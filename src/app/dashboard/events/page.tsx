@@ -1,0 +1,104 @@
+'use client';
+
+import { EventList } from "@/components/event-list";
+import { CreateEventForm } from "@/components/create-event-form";
+import { EditEventForm } from "@/components/edit-event-form"; // <-- 1. IMPORTAR
+import { Modal } from "@/components/ui/modal";
+import api from "@/lib/axios";
+import { CalendarPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+
+export interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string;
+  startDate: string;
+  endDate: string;
+  flyerImageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function EventsPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  // 2. NUEVOS ESTADOS PARA LA EDICIÓN
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
+  const fetchEvents = async () => {
+    try {
+      const response = await api.get('/events');
+      setEvents(response.data);
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+      setEvents([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handleDataChange = () => {
+    fetchEvents();
+  };
+  
+  // 3. FUNCIÓN PARA ABRIR EL MODAL DE EDICIÓN
+  const handleEditClick = (event: Event) => {
+    setSelectedEvent(event);
+    setIsEditModalOpen(true);
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Eventos</h1>
+          <p className="mt-1 text-zinc-400">
+            Administra los eventos de SUCHT.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg flex items-center space-x-2"
+        >
+          <CalendarPlus className="h-5 w-5" />
+          <span>Crear Evento</span>
+        </button>
+      </div>
+      
+      {/* 4. PASAMOS LA FUNCIÓN DE EDITAR A LA LISTA */}
+      <EventList events={events} onDataChange={handleDataChange} onEditEvent={handleEditClick} />
+
+      {/* Modal de Creación */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Crear Nuevo Evento"
+      >
+        <CreateEventForm 
+          onClose={() => setIsCreateModalOpen(false)}
+          onEventCreated={handleDataChange}
+        />
+      </Modal>
+
+      {/* 5. MODAL DE EDICIÓN */}
+      {selectedEvent && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title={`Editando: ${selectedEvent.title}`}
+        >
+          <EditEventForm 
+            event={selectedEvent}
+            onClose={() => setIsEditModalOpen(false)}
+            onEventUpdated={handleDataChange}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
