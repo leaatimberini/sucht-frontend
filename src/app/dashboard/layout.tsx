@@ -7,8 +7,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    // ¡Nuestro guardia protege todo lo que está adentro!
-    <AuthCheck>
+    // ¡Nuestro guardia ahora pide credenciales de ADMIN!
+    <AuthCheck allowedRoles={['ADMIN']}>
       <div className="flex min-h-screen">
         {/* Barra Lateral (Sidebar) */}
         <aside className="w-64 bg-zinc-900 p-4 border-r border-zinc-800 flex flex-col">
