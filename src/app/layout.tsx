@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { Poppins } from 'next/font/google'; // Importamos la tipografía
+import { Poppins } from 'next/font/google';
 import './globals.css';
+import { Toaster } from 'react-hot-toast'; // <-- 1. IMPORTAR
 
-// Configuramos la tipografía Poppins con los grosores que usaremos
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
@@ -20,10 +20,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      {/* Aplicamos la clase de la tipografía y los colores base al body */}
       <body
         className={`${poppins.className} bg-zinc-950 text-zinc-50 antialiased`}
       >
+        <Toaster position="top-center" /> {/* <-- 2. AÑADIR COMPONENTE */}
         {children}
       </body>
     </html>
