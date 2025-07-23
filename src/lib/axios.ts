@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000', // La URL base de nuestro backend
+  baseURL: '/', // La URL base de nuestro backend
 });
 
 // Interceptor para añadir el token a cada petición
