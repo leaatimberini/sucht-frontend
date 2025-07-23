@@ -8,9 +8,9 @@ import toast from "react-hot-toast";
 
 // SOLUCIÓN DEFINITIVA: Usamos z.coerce.number() para la conversión de tipos
 const createTierSchema = z.object({
-  name: z.string().min(3, { message: "El nombre es requerido." }),
-  price: z.coerce.number().min(0, { message: "El precio no puede ser negativo." }),
-  quantity: z.coerce.number().int().min(1, { message: "La cantidad debe ser al menos 1." }),
+  name: z.string().min(1, "El nombre es requerido."),
+  price: z.coerce.number().min(0, "El precio no puede ser negativo."),
+  quantity: z.coerce.number().int().min(1, "La cantidad debe ser al menos 1."),
 });
 
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
