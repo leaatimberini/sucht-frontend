@@ -6,13 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
 
-// SOLUCIÓN DEFINITIVA: Usamos z.coerce.number() para la conversión de tipos
+// Esta es la definición correcta que soluciona los errores de tipos.
 const createTierSchema = z.object({
   name: z.string().min(1, "El nombre es requerido."),
   price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   quantity: z.coerce.number().int().min(1, "La cantidad debe ser al menos 1."),
 });
 
+// Este tipo se crea a partir del esquema correcto.
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
 
 export function CreateTicketTierForm({ 
@@ -29,17 +30,18 @@ export function CreateTicketTierForm({
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<CreateTierFormInputs>({
-    resolver: zodResolver(createTierSchema),
+  } = useForm({ // <--- Quita <CreateTierFormInputs> de aquí
+    resolver: zodResolver(createTierSchema), 
   });
 
+  // La 'data' de esta función ahora coincide con los tipos del formulario.
   const onSubmit = async (data: CreateTierFormInputs) => {
     try {
       await api.post(`/events/${eventId}/ticket-tiers`, data);
       toast.success("Tipo de entrada creado con éxito.");
       reset();
-      onTierCreated(); // Llama a la función para recargar la lista
-      onClose(); // Cierra el modal
+      onTierCreated();
+      onClose();
     } catch (error) {
       toast.error("Error al crear el tipo de entrada.");
     }
