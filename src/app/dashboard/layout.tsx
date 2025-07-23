@@ -2,7 +2,7 @@ import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { Calendar, LayoutGrid, BarChart3, Users } from "lucide-react"; // <-- Importar icono Users
+import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -12,7 +12,6 @@ export default function DashboardLayout({
   return (
     <AuthCheck allowedRoles={[UserRole.ADMIN]}> 
       <div className="flex min-h-screen">
-        {/* Barra Lateral (Sidebar) */}
         <aside className="w-64 bg-zinc-900 p-4 border-r border-zinc-800 flex flex-col">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-white">SUCHT</h1>
@@ -33,11 +32,23 @@ export default function DashboardLayout({
                   <span>Eventos</span>
                 </Link>
               </li>
-              {/* NUEVO LINK DE STAFF */}
               <li>
                 <Link href="/dashboard/staff" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <Users className="h-4 w-4" />
                   <span>Staff</span>
+                </Link>
+              </li>
+              {/* NUEVO LINK DE CLIENTES */}
+              <li>
+                <Link href="/dashboard/clients" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <UserSquare className="h-4 w-4" />
+                  <span>Clientes</span>
+                </Link>
+              </li>
+              <li className="border-t border-zinc-700 pt-2 mt-2">
+                <Link href="/dashboard/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <QrCode className="h-4 w-4" />
+                  <span>Verificar Acceso</span>
                 </Link>
               </li>
               <li>
@@ -54,7 +65,6 @@ export default function DashboardLayout({
           </div>
         </aside>
         
-        {/* Contenido Principal */}
         <main className="flex-1 p-8">
           {children}
         </main>

@@ -2,29 +2,18 @@
 
 import { EventList } from "@/components/event-list";
 import { CreateEventForm } from "@/components/create-event-form";
-import { EditEventForm } from "@/components/edit-event-form"; // <-- 1. IMPORTAR
+import { EditEventForm } from "@/components/edit-event-form";
 import { Modal } from "@/components/ui/modal";
 import api from "@/lib/axios";
 import { CalendarPlus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { type Event } from "@/types/event.types"; // <-- 1. IMPORTAR DESDE EL NUEVO ARCHIVO
 
-export interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string;
-  startDate: string;
-  endDate: string;
-  flyerImageUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+// 2. LA INTERFAZ "Event" HA SIDO ELIMINADA DE AQUÍ
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
-  // 2. NUEVOS ESTADOS PARA LA EDICIÓN
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
@@ -46,7 +35,6 @@ export default function EventsPage() {
     fetchEvents();
   };
   
-  // 3. FUNCIÓN PARA ABRIR EL MODAL DE EDICIÓN
   const handleEditClick = (event: Event) => {
     setSelectedEvent(event);
     setIsEditModalOpen(true);
@@ -70,10 +58,8 @@ export default function EventsPage() {
         </button>
       </div>
       
-      {/* 4. PASAMOS LA FUNCIÓN DE EDITAR A LA LISTA */}
       <EventList events={events} onDataChange={handleDataChange} onEditEvent={handleEditClick} />
 
-      {/* Modal de Creación */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -85,7 +71,6 @@ export default function EventsPage() {
         />
       </Modal>
 
-      {/* 5. MODAL DE EDICIÓN */}
       {selectedEvent && (
         <Modal
           isOpen={isEditModalOpen}

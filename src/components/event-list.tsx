@@ -1,8 +1,9 @@
 'use client';
 
-import { type Event } from "@/app/dashboard/events/page";
+import { type Event } from "@/types/event.types";
 import { ImageOff, Pencil } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { DeleteEventButton } from "./delete-event-button";
 
 const API_URL = 'http://localhost:8000';
@@ -38,25 +39,32 @@ export function EventList({
         </thead>
         <tbody>
           {events.map((event) => (
-            <tr key={event.id} className="border-b border-zinc-800 last:border-b-0">
+            <tr key={event.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 transition-colors">
               <td className="p-4">
-                {event.flyerImageUrl ? (
-                  <Image 
-                    src={`${API_URL}${event.flyerImageUrl}`} 
-                    alt={`Flyer de ${event.title}`}
-                    width={80}
-                    height={120}
-                    className="rounded-md object-cover w-20 h-auto"
-                  />
-                ) : (
-                  <div className="w-20 h-[120px] bg-zinc-800 rounded-md flex items-center justify-center">
-                    <ImageOff className="h-8 w-8 text-zinc-500" />
-                  </div>
-                )}
+                <Link href={`/dashboard/events/${event.id}`}>
+                  {event.flyerImageUrl ? (
+                    <Image 
+                      src={`${API_URL}${event.flyerImageUrl}`} 
+                      alt={`Flyer de ${event.title}`}
+                      width={80}
+                      height={120}
+                      className="rounded-md object-cover w-20 h-auto"
+                    />
+                  ) : (
+                    <div className="w-20 h-[120px] bg-zinc-800 rounded-md flex items-center justify-center">
+                      <ImageOff className="h-8 w-8 text-zinc-500" />
+                    </div>
+                  )}
+                </Link>
               </td>
-              <td className="p-4 text-zinc-300 align-top">{event.title}</td>
+              <td className="p-4 text-zinc-300 align-top">
+                <Link href={`/dashboard/events/${event.id}`} className="font-semibold hover:underline">
+                  {event.title}
+                </Link>
+              </td>
               <td className="p-4 text-zinc-300 align-top">{event.location}</td>
               <td className="p-4 text-zinc-300 align-top">
+                {/* SINTAXIS DE FECHA CORREGIDA */}
                 {new Date(event.startDate).toLocaleDateString('es-AR', {
                   year: 'numeric', month: 'short', day: 'numeric',
                 })}

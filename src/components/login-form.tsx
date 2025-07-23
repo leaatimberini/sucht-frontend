@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { UserRole } from '@/types/user.types'; // 1. IMPORTAR UserRole PARA MAYOR SEGURIDAD
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Por favor, introduce un email válido.' }),
@@ -20,7 +21,7 @@ type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login } = useAuthStore(); // Obtenemos la acción de login de nuestro store
+  const { login } = useAuthStore();
 
   const {
     register,
@@ -35,17 +36,18 @@ export function LoginForm() {
       await login(data);
       toast.success('¡Login exitoso!');
 
-      // Lógica de redirección por rol
-      // Usamos un pequeño delay para que el estado de Zustand se actualice
       setTimeout(() => {
         const currentUser = useAuthStore.getState().user;
-        if (currentUser?.role === 'ADMIN') {
+        
+        // 2. LÓGICA DE REDIRECCIÓN ACTUALIZADA CON EL CASO RRPP
+        if (currentUser?.role === UserRole.ADMIN) {
           router.push('/dashboard');
+        } else if (currentUser?.role === UserRole.RRPP) {
+          router.push('/rrpp');
         } else {
-          // Por defecto, cualquier otro rol va a su cuenta
           router.push('/mi-cuenta');
         }
-      }, 50); // 50ms es suficiente
+      }, 50);
 
     } catch (error) {
       if (error instanceof Error) {
@@ -57,7 +59,6 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Campo de Email */}
         <div className="space-y-2">
           <label
             htmlFor="email"
@@ -80,7 +81,6 @@ export function LoginForm() {
           )}
         </div>
 
-        {/* Campo de Contraseña */}
         <div className="space-y-2">
           <label
             htmlFor="password"
@@ -105,7 +105,6 @@ export function LoginForm() {
           )}
         </div>
 
-        {/* Botón de Envío */}
         <button
           type="submit"
           disabled={isSubmitting}
