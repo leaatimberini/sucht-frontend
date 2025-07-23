@@ -13,7 +13,7 @@ export default function ClientsPage() {
       setIsLoading(true);
       try {
         // APUNTAMOS AL ENDPOINT /users/clients
-        const response = await api.get('/users/clients');
+        const response = await api.get('/api/users/clients');
         setClients(response.data);
       } catch (error) {
         console.error("Failed to fetch clients:", error);

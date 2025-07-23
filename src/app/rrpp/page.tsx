@@ -10,7 +10,7 @@ export default function RRPPPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await api.get('/events');
+        const response = await api.get('/api/events');
         setEvents(response.data);
       } catch (error) {
         console.error("Failed to fetch events:", error);

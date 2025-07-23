@@ -13,7 +13,7 @@ export default function StaffPage() {
     setIsLoading(true);
     try {
       // CAMBIAMOS EL ENDPOINT A /users/staff
-      const response = await api.get('/users/staff');
+      const response = await api.get('/api/users/staff');
       setStaff(response.data);
     } catch (error) {
       console.error("Failed to fetch staff:", error);
