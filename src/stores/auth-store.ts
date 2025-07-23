@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import axios from 'axios';
+import api from '@/lib/axios'; // <-- Importa tu cliente de axios configurado
 
 // Definimos la forma de nuestro estado y las acciones
 interface AuthState {
@@ -21,22 +21,23 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         try {
-          const response = await axios.post(
-            'http://localhost:8000/auth/login',
-            credentials,
-          );
+          // --- LÍNEA CORREGIDA ---
+          // Usamos el cliente 'api' y una ruta relativa
+          const response = await api.post('/api/auth/login', credentials);
+          // -----------------------
+
           const { access_token } = response.data;
           
-          // Decodificamos el token para extraer la información del usuario (sin verificar la firma aquí)
+          // Decodificamos el token para extraer la información del usuario
           const payload = JSON.parse(atob(access_token.split('.')[1]));
 
           set({ 
             token: access_token,
             user: { email: payload.email, role: payload.role }
           });
-        } catch (error) {
-          // Si hay un error, lo relanzamos para que el componente del formulario lo pueda atrapar
-          if (axios.isAxiosError(error) && error.response) {
+        } catch (error: any) {
+          // Si hay un error, lo relanzamos para que el componente lo pueda atrapar
+          if (error.response) {
             throw new Error(error.response.data.message || 'Error al iniciar sesión');
           }
           throw new Error('Un error inesperado ocurrió.');

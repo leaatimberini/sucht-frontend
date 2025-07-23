@@ -1,4 +1,4 @@
-import { type Event, type TicketTier } from "@/types/event.types"; // <-- Importar desde aquí
+import { type Event } from "@/types/event.types"; 
 import api from "@/lib/axios";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -6,12 +6,10 @@ import { TicketTierManager } from "@/components/ticket-tier-manager";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-// Puedes mantener esta URL o moverla a un archivo de configuración si es una constante global
-const API_URL = 'http://localhost:8000';
-
 async function getEvent(id: string): Promise<Event | null> {
   try {
-    const response = await api.get(`/events/${id}`);
+    // La llamada a la API ahora usará la baseURL configurada en axios.ts
+    const response = await api.get(`/api/events/${id}`);
     return response.data;
   } catch (error) {
     return null;
@@ -35,7 +33,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {event.flyerImageUrl && (
           <Image
-            src={`${API_URL}${event.flyerImageUrl}`}
+            // La URL de la imagen ahora es una ruta relativa
+            src={event.flyerImageUrl}
             alt={`Flyer de ${event.title}`}
             width={300}
             height={450}
@@ -51,7 +50,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
       
       <hr className="my-8 border-zinc-800" />
       
-      {/* Aquí insertamos nuestro nuevo componente */}
       <TicketTierManager eventId={event.id} />
     </div>
   );

@@ -6,14 +6,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { DeleteEventButton } from "./delete-event-button";
 
-const API_URL = 'http://localhost:8000';
-
-export function EventList({ 
-  events, 
+export function EventList({
+  events,
   onDataChange,
   onEditEvent,
-}: { 
-  events: Event[], 
+}: {
+  events: Event[],
   onDataChange: () => void,
   onEditEvent: (event: Event) => void,
 }) {
@@ -43,8 +41,9 @@ export function EventList({
               <td className="p-4">
                 <Link href={`/dashboard/events/${event.id}`}>
                   {event.flyerImageUrl ? (
-                    <Image 
-                      src={`${API_URL}${event.flyerImageUrl}`} 
+                    <Image
+                      // La URL de la imagen ahora es una ruta relativa
+                      src={event.flyerImageUrl}
                       alt={`Flyer de ${event.title}`}
                       width={80}
                       height={120}
@@ -64,7 +63,6 @@ export function EventList({
               </td>
               <td className="p-4 text-zinc-300 align-top">{event.location}</td>
               <td className="p-4 text-zinc-300 align-top">
-                {/* SINTAXIS DE FECHA CORREGIDA */}
                 {new Date(event.startDate).toLocaleDateString('es-AR', {
                   year: 'numeric', month: 'short', day: 'numeric',
                 })}
