@@ -2,10 +2,10 @@ import { useAuthStore } from '@/stores/auth-store';
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/', // La URL base de nuestro backend
+  // Construimos la URL base completa, incluyendo /api
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
 });
 
-// Interceptor para añadir el token a cada petición
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;

@@ -1,4 +1,4 @@
-import { type Event } from "@/types/event.types"; // <-- CORREGIR ESTA LÍNEA
+import { type Event } from "@/types/event.types";
 import api from "@/lib/axios";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -6,13 +6,16 @@ import { TicketTierManager } from "@/components/ticket-tier-manager";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-const API_URL = '/';
+// La URL base para las imágenes ahora viene de la variable de entorno
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 async function getEvent(id: string): Promise<Event | null> {
   try {
-    const response = await api.get(`/api/events/${id}`);
+    // La llamada es relativa a la baseURL de axios (/api)
+    const response = await api.get(`/events/${id}`);
     return response.data;
   } catch (error) {
+    console.error(`Failed to fetch event ${id}:`, error);
     return null;
   }
 }
@@ -34,7 +37,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {event.flyerImageUrl && (
           <Image
-            src={`${API_URL}${event.flyerImageUrl}`}
+            src={`${API_BASE_URL}${event.flyerImageUrl}`}
             alt={`Flyer de ${event.title}`}
             width={300}
             height={450}
