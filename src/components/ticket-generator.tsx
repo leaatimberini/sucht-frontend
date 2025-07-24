@@ -42,7 +42,7 @@ export function TicketGenerator({ event }: { event: Event }) {
 
   const onSubmit = async (data: GenerateTicketInputs) => {
     try {
-      await api.post('/tickets', {
+      await api.post('/api/tickets', {
         userEmail: data.userEmail,
         eventId: event.id,
         ticketTierId: data.ticketTierId,
