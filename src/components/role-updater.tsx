@@ -16,7 +16,7 @@ export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated
     try {
       // --- LÍNEA CORREGIDA ---
       // Se añade el prefijo /api a la ruta
-      await api.patch(`/api/users/${user.id}/role`, { role: newRole });
+      await api.patch(`/users/${user.id}/role`, { role: newRole });
       // -----------------------
 
       setCurrentRole(newRole);

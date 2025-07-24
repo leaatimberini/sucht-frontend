@@ -56,7 +56,7 @@ export function EditTicketTierForm({
       };
       // --- LÍNEA CORREGIDA ---
       // Se añade el prefijo /api a la ruta
-      await api.patch(`/api/ticket-tiers/${ticketTier.id}`, payload);
+      await api.patch(`/ticket-tiers/${ticketTier.id}`, payload);
       // -----------------------
 
       toast.success('¡Tipo de ticket actualizado exitosamente!');

@@ -62,7 +62,7 @@ export function CreateEventForm({
     }
 
     try {
-      await api.post('/api/events', formData, {
+      await api.post('/events', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('¡Evento creado exitosamente!');

@@ -29,7 +29,7 @@ export function QrScanner() {
       // Hacemos la llamada al backend para verificar el ticket
       // --- LÍNEA CORREGIDA ---
       // Se añade el prefijo /api a la ruta
-      api.post(`/api/tickets/${decodedText}/verify`)
+      api.post(`/tickets/${decodedText}/verify`)
       // -----------------------
         .then(response => {
           setScanResult({ type: 'success', data: response.data });

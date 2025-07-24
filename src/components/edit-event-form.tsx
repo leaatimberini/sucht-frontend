@@ -58,7 +58,7 @@ export function EditEventForm({
       };
       // --- LÍNEA CORREGIDA ---
       // Se añade el prefijo /api a la ruta
-      await api.patch(`/api/events/${event.id}`, payload);
+      await api.patch(`/events/${event.id}`, payload);
       // -----------------------
 
       toast.success('¡Evento actualizado exitosamente!');

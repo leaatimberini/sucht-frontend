@@ -14,7 +14,7 @@ export default function StaffPage() {
   const fetchStaff = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/api/users/staff');
+      const response = await api.get('/users/staff');
       setStaff(response.data);
     } catch (error) {
       console.error("Failed to fetch staff:", error);

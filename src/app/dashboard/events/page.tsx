@@ -19,7 +19,7 @@ export default function EventsPage() {
   // 2. Se envuelve la función en 'useCallback'
   const fetchEvents = useCallback(async () => {
     try {
-      const response = await api.get('/api/events');
+      const response = await api.get('/events');
       setEvents(response.data);
     } catch (error) {
       console.error("Failed to fetch events:", error);

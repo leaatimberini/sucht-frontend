@@ -14,7 +14,7 @@ export default function ClientsPage() {
     setIsLoading(true);
     try {
       // La llamada a la API ya estaba correcta
-      const response = await api.get('/api/users/clients');
+      const response = await api.get('/users/clients');
       setClients(response.data);
     } catch (error) {
       console.error("Failed to fetch clients:", error);

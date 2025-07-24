@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import api from '@/lib/axios'; // <-- Importa tu cliente de axios configurado
+import axios from 'axios';
+import api from '@/lib/axios'; // Asegúrate de que importa nuestra instancia configurada
 
 // Definimos la forma de nuestro estado y las acciones
 interface AuthState {
@@ -12,8 +13,6 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  // La función `persist` hace que el estado se guarde en el localStorage del navegador,
-  // para que el usuario no pierda la sesión al refrescar la página.
   persist(
     (set, get) => ({
       token: null,
@@ -21,23 +20,21 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         try {
-          // --- LÍNEA CORREGIDA ---
-          // Usamos el cliente 'api' y una ruta relativa
-          const response = await api.post('/api/auth/login', credentials);
+          // --- CORRECCIÓN AQUÍ ---
+          // La ruta ahora es relativa a la baseURL de axios (que ya incluye /api)
+          const response = await api.post('/auth/login', credentials);
           // -----------------------
-
+          
           const { access_token } = response.data;
           
-          // Decodificamos el token para extraer la información del usuario
           const payload = JSON.parse(atob(access_token.split('.')[1]));
 
           set({ 
             token: access_token,
             user: { email: payload.email, role: payload.role }
           });
-        } catch (error: any) {
-          // Si hay un error, lo relanzamos para que el componente lo pueda atrapar
-          if (error.response) {
+        } catch (error) {
+          if (axios.isAxiosError(error) && error.response) {
             throw new Error(error.response.data.message || 'Error al iniciar sesión');
           }
           throw new Error('Un error inesperado ocurrió.');
@@ -53,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage', // nombre de la clave en el localStorage
+      name: 'auth-storage',
     },
   ),
 );

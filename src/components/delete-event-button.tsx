@@ -21,7 +21,7 @@ export function DeleteEventButton({
     try {
       // --- LÍNEA CORREGIDA ---
       // Se añade el prefijo /api a la ruta
-      await api.delete(`/api/events/${eventId}`);
+      await api.delete(`/events/${eventId}`);
       // -----------------------
 
       toast.success('Evento eliminado correctamente.');

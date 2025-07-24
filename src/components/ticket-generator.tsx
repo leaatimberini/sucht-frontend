@@ -33,7 +33,7 @@ export function TicketGenerator({ event }: { event: Event }) {
   const fetchTiers = useCallback(async () => {
     try {
       // --- LÍNEA CORREGIDA ---
-      const response = await api.get(`/api/events/${event.id}/ticket-tiers`);
+      const response = await api.get(`/events/${event.id}/ticket-tiers`);
       // -----------------------
       setTiers(response.data);
     } catch (error) {
@@ -47,7 +47,7 @@ export function TicketGenerator({ event }: { event: Event }) {
 
   const onSubmit = async (data: GenerateTicketInputs) => {
     try {
-      await api.post('/api/tickets', {
+      await api.post('/tickets', {
         userEmail: data.userEmail,
         eventId: event.id,
         ticketTierId: data.ticketTierId,
