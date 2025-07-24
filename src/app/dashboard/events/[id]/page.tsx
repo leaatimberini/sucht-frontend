@@ -2,7 +2,7 @@ import { type Event } from "@/types/event.types";
 import api from "@/lib/axios";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import TicketTierManager from "@/components/ticket-tier-manager";
+import { TicketTierManager } from "@/components/ticket-tier-manager";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
