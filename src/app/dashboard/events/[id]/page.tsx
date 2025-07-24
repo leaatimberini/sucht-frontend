@@ -1,4 +1,4 @@
-import { type Event } from "@/types/event.types"; 
+import { type Event } from "@/types/event.types"; // <-- CORREGIR ESTA LÍNEA
 import api from "@/lib/axios";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -6,9 +6,10 @@ import { TicketTierManager } from "@/components/ticket-tier-manager";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
+const API_URL = '/';
+
 async function getEvent(id: string): Promise<Event | null> {
   try {
-    // La llamada a la API ahora usará la baseURL configurada en axios.ts
     const response = await api.get(`/api/events/${id}`);
     return response.data;
   } catch (error) {
@@ -33,8 +34,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {event.flyerImageUrl && (
           <Image
-            // La URL de la imagen ahora es una ruta relativa
-            src={event.flyerImageUrl}
+            src={`${API_URL}${event.flyerImageUrl}`}
             alt={`Flyer de ${event.title}`}
             width={300}
             height={450}

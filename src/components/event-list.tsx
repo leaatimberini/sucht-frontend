@@ -1,107 +1,90 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import api from '@/lib/axios';
-import { type TicketTier } from '@/types/event.types';
-import { Modal } from './ui/modal';
-import { CreateTicketTierForm } from './create-ticket-tier-form';
-import { EditTicketTierForm } from './edit-ticket-tier-form';
-import { Pencil, PlusCircle } from 'lucide-react';
+import { type Event } from "@/types/event.types"; // <-- CORRECCIÓN: Importación centralizada
+import { ImageOff, Pencil } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { DeleteEventButton } from "./delete-event-button";
 
-export function TicketTierManager({ eventId }: { eventId: string }) {
-  const [tiers, setTiers] = useState<TicketTier[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<TicketTier | null>(null);
+// Usamos la variable de entorno para la URL de la API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  const fetchTiers = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get(`/api/events/${eventId}/ticket-tiers`);
-      setTiers(response.data);
-    } catch (error) {
-      console.error("Failed to fetch ticket tiers:", error);
-      setTiers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [eventId]);
-
-  useEffect(() => {
-    fetchTiers();
-  }, [fetchTiers]);
-
-  const handleEditClick = (tier: TicketTier) => {
-    setSelectedTier(tier);
-    setIsEditModalOpen(true);
-  };
+export function EventList({ // <-- CORRECCIÓN: 'export' estaba faltando o era incorrecto
+  events, 
+  onDataChange,
+  onEditEvent,
+}: { 
+  events: Event[], 
+  onDataChange: () => void,
+  onEditEvent: (event: Event) => void,
+}) {
+  if (events.length === 0) {
+    return (
+      <div className="text-center py-10 bg-zinc-900 border border-zinc-800 rounded-lg">
+        <p className="text-zinc-500">No hay eventos para mostrar.</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-white">Tipos de Entrada</h2>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg flex items-center space-x-2 text-sm"
-        >
-          <PlusCircle className="h-4 w-4" />
-          <span>Crear Tipo</span>
-        </button>
-      </div>
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg">
-        {isLoading ? (
-          <p className="p-4 text-zinc-400">Cargando...</p>
-        ) : tiers.length > 0 ? (
-          tiers.map(tier => (
-            <div key={tier.id} className="flex justify-between items-center p-4 border-b border-zinc-800 last:border-b-0">
-              <div>
-                <p className="font-semibold text-white">{tier.name}</p>
-                <p className="text-sm text-zinc-400">
-                  ${tier.price} ARS - Cantidad: {tier.quantity} - {tier.available ? 'Activo' : 'Inactivo'}
-                </p>
-              </div>
-              <button 
-                onClick={() => handleEditClick(tier)}
-                className="text-zinc-400 hover:text-white transition-colors p-1"
-              >
-                <Pencil className="h-5 w-5" />
-              </button>
-            </div>
-          ))
-        ) : (
-          <p className="p-4 text-zinc-500">No hay tipos de entrada creados para este evento.</p>
-        )}
-      </div>
-
-      {/* Modal para Crear */}
-      <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Crear Nuevo Tipo de Entrada"
-      >
-        <CreateTicketTierForm
-          eventId={eventId}
-          onClose={() => setIsCreateModalOpen(false)}
-          onTierCreated={fetchTiers}
-        />
-      </Modal>
-
-      {/* Modal para Editar */}
-      {selectedTier && (
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          title={`Editando: ${selectedTier.name}`}
-        >
-          <EditTicketTierForm
-            ticketTier={selectedTier}
-            onClose={() => setIsEditModalOpen(false)}
-            onTicketTierUpdated={fetchTiers}
-          />
-        </Modal>
-      )}
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
+      <table className="w-full text-left">
+        <thead className="border-b border-zinc-700">
+          <tr>
+            <th className="p-4 text-sm font-semibold text-white w-24">Flyer</th>
+            <th className="p-4 text-sm font-semibold text-white">Título</th>
+            <th className="p-4 text-sm font-semibold text-white">Ubicación</th>
+            <th className="p-4 text-sm font-semibold text-white">Fecha de Inicio</th>
+            <th className="p-4 text-sm font-semibold text-white">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {events.map((event) => (
+            <tr key={event.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 transition-colors">
+              <td className="p-4">
+                <Link href={`/dashboard/events/${event.id}`}>
+                  {event.flyerImageUrl ? (
+                    <Image 
+                      src={`${API_URL}${event.flyerImageUrl}`} 
+                      alt={`Flyer de ${event.title}`}
+                      width={80}
+                      height={120}
+                      className="rounded-md object-cover w-20 h-auto"
+                    />
+                  ) : (
+                    <div className="w-20 h-[120px] bg-zinc-800 rounded-md flex items-center justify-center">
+                      <ImageOff className="h-8 w-8 text-zinc-500" />
+                    </div>
+                  )}
+                </Link>
+              </td>
+              <td className="p-4 text-zinc-300 align-top">
+                <Link href={`/dashboard/events/${event.id}`} className="font-semibold hover:underline">
+                  {event.title}
+                </Link>
+              </td>
+              <td className="p-4 text-zinc-300 align-top">{event.location}</td>
+              <td className="p-4 text-zinc-300 align-top">
+                {new Date(event.startDate).toLocaleDateString('es-AR', {
+                  year: 'numeric', month: 'short', day: 'numeric',
+                })}
+              </td>
+              <td className="p-4 align-top">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => onEditEvent(event)}
+                    className="text-zinc-400 hover:text-white transition-colors p-1"
+                    title="Editar evento"
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </button>
+                  <DeleteEventButton eventId={event.id} onEventDeleted={onDataChange} />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

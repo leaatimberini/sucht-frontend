@@ -1,6 +1,6 @@
 'use client';
 
-import EventList from "@/components/event-list";
+import { EventList } from "@/components/event-list"
 import { CreateEventForm } from "@/components/create-event-form";
 import { EditEventForm } from "@/components/edit-event-form";
 import { Modal } from "@/components/ui/modal";
