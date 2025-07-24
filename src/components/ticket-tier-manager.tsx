@@ -11,9 +11,9 @@ import { Modal } from "./ui/modal";
 import { PlusCircle } from "lucide-react";
 
 const createTierSchema = z.object({
-  name: z.string().min(3, { message: "El nombre es requerido." }),
-  price: z.coerce.number().min(0, { message: "El precio no puede ser negativo." }),
-  quantity: z.coerce.number().int().min(1, { message: "La cantidad debe ser al menos 1." }),
+ name: z.string().min(3, { message: "El nombre es requerido." }),
+ price: z.number().min(0, { message: "El precio no puede ser negativo." }),
+ quantity: z.number().int().min(1, { message: "La cantidad debe ser al menos 1." }),
 });
 
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
@@ -49,8 +49,8 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
       await api.post(`/events/${eventId}/ticket-tiers`, data);
       toast.success("Tipo de entrada creado con éxito.");
       reset();
-      fetchTiers(); // Recargar la lista
-      setIsModalOpen(false); // Cerrar el modal
+      fetchTiers();
+      setIsModalOpen(false);
     } catch (error) {
       toast.error("Error al crear el tipo de entrada.");
     }
