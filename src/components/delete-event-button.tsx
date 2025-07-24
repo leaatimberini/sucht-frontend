@@ -19,7 +19,11 @@ export function DeleteEventButton({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await api.delete(`/events/${eventId}`);
+      // --- LÍNEA CORREGIDA ---
+      // Se añade el prefijo /api a la ruta
+      await api.delete(`/api/events/${eventId}`);
+      // -----------------------
+
       toast.success('Evento eliminado correctamente.');
       onEventDeleted(); // Refresca la lista de eventos
       setIsModalOpen(false);

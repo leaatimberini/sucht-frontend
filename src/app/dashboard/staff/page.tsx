@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from "react";
+// 1. Se añade 'useCallback' a la importación
+import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/axios";
 import { User } from "@/types/user.types";
 import { RoleUpdater } from "@/components/role-updater";
@@ -9,10 +10,10 @@ export default function StaffPage() {
   const [staff, setStaff] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchStaff = async () => {
+  // 2. Se envuelve la función en useCallback
+  const fetchStaff = useCallback(async () => {
     setIsLoading(true);
     try {
-      // CAMBIAMOS EL ENDPOINT A /users/staff
       const response = await api.get('/api/users/staff');
       setStaff(response.data);
     } catch (error) {
@@ -20,11 +21,11 @@ export default function StaffPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // El array vacío indica que esta función no depende de props o estado
 
   useEffect(() => {
     fetchStaff();
-  }, []);
+  }, [fetchStaff]); // 3. Se añade la función a la lista de dependencias
 
   return (
     <div>

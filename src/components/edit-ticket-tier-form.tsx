@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 import { type TicketTier } from '@/types/event.types';
 
-// Definimos el esquema Zod directamente con los tipos que esperamos de los inputs HTML
+// Esquema de validación para el formulario de edición
 const editTicketTierSchema = z.object({
   name: z.string().min(1, { message: 'El nombre es requerido.' }),
   price: z.string().min(1, { message: 'El precio es requerido.' })
@@ -21,7 +21,6 @@ const editTicketTierSchema = z.object({
   available: z.boolean(),
 });
 
-// El tipo de los valores del formulario tal como vienen de los inputs
 type EditTicketTierFormInputs = z.infer<typeof editTicketTierSchema>;
 
 export function EditTicketTierForm({
@@ -41,21 +40,25 @@ export function EditTicketTierForm({
     resolver: zodResolver(editTicketTierSchema),
     defaultValues: {
       name: ticketTier.name,
-      price: ticketTier.price.toString(), // Asegúrate de que sea string para el default
-      quantity: ticketTier.quantity.toString(), // Asegúrate de que sea string para el default
+      price: ticketTier.price.toString(),
+      quantity: ticketTier.quantity.toString(),
       available: ticketTier.available,
     },
   });
 
   const onSubmit = async (data: EditTicketTierFormInputs) => {
     try {
-      // Aquí realizamos la conversión explícita a number antes de enviar los datos a la API
+      // Convertimos los datos a los tipos correctos antes de enviarlos
       const payload = {
         ...data,
         price: parseFloat(data.price),
         quantity: parseInt(data.quantity, 10),
       };
-      await api.patch(`/ticket-tiers/${ticketTier.id}`, payload);
+      // --- LÍNEA CORREGIDA ---
+      // Se añade el prefijo /api a la ruta
+      await api.patch(`/api/ticket-tiers/${ticketTier.id}`, payload);
+      // -----------------------
+
       toast.success('¡Tipo de ticket actualizado exitosamente!');
       onTicketTierUpdated();
       onClose();

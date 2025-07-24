@@ -1,5 +1,7 @@
 'use client';
-import { useEffect, useState } from "react";
+
+// 1. Se añade 'useCallback' a la importación
+import { useEffect, useState, useCallback } from "react";
 import { Event } from "@/types/event.types";
 import api from "@/lib/axios";
 import { TicketGenerator } from "@/components/ticket-generator";
@@ -7,17 +9,19 @@ import { TicketGenerator } from "@/components/ticket-generator";
 export default function RRPPPage() {
   const [events, setEvents] = useState<Event[]>([]);
 
+  // 2. Se envuelve la función en useCallback
+  const fetchEvents = useCallback(async () => {
+    try {
+      const response = await api.get('/api/events');
+      setEvents(response.data);
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+    }
+  }, []); // El array vacío indica que esta función no depende de props o estado
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await api.get('/api/events');
-        setEvents(response.data);
-      } catch (error) {
-        console.error("Failed to fetch events:", error);
-      }
-    };
     fetchEvents();
-  }, []);
+  }, [fetchEvents]); // 3. Se añade la función a la lista de dependencias
 
   return (
     <div>

@@ -1,12 +1,13 @@
 'use client';
 
+// 1. Se añade 'useCallback' a la importación
+import { useEffect, useState, useCallback } from "react";
 import { Event } from "@/types/event.types";
+import api from "@/lib/axios";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import api from "@/lib/axios";
 import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
 import { TicketTier } from "@/types/ticket.types";
 
 const generateTicketSchema = z.object({
@@ -28,17 +29,21 @@ export function TicketGenerator({ event }: { event: Event }) {
     resolver: zodResolver(generateTicketSchema)
   });
 
+  // 2. Se envuelve la función en useCallback
+  const fetchTiers = useCallback(async () => {
+    try {
+      // --- LÍNEA CORREGIDA ---
+      const response = await api.get(`/api/events/${event.id}/ticket-tiers`);
+      // -----------------------
+      setTiers(response.data);
+    } catch (error) {
+      console.error("Failed to fetch ticket tiers", error);
+    }
+  }, [event.id]); // La función depende de event.id
+
   useEffect(() => {
-    const fetchTiers = async () => {
-      try {
-        const response = await api.get(`/events/${event.id}/ticket-tiers`);
-        setTiers(response.data);
-      } catch (error) {
-        console.error("Failed to fetch ticket tiers", error);
-      }
-    };
     fetchTiers();
-  }, [event.id]);
+  }, [fetchTiers]); // 3. Se añade la función a la lista de dependencias
 
   const onSubmit = async (data: GenerateTicketInputs) => {
     try {

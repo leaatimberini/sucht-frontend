@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from "react";
+// 1. Se añade 'useCallback' a la importación
+import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/axios";
 import { User } from "@/types/user.types";
 
@@ -8,21 +9,23 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 2. Se envuelve la función en useCallback para optimizarla
+  const fetchClients = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // La llamada a la API ya estaba correcta
+      const response = await api.get('/api/users/clients');
+      setClients(response.data);
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []); // El array vacío indica que esta función no depende de props o estado
+
   useEffect(() => {
-    const fetchClients = async () => {
-      setIsLoading(true);
-      try {
-        // APUNTAMOS AL ENDPOINT /users/clients
-        const response = await api.get('/api/users/clients');
-        setClients(response.data);
-      } catch (error) {
-        console.error("Failed to fetch clients:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchClients();
-  }, []);
+  }, [fetchClients]); // 3. Se añade la función a la lista de dependencias
 
   return (
     <div>

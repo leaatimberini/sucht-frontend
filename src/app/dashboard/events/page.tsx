@@ -6,10 +6,9 @@ import { EditEventForm } from "@/components/edit-event-form";
 import { Modal } from "@/components/ui/modal";
 import api from "@/lib/axios";
 import { CalendarPlus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { type Event } from "@/types/event.types"; // <-- 1. IMPORTAR DESDE EL NUEVO ARCHIVO
-
-// 2. LA INTERFAZ "Event" HA SIDO ELIMINADA DE AQUÍ
+// 1. Se añade 'useCallback' a la importación
+import { useEffect, useState, useCallback } from "react";
+import { type Event } from "@/types/event.types";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -17,7 +16,8 @@ export default function EventsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  const fetchEvents = async () => {
+  // 2. Se envuelve la función en 'useCallback'
+  const fetchEvents = useCallback(async () => {
     try {
       const response = await api.get('/api/events');
       setEvents(response.data);
@@ -25,11 +25,11 @@ export default function EventsPage() {
       console.error("Failed to fetch events:", error);
       setEvents([]);
     }
-  };
+  }, []); // El array vacío indica que esta función nunca cambia
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [fetchEvents]); // 3. Se añade la función a las dependencias
 
   const handleDataChange = () => {
     fetchEvents();

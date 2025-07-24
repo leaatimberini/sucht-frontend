@@ -14,10 +14,14 @@ export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated
 
     setIsLoading(true);
     try {
-      await api.patch(`/users/${user.id}/role`, { role: newRole });
+      // --- LÍNEA CORREGIDA ---
+      // Se añade el prefijo /api a la ruta
+      await api.patch(`/api/users/${user.id}/role`, { role: newRole });
+      // -----------------------
+
       setCurrentRole(newRole);
       toast.success(`Rol de ${user.name} actualizado a ${newRole}.`);
-      onRoleUpdated(); // Avisa al componente padre para que refresque la lista si es necesario
+      onRoleUpdated(); // Avisa al componente padre para que refresque la lista
     } catch (error) {
       toast.error('No se pudo actualizar el rol.');
     } finally {

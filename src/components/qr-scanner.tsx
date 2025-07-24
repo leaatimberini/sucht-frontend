@@ -9,44 +9,52 @@ export function QrScanner() {
   const [scanResult, setScanResult] = useState<any | null>(null);
 
   useEffect(() => {
-    // Esta variable se asegura de que solo inicialicemos el escáner una vez
-    let scanner: Html5QrcodeScanner | null = null;
-    
+    // Solo inicializa el escáner si no hay un resultado previo
+    if (scanResult) return;
+
+    // El objeto escáner se manejará dentro del efecto
+    const qrScanner = new Html5QrcodeScanner(
+      'qr-reader', 
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+      }, 
+      false
+    );
+
     const onScanSuccess = (decodedText: string) => {
-      if (scanner) {
-        scanner.pause(true); // Pausamos el escáner para procesar el resultado
-      }
+      // Pausamos inmediatamente para evitar múltiples escaneos
+      qrScanner.pause(true);
 
       // Hacemos la llamada al backend para verificar el ticket
-      api.post(`/tickets/${decodedText}/verify`)
+      // --- LÍNEA CORREGIDA ---
+      // Se añade el prefijo /api a la ruta
+      api.post(`/api/tickets/${decodedText}/verify`)
+      // -----------------------
         .then(response => {
           setScanResult({ type: 'success', data: response.data });
         })
         .catch(error => {
-          setScanResult({ type: 'error', data: error.response.data });
+          setScanResult({ type: 'error', data: error.response?.data || { message: 'Error de red' } });
         });
     };
 
     const onScanFailure = (error: any) => {
-      // No hacemos nada en caso de fallo (ej. no se encontró QR)
+      // Ignoramos errores comunes como "QR code not found"
     };
 
-    // Solo inicializa el escáner si no hay un resultado
-    if (!scanResult) {
-      scanner = new Html5QrcodeScanner('qr-reader', {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-      }, false);
-      scanner.render(onScanSuccess, onScanFailure);
-    }
-    
-    // Limpieza al desmontar el componente
+    qrScanner.render(onScanSuccess, onScanFailure);
+
+    // Función de limpieza para desmontar el componente de forma segura
     return () => {
-      if (scanner) {
-        scanner.clear().catch(error => console.error("Failed to clear scanner", error));
+      // Verificamos el estado del escáner antes de intentar limpiarlo
+      if (qrScanner && qrScanner.getState()) {
+        qrScanner.clear().catch(error => 
+          console.error("Error al limpiar el escáner.", error)
+        );
       }
     };
-  }, [scanResult]); // Volvemos a ejecutar el efecto cuando el resultado cambia (para reiniciar)
+  }, [scanResult]);
 
   const handleScanNext = () => {
     setScanResult(null); // Limpia el resultado para que el escáner se reinicie

@@ -34,12 +34,15 @@ export function AuthCheck({
     // 2. Si se especifican roles y el usuario no tiene el rol correcto, lo expulsamos
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
       toast.error('No tienes permiso para acceder a esta página.');
-      // Lo redirigimos a su página por defecto
-      if (user.role === 'CLIENT') {
+      
+      // --- LÓGICA MEJORADA ---
+      // Se convierte el rol a minúsculas para una comparación segura
+      if (user.role.toLowerCase() === 'client') {
         router.push('/mi-cuenta');
       } else {
         router.push('/dashboard');
       }
+      // ---------------------
     }
 
   }, [token, user, isClient, router, allowedRoles]);

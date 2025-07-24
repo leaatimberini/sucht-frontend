@@ -56,7 +56,11 @@ export function EditEventForm({
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
       };
-      await api.patch(`/events/${event.id}`, payload); // Usamos PATCH para actualizar
+      // --- LÍNEA CORREGIDA ---
+      // Se añade el prefijo /api a la ruta
+      await api.patch(`/api/events/${event.id}`, payload);
+      // -----------------------
+
       toast.success('¡Evento actualizado exitosamente!');
       onEventUpdated(); // Llama a la función para refrescar la lista de eventos
       onClose(); // Cierra el modal
