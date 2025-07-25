@@ -28,7 +28,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<CreateTierFormInputs>({
+  } = useForm({
     resolver: zodResolver(createTierSchema),
   });
 
