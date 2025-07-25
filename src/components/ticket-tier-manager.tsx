@@ -10,11 +10,12 @@ import toast from "react-hot-toast";
 import { Modal } from "./ui/modal";
 import { PlusCircle } from "lucide-react";
 
-// CORRECCIÓN DEFINITIVA: Usamos z.coerce.number() para la conversión de tipos
+// 1. AÑADIMOS 'validUntil' AL ESQUEMA DE VALIDACIÓN
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   price: z.coerce.number().min(0, { message: "El precio no puede ser negativo." }),
   quantity: z.coerce.number().int().min(1, { message: "La cantidad debe ser al menos 1." }),
+  validUntil: z.string().optional(),
 });
 
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
@@ -49,11 +50,17 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
 
   const onSubmit = async (data: CreateTierFormInputs) => {
     try {
-      await api.post(`/events/${eventId}/ticket-tiers`, data);
+      // 2. PREPARAMOS EL PAYLOAD CORRECTAMENTE PARA LA API
+      const payload = {
+        ...data,
+        // Solo enviamos la fecha si el usuario la seleccionó
+        validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
+      };
+      await api.post(`/events/${eventId}/ticket-tiers`, payload);
       toast.success("Tipo de entrada creado con éxito.");
       reset();
-      fetchTiers(); // Recargar la lista
-      setIsModalOpen(false); // Cerrar el modal
+      fetchTiers();
+      setIsModalOpen(false);
     } catch (error) {
       toast.error("Error al crear el tipo de entrada.");
     }
@@ -79,6 +86,12 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
               <div>
                 <p className="font-semibold text-white">{tier.name}</p>
                 <p className="text-sm text-zinc-400">Cantidad: {tier.quantity}</p>
+                {/* 3. MOSTRAMOS LA FECHA DE VENCIMIENTO SI EXISTE */}
+                {tier.validUntil && (
+                  <p className="text-xs text-yellow-400 mt-1">
+                    Válido hasta: {new Date(tier.validUntil).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })} hs.
+                  </p>
+                )}
               </div>
               <p className="font-bold text-lg text-pink-500">${tier.price}</p>
             </div>
@@ -110,6 +123,11 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
             <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
             <input {...register('quantity')} id="quantity" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
             {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
+          </div>
+          {/* 4. NUEVO CAMPO DE FECHA EN EL FORMULARIO */}
+          <div>
+            <label htmlFor="validUntil" className="block text-sm font-medium text-zinc-300 mb-1">Válido Hasta (Opcional)</label>
+            <input id="validUntil" type="datetime-local" {...register('validUntil')} className="w-full bg-zinc-800 rounded-md p-2 text-white"/>
           </div>
           <div className="flex justify-end pt-4">
             <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">

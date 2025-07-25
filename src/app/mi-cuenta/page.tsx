@@ -44,20 +44,27 @@ export default function MiCuentaPage() {
                   <QRCodeSVG value={ticket.id} size={160} />
                 </div>
                 <h2 className="text-2xl font-bold text-white mt-6">{ticket.event.title}</h2>
-                <p className="text-pink-500 font-semibold">{ticket.tier.name}</p>
+                <p className="text-pink-500 font-semibold">{ticket.tier.name} (x{ticket.quantity})</p>
                 <p className="text-zinc-400 text-sm mt-2">
-                  {/* --- CORRECCIÓN AQUÍ --- */}
                   {new Date(ticket.event.startDate).toLocaleString('es-AR', {
                     dateStyle: 'full',
                     timeStyle: 'short'
                   })} hs.
                 </p>
+                {/* AÑADIDO: MUESTRA VENCIMIENTO SI EXISTE */}
+                {ticket.tier.validUntil && (
+                   <p className="text-xs text-yellow-400 mt-1">
+                    Válido hasta: {new Date(ticket.tier.validUntil).toLocaleString('es-AR', {dateStyle: 'short', timeStyle: 'short'})} hs.
+                   </p>
+                )}
                 <div className={`mt-4 px-3 py-1 rounded-full text-xs font-semibold ${
                   ticket.status === 'valid' ? 'bg-green-500/20 text-green-400' :
                   ticket.status === 'used' ? 'bg-zinc-500/20 text-zinc-400' :
                   'bg-red-500/20 text-red-400'
                 }`}>
-                  {ticket.status === 'valid' ? 'LISTA PARA USAR' : 'YA UTILIZADA'}
+                  {ticket.status === 'valid' && `LISTA PARA USAR (${ticket.redeemedCount}/${ticket.quantity})`}
+                  {ticket.status === 'partially_used' && `USADA PARCIALMENTE (${ticket.redeemedCount}/${ticket.quantity})`}
+                  {ticket.status === 'used' && `COMPLETAMENTE USADA`}
                 </div>
               </div>
             ))}
