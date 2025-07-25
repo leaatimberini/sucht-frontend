@@ -24,7 +24,7 @@ export default function HomePage() {
             SUCHT
           </h1>
           <p className="text-lg md:text-xl text-zinc-300 mt-4 max-w-2xl mx-auto">
-            La experiencia definitiva en Castelar. Música, amigos y noches inolvidables te esperan.
+            Música, amigos y noches inolvidables te esperan.
           </p>
           <div className="mt-8">
             <Link href="/eventos" className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform hover:scale-105">
