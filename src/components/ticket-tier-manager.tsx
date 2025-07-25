@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { Modal } from "./ui/modal";
 import { PlusCircle } from "lucide-react";
 
-// CORRECCIÓN: Usamos z.coerce.number() para la conversión de tipos
+// CORRECCIÓN DEFINITIVA: Usamos z.coerce.number() para la conversión de tipos
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   price: z.coerce.number().min(0, { message: "El precio no puede ser negativo." }),
@@ -32,18 +32,20 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     resolver: zodResolver(createTierSchema),
   });
 
-  const fetchTiers = async () => {
+  const fetchTiers = useCallback(async () => {
     try {
       const response = await api.get(`/events/${eventId}/ticket-tiers`);
       setTiers(response.data);
     } catch (error) {
       console.error("Failed to fetch ticket tiers", error);
     }
-  };
+  }, [eventId]);
 
   useEffect(() => {
-    fetchTiers();
-  }, [eventId]);
+    if (eventId) {
+      fetchTiers();
+    }
+  }, [eventId, fetchTiers]);
 
   const onSubmit = async (data: CreateTierFormInputs) => {
     try {
