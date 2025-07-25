@@ -1,15 +1,14 @@
 'use client';
 
-import { type Event } from "@/types/event.types"; // <-- CORRECCIÓN: Importación centralizada
+import { type Event } from "@/types/event.types"; // <-- CORRECCIÓN AQUÍ
 import { ImageOff, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { DeleteEventButton } from "./delete-event-button";
 
-// Usamos la variable de entorno para la URL de la API
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export function EventList({ // <-- CORRECCIÓN: 'export' estaba faltando o era incorrecto
+export function EventList({ 
   events, 
   onDataChange,
   onEditEvent,

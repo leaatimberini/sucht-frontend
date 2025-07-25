@@ -7,7 +7,7 @@ import { Ticket } from "@/types/ticket.types";
 import { User } from "@/types/user.types";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from 'qrcode.react';
-import { EditProfileForm } from "@/components/edit-profile-form"; // <-- IMPORTAR
+import { EditProfileForm } from "@/components/edit-profile-form";
 
 function MisEntradas({ tickets }: { tickets: Ticket[] }) {
   return (
@@ -51,7 +51,8 @@ export default function MiCuentaPage() {
       try {
         const [ticketsRes, userRes] = await Promise.all([
           api.get('/tickets/my-tickets'),
-          api.get(`/users/by-email/${authUser.email}`) // Necesitamos los datos completos del perfil
+          // --- CORRECCIÓN: LLAMAMOS AL NUEVO ENDPOINT ---
+          api.get('/users/profile/me') 
         ]);
         setTickets(ticketsRes.data);
         setUserData(userRes.data);
