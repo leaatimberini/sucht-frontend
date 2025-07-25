@@ -1,4 +1,3 @@
-// Este enum debe ser idéntico al que está en el backend (src/users/user.entity.ts)
 export enum UserRole {
   ADMIN = 'admin',
   RRPP = 'rrpp',
@@ -6,12 +5,16 @@ export enum UserRole {
   CLIENT = 'client',
 }
 
-// Interfaz para el objeto User que recibimos de la API
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  roles: UserRole[];
   createdAt: string;
   updatedAt: string;
+  // --- CAMPOS AÑADIDOS ---
+  profileImageUrl: string | null;
+  instagramHandle: string | null;
+  whatsappNumber: string | null;
+  dateOfBirth: string | null;
 }
