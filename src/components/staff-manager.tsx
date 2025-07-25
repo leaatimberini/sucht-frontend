@@ -6,7 +6,7 @@ import { User, UserRole } from '@/types/user.types';
 import toast from 'react-hot-toast';
 import { Search } from 'lucide-react';
 
-export function StaffManager() {
+export function StaffManager({ onStaffChange }: { onStaffChange: () => void }) {
   const [searchedUser, setSearchedUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [emailToSearch, setEmailToSearch] = useState('');
@@ -40,7 +40,6 @@ export function StaffManager() {
   const handleInviteOrUpdate = async () => {
     setIsLoading(true);
     try {
-      // Siempre incluimos el rol de CLIENTE, a menos que sea ADMIN
       const finalRoles = selectedRoles.includes(UserRole.ADMIN) 
         ? selectedRoles 
         : Array.from(new Set([...selectedRoles, UserRole.CLIENT]));
@@ -53,6 +52,7 @@ export function StaffManager() {
       setSelectedRoles(response.data.roles.filter((r: UserRole) => r !== UserRole.CLIENT));
       setNotFound(false);
       toast.success(`Usuario ${searchedUser ? 'actualizado' : 'invitado'} con éxito.`);
+      onStaffChange();
     } catch (error) {
       toast.error('Ocurrió un error.');
     } finally {
