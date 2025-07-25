@@ -46,7 +46,8 @@ export default function MiCuentaPage() {
                 <h2 className="text-2xl font-bold text-white mt-6">{ticket.event.title}</h2>
                 <p className="text-pink-500 font-semibold">{ticket.tier.name}</p>
                 <p className="text-zinc-400 text-sm mt-2">
-                  {new Date(ticket.event.startDate).toLocaleDateString('es-AR', {
+                  {/* --- CORRECCIÓN AQUÍ --- */}
+                  {new Date(ticket.event.startDate).toLocaleString('es-AR', {
                     dateStyle: 'full',
                     timeStyle: 'short'
                   })} hs.
