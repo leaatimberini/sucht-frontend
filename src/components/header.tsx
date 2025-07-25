@@ -4,13 +4,15 @@ import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 import { User, LogIn, Ticket } from "lucide-react";
 import { UserRole } from "@/types/user.types";
+import { useEffect, useState } from "react";
 
 export function Header() {
-  const { isLoggedIn, user, token } = useAuthStore();
-  
-  // Pequeño truco para forzar la re-renderización del componente cuando el estado cambia
-  // ya que a veces el estado de zustand puede no actualizar los componentes de servidor inmediatamente
-  const isUserLoggedIn = isLoggedIn();
+  const { user } = useAuthStore();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-black/50 backdrop-blur-lg">
@@ -24,15 +26,15 @@ export function Header() {
             Eventos
           </Link>
 
-          {isUserLoggedIn ? (
+          {/* Solo renderizamos el menú del usuario una vez que el componente se ha montado en el cliente */}
+          {hasMounted && user ? (
             <>
-              {/* Menú para usuarios logueados */}
-              {user?.roles.includes(UserRole.ADMIN) && (
+              {user.roles.includes(UserRole.ADMIN) && (
                 <Link href="/dashboard" className="hover:text-white transition-colors">
                   Dashboard
                 </Link>
               )}
-              {user?.roles.includes(UserRole.RRPP) && (
+              {user.roles.includes(UserRole.RRPP) && (
                 <Link href="/rrpp" className="hover:text-white transition-colors">
                   Panel RRPP
                 </Link>
@@ -42,9 +44,8 @@ export function Header() {
                 <span>Mis Entradas</span>
               </Link>
             </>
-          ) : (
+          ) : hasMounted && !user ? (
             <>
-              {/* Menú para visitantes */}
               <Link href="/login" className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-full transition-colors">
                 <LogIn className="h-4 w-4" />
                 <span>Ingresar</span>
@@ -53,6 +54,9 @@ export function Header() {
                 Crear Cuenta
               </Link>
             </>
+          ) : (
+            // Renderizamos un placeholder simple mientras se determina el estado
+            <div className="h-9 w-24 bg-zinc-800 rounded-full animate-pulse"></div>
           )}
         </nav>
       </div>

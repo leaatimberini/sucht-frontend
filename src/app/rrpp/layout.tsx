@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
 import { Ticket, LayoutGrid, QrCode } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function RRPPLayout({
   children,
@@ -13,7 +14,12 @@ export default function RRPPLayout({
   children: React.ReactNode;
 }) {
   const user = useAuthStore((state) => state.user);
-  const isVerifier = user?.roles.includes(UserRole.VERIFIER);
+  const [isVerifier, setIsVerifier] = useState(false);
+
+  useEffect(() => {
+    // Calculamos si es verificador solo en el lado del cliente
+    setIsVerifier(user?.roles.includes(UserRole.VERIFIER) || false);
+  }, [user]);
 
   return (
     <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.RRPP]}>
@@ -33,7 +39,6 @@ export default function RRPPLayout({
               </li>
               {isVerifier && (
                 <li className="border-t border-zinc-700 pt-2 mt-2">
-                  {/* CORRECCIÓN: Apunta a la nueva ruta /verifier */}
                   <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                     <QrCode className="h-4 w-4" />
                     <span>Verificar Acceso</span>
