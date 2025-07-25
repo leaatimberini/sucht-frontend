@@ -1,12 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
-import api from '@/lib/axios'; // Asegúrate de que importa nuestra instancia configurada
+import api from '@/lib/axios';
 
-// Definimos la forma de nuestro estado y las acciones
+interface UserState {
+  email: string;
+  roles: string[]; // <-- Cambiado a 'roles' en plural y array
+}
+
 interface AuthState {
   token: string | null;
-  user: { email: string; role: string } | null;
+  user: UserState | null;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   logout: () => void;
   isLoggedIn: () => boolean;
@@ -20,18 +24,15 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         try {
-          // --- CORRECCIÓN AQUÍ ---
-          // La ruta ahora es relativa a la baseURL de axios (que ya incluye /api)
           const response = await api.post('/auth/login', credentials);
-          // -----------------------
-          
           const { access_token } = response.data;
           
           const payload = JSON.parse(atob(access_token.split('.')[1]));
 
+          // Leemos 'roles' (plural) del token
           set({ 
             token: access_token,
-            user: { email: payload.email, role: payload.role }
+            user: { email: payload.email, roles: payload.roles }
           });
         } catch (error) {
           if (axios.isAxiosError(error) && error.response) {
