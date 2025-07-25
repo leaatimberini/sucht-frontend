@@ -14,7 +14,7 @@ export default function HomePage() {
             muted
             className="min-w-full min-h-full object-cover"
           >
-            <source src="/fondo.webm" type="video/webm" />
+            <source src="/fondo2.webm" type="video/webm" />
             {/* Puedes añadir un fallback con una imagen */}
             
           </video>
