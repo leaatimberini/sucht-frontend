@@ -1,3 +1,5 @@
+'use client';
+
 import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
@@ -38,7 +40,6 @@ export default function DashboardLayout({
                   <span>Staff</span>
                 </Link>
               </li>
-              {/* NUEVO LINK DE CLIENTES */}
               <li>
                 <Link href="/dashboard/clients" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <UserSquare className="h-4 w-4" />
@@ -46,7 +47,8 @@ export default function DashboardLayout({
                 </Link>
               </li>
               <li className="border-t border-zinc-700 pt-2 mt-2">
-                <Link href="/dashboard/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                {/* CORRECCIÓN: Apunta a la nueva ruta /verifier */}
+                <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <QrCode className="h-4 w-4" />
                   <span>Verificar Acceso</span>
                 </Link>
