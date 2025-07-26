@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { UploadCloud } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 const profileSchema = z.object({
   name: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -31,7 +31,6 @@ export function EditProfileForm({ user }: { user: User }) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setValue,
   } = useForm<ProfileFormInputs>({
     resolver: zodResolver(profileSchema),
     defaultValues: {

@@ -5,17 +5,15 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '8000',
+        port: '5000', // Apuntamos al puerto del backend
         pathname: '/uploads/**',
       },
-      // --- LÍNEA AÑADIDA ---
-      // Permite que Next.js cargue imágenes desde tu dominio de producción
       {
         protocol: 'https',
         hostname: 'sucht.com.ar',
+        port: '',
         pathname: '/uploads/**',
       },
-      // --------------------
     ],
   },
 };
