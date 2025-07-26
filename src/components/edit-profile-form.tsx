@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User } from '@/types/user.types';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
@@ -50,20 +50,28 @@ export function EditProfileForm({ user }: { user: User }) {
   
   const onSubmit = async (data: ProfileFormInputs) => {
     const formData = new FormData();
+    
+    // Añadimos los campos de texto
     formData.append('name', data.name);
     formData.append('instagramHandle', data.instagramHandle || '');
     formData.append('whatsappNumber', data.whatsappNumber || '');
     formData.append('dateOfBirth', data.dateOfBirth);
-    if (data.profileImage && data.profileImage[0]) {
+    
+    // --- CORRECCIÓN CLAVE ---
+    // Verificamos si el usuario seleccionó un archivo nuevo
+    // y lo añadimos al FormData.
+    if (data.profileImage && data.profileImage.length > 0) {
       formData.append('profileImage', data.profileImage[0]);
     }
 
     try {
-      // --- CORRECCIÓN APLICADA AQUÍ ---
-      // Se eliminó el tercer parámetro con los headers manuales.
-      await api.patch('/users/profile/me', formData);
-      
+      const response = await api.patch('/users/profile/me', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       toast.success('¡Perfil actualizado!');
+      if (response.data.profileImageUrl) {
+        setPreview(`${API_URL}${response.data.profileImageUrl}`);
+      }
     } catch (error) {
       toast.error('No se pudo actualizar el perfil.');
     }
