@@ -59,9 +59,10 @@ export function EditProfileForm({ user }: { user: User }) {
     }
 
     try {
-      await api.patch('/users/profile/me', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // --- CORRECCIÓN APLICADA AQUÍ ---
+      // Se eliminó el tercer parámetro con los headers manuales.
+      await api.patch('/users/profile/me', formData);
+      
       toast.success('¡Perfil actualizado!');
     } catch (error) {
       toast.error('No se pudo actualizar el perfil.');
