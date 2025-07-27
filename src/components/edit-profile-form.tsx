@@ -12,12 +12,12 @@ import { UploadCloud } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// El esquema de validación ya no necesita el campo de la imagen
 const profileSchema = z.object({
   name: z.string().min(3, { message: 'El nombre es requerido.' }),
   instagramHandle: z.string().optional(),
   whatsappNumber: z.string().optional(),
   dateOfBirth: z.string().min(1, { message: 'La fecha de nacimiento es requerida.' }),
-  profileImage: z.any().optional(),
 });
 
 type ProfileFormInputs = z.infer<typeof profileSchema>;
@@ -26,6 +26,8 @@ export function EditProfileForm({ user }: { user: User }) {
   const [preview, setPreview] = useState<string | null>(
     user.profileImageUrl ? `${API_URL}${user.profileImageUrl}` : null
   );
+  // --- NUEVO ESTADO PARA MANEJAR EL ARCHIVO DIRECTAMENTE ---
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
     register,
@@ -44,24 +46,23 @@ export function EditProfileForm({ user }: { user: User }) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setPreview(URL.createObjectURL(file));
+      setSelectedFile(file); // Guardamos el archivo en nuestro estado
+      setPreview(URL.createObjectURL(file)); // Actualizamos la vista previa
     }
   };
   
   const onSubmit = async (data: ProfileFormInputs) => {
-    
-    // --- LÍNEA DE DEPURACIÓN AÑADIDA ---
-    console.log("Datos del formulario a punto de enviar:", data);
-    // ------------------------------------
-
     const formData = new FormData();
+    
     formData.append('name', data.name);
     formData.append('instagramHandle', data.instagramHandle || '');
     formData.append('whatsappNumber', data.whatsappNumber || '');
     formData.append('dateOfBirth', data.dateOfBirth);
     
-    if (data.profileImage && data.profileImage.length > 0) {
-      formData.append('profileImage', data.profileImage[0]);
+    // --- LÓGICA CORREGIDA ---
+    // Usamos el archivo de nuestro estado 'selectedFile'
+    if (selectedFile) {
+      formData.append('profileImage', selectedFile);
     }
 
     try {
@@ -70,7 +71,7 @@ export function EditProfileForm({ user }: { user: User }) {
       });
       toast.success('¡Perfil actualizado!');
       if (response.data.profileImageUrl) {
-        setPreview(`${API_URL}${response.data.profileImageUrl}`);
+        setPreview(response.data.profileImageUrl);
       }
     } catch (error) {
       toast.error('No se pudo actualizar el perfil.');
@@ -89,7 +90,8 @@ export function EditProfileForm({ user }: { user: User }) {
             )}
           </div>
         </label>
-        <input id="profileImage" type="file" className="hidden" {...register('profileImage')} onChange={handleFileChange} accept="image/png, image/jpeg"/>
+        {/* El input ya no necesita ser registrado con react-hook-form */}
+        <input id="profileImage" type="file" className="hidden" onChange={handleFileChange} accept="image/png, image/jpeg"/>
         <p className="text-sm text-zinc-400">Haz clic en el círculo para cambiar tu foto</p>
       </div>
 
@@ -109,7 +111,7 @@ export function EditProfileForm({ user }: { user: User }) {
       </div>
       <div>
         <label htmlFor="whatsappNumber" className="block text-sm font-medium text-zinc-300 mb-1">WhatsApp (con cód. de país)</label>
-        <input {...register('whatsappNumber')} id="whatsappNumber" placeholder="+541122334455" className="w-full bg-zinc-800 rounded-md p-2"/>
+        <input {...register('whatsappNumber')} id="whatsappNumber" placeholder="+5491122334455" className="w-full bg-zinc-800 rounded-md p-2"/>
       </div>
 
       <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50">
