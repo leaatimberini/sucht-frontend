@@ -3,7 +3,10 @@ import { type Event } from "@/types/event.types";
 import Image from "next/image";
 import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// --- AÑADIDO: Revalidación Incremental ---
+// Esto le dice a Next.js que vuelva a generar esta página cada 60 segundos
+// para buscar nuevos eventos sin necesidad de un nuevo despliegue.
+export const revalidate = 60; 
 
 async function getEvents(): Promise<Event[]> {
   try {
@@ -26,7 +29,7 @@ export default async function EventosPage() {
           <Link key={event.id} href={`/eventos/${event.id}`} className="block bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 hover:border-pink-500 transition-all">
             {event.flyerImageUrl ? (
               <Image
-                src={`${API_URL}${event.flyerImageUrl}`}
+                src={event.flyerImageUrl}
                 alt={`Flyer de ${event.title}`}
                 width={500}
                 height={750}
