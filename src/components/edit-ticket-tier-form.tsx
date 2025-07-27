@@ -1,126 +1,75 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-import { type TicketTier } from '@/types/event.types';
+import { type TicketTier } from '@/types/ticket.types';
 
-// Esquema de validación para el formulario de edición
 const editTicketTierSchema = z.object({
-  name: z.string().min(1, { message: 'El nombre es requerido.' }),
-  price: z.string().min(1, { message: 'El precio es requerido.' })
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0.01, {
-      message: 'El precio debe ser un número mayor que cero.',
-    }),
-  quantity: z.string().min(1, { message: 'La cantidad es requerida.' })
-    .refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) >= 1, {
-      message: 'La cantidad debe ser un número entero mayor o igual a 1.',
-    }),
-  available: z.boolean(),
+  name: z.string().min(3, { message: "El nombre es requerido." }).optional(),
+  price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional(),
+  quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa.").optional(),
 });
 
 type EditTicketTierFormInputs = z.infer<typeof editTicketTierSchema>;
 
 export function EditTicketTierForm({
-  ticketTier,
+  tier,
+  eventId,
   onClose,
-  onTicketTierUpdated,
+  onTierUpdated,
 }: {
-  ticketTier: TicketTier;
+  tier: TicketTier;
+  eventId: string;
   onClose: () => void;
-  onTicketTierUpdated: () => void;
+  onTierUpdated: () => void;
 }) {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<EditTicketTierFormInputs>({
+  } = useForm({
     resolver: zodResolver(editTicketTierSchema),
     defaultValues: {
-      name: ticketTier.name,
-      price: ticketTier.price.toString(),
-      quantity: ticketTier.quantity.toString(),
-      available: ticketTier.available,
-    },
+      name: tier.name,
+      price: tier.price,
+      quantity: tier.quantity,
+    }
   });
 
   const onSubmit = async (data: EditTicketTierFormInputs) => {
     try {
-      // Convertimos los datos a los tipos correctos antes de enviarlos
-      const payload = {
-        ...data,
-        price: parseFloat(data.price),
-        quantity: parseInt(data.quantity, 10),
-      };
-      // --- LÍNEA CORREGIDA ---
-      // Se añade el prefijo /api a la ruta
-      await api.patch(`/ticket-tiers/${ticketTier.id}`, payload);
-      // -----------------------
-
-      toast.success('¡Tipo de ticket actualizado exitosamente!');
-      onTicketTierUpdated();
+      await api.patch(`/events/${eventId}/ticket-tiers/${tier.id}`, data);
+      toast.success("Tipo de entrada actualizado.");
+      onTierUpdated();
       onClose();
     } catch (error) {
-      toast.error('Hubo un error al actualizar el tipo de ticket.');
-      console.error("Update ticket tier error:", error);
+      toast.error("Error al actualizar el tipo de entrada.");
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <label htmlFor="edit-tier-name" className="block text-sm font-medium text-zinc-300 mb-1">Nombre</label>
-        <input
-          id="edit-tier-name"
-          {...register('name')}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
-        />
+        <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-1">Nombre</label>
+        <input {...register('name')} id="name" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
         {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
       </div>
-
       <div>
-        <label htmlFor="edit-tier-price" className="block text-sm font-medium text-zinc-300 mb-1">Precio</label>
-        <input
-          id="edit-tier-price"
-          type="number"
-          step="0.01"
-          {...register('price')}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
-        />
+        <label htmlFor="price" className="block text-sm font-medium text-zinc-300 mb-1">Precio</label>
+        <input {...register('price')} id="price" type="number" step="0.01" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
         {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}
       </div>
-
       <div>
-        <label htmlFor="edit-tier-quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
-        <input
-          id="edit-tier-quantity"
-          type="number"
-          step="1"
-          {...register('quantity')}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
-        />
+        <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
+        <input {...register('quantity')} id="quantity" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
         {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
       </div>
-
-      <div className="flex items-center space-x-2">
-        <input
-          id="edit-tier-available"
-          type="checkbox"
-          {...register('available')}
-          className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-zinc-600 rounded"
-        />
-        <label htmlFor="edit-tier-available" className="text-sm font-medium text-zinc-300">Disponible para venta</label>
-      </div>
-
       <div className="flex justify-end pt-4">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
-        >
-          {isSubmitting ? 'Actualizando...' : 'Actualizar Tipo de Ticket'}
+        <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">
+          {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
         </button>
       </div>
     </form>
