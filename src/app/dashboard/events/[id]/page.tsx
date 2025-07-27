@@ -1,4 +1,4 @@
-'use client'; 
+'use client';
 
 import { type Event } from "@/types/event.types";
 import api from "@/lib/axios";
@@ -31,7 +31,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     try {
       await api.post(`/events/${event.id}/request-confirmation`);
       toast.success("Solicitud de confirmación enviada a todos los poseedores de entradas.");
-      fetchEvent(); // Refrescar los datos del evento
+      fetchEvent();
     } catch (error) {
       toast.error("No se pudo enviar la solicitud.");
     }
@@ -70,7 +70,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:bg-zinc-700 disabled:cursor-not-allowed"
             >
               <BellRing className="h-5 w-5" />
-              <span>{event.confirmationSentAt ? `Solicitud enviada` : 'Solicitar Confirmación de Asistencia'}</span>
+              <span>{event.confirmationSentAt ? `Solicitud enviada` : 'Solicitar Confirmación'}</span>
             </button>
             {event.confirmationSentAt && (
               <p className="text-xs text-zinc-400 mt-2 text-center">
@@ -83,6 +83,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       
       <hr className="my-8 border-zinc-800" />
       
+      {/* Este es el componente para Admins */}
       <TicketTierManager eventId={event.id} />
     </div>
   );

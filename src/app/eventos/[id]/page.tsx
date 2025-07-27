@@ -1,90 +1,62 @@
-'use client';
-
-import { type Event } from "@/types/event.types";
 import api from "@/lib/axios";
+import { type Event } from "@/types/event.types";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { TicketTierManager } from "@/components/ticket-tier-manager";
+import { TicketAcquirer } from "@/components/ticket-acquirer";
 import Link from "next/link";
-import { ArrowLeft, BellRing } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import { ArrowLeft } from "lucide-react";
 
-export default function EventDetailPage({ params }: { params: { id: string } }) {
-  const [event, setEvent] = useState<Event | null>(null);
-  
-  const fetchEvent = useCallback(async () => {
-    try {
-      const response = await api.get(`/events/${params.id}`);
-      setEvent(response.data);
-    } catch (error) {
-      console.error("Failed to fetch event", error);
-      // Aquí podrías redirigir o mostrar un mensaje de error si el evento no se encuentra
-    }
-  }, [params.id]);
+export const revalidate = 60;
 
-  useEffect(() => {
-    fetchEvent();
-  }, [fetchEvent]);
-  
-  const handleRequestConfirmation = async () => {
-    if (!event) return;
-    try {
-      await api.post(`/events/${event.id}/request-confirmation`);
-      toast.success("Solicitud de confirmación enviada a todos los poseedores de entradas.");
-      fetchEvent(); // Refrescar los datos del evento para actualizar el estado del botón
-    } catch (error) {
-      toast.error("No se pudo enviar la solicitud.");
-    }
-  };
+async function getEvent(id: string): Promise<Event | null> {
+  try {
+    const response = await api.get(`/events/${id}`);
+    return response.data;
+  } catch (error) {
+    return null;
+  }
+}
+
+export default async function EventoDetailPage({ params }: { params: { id: string } }) {
+  const event = await getEvent(params.id);
 
   if (!event) {
-    return <div className="container mx-auto px-4 py-8"><p className="text-zinc-400">Cargando evento...</p></div>;
+    notFound();
   }
+  
+  const isEventFinished = new Date() > new Date(event.endDate);
 
   return (
-    <div>
-      <Link href="/dashboard/events" className="flex items-center space-x-2 text-zinc-400 hover:text-white mb-6">
-        <ArrowLeft className="h-4 w-4" />
-        <span>Volver a Eventos</span>
-      </Link>
-      
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        {event.flyerImageUrl && (
-          <Image
-            src={event.flyerImageUrl}
-            alt={`Flyer de ${event.title}`}
-            width={300}
-            height={450}
-            className="rounded-lg object-cover"
-          />
-        )}
-        <div>
-          <h1 className="text-4xl font-bold text-white">{event.title}</h1>
-          <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
-          <p className="text-zinc-300 mt-4">{event.description}</p>
-          
-          <div className="mt-6 border-t border-zinc-800 pt-6">
-            <button 
-              onClick={handleRequestConfirmation}
-              disabled={!!event.confirmationSentAt}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:bg-zinc-700 disabled:cursor-not-allowed"
-            >
-              <BellRing className="h-5 w-5" />
-              <span>{event.confirmationSentAt ? `Solicitud enviada` : 'Solicitar Confirmación de Asistencia'}</span>
-            </button>
-            {event.confirmationSentAt && (
-              <p className="text-xs text-zinc-400 mt-2 text-center">
-                Se pidió confirmación el: {new Date(event.confirmationSentAt).toLocaleString('es-AR')}
-              </p>
-            )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2">
+          {event.flyerImageUrl && (
+            <Image
+              src={event.flyerImageUrl}
+              alt={`Flyer de ${event.title}`}
+              width={700}
+              height={1050}
+              className="w-full rounded-lg object-cover"
+            />
+          )}
+          <div className="mt-8">
+            <h1 className="text-4xl font-bold text-white">{event.title}</h1>
+            <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
+            <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
           </div>
         </div>
+        <div className="lg:col-span-1">
+          {isEventFinished ? (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 text-center">
+              <h3 className="text-xl font-semibold text-white">Evento Finalizado</h3>
+              <p className="text-zinc-400 mt-2">Gracias por acompañarnos.</p>
+            </div>
+          ) : (
+            // Este es el componente para clientes
+            <TicketAcquirer eventId={event.id} />
+          )}
+        </div>
       </div>
-      
-      <hr className="my-8 border-zinc-800" />
-      
-      <TicketTierManager eventId={event.id} />
     </div>
   );
 }
