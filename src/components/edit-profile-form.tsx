@@ -49,17 +49,17 @@ export function EditProfileForm({ user }: { user: User }) {
   };
   
   const onSubmit = async (data: ProfileFormInputs) => {
-    const formData = new FormData();
     
-    // Añadimos los campos de texto
+    // --- LÍNEA DE DEPURACIÓN AÑADIDA ---
+    console.log("Datos del formulario a punto de enviar:", data);
+    // ------------------------------------
+
+    const formData = new FormData();
     formData.append('name', data.name);
     formData.append('instagramHandle', data.instagramHandle || '');
     formData.append('whatsappNumber', data.whatsappNumber || '');
     formData.append('dateOfBirth', data.dateOfBirth);
     
-    // --- CORRECCIÓN CLAVE ---
-    // Verificamos si el usuario seleccionó un archivo nuevo
-    // y lo añadimos al FormData.
     if (data.profileImage && data.profileImage.length > 0) {
       formData.append('profileImage', data.profileImage[0]);
     }
