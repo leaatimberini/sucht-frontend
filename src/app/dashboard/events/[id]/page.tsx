@@ -1,30 +1,44 @@
+'use client'; 
+
 import { type Event } from "@/types/event.types";
 import api from "@/lib/axios";
-import { notFound } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { TicketTierManager } from "@/components/ticket-tier-manager";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BellRing } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import toast from "react-hot-toast";
 
-// La URL base para las imágenes ahora viene de la variable de entorno
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export default function EventDetailPage({ params }: { params: { id: string } }) {
+  const [event, setEvent] = useState<Event | null>(null);
+  
+  const fetchEvent = useCallback(async () => {
+    try {
+      const response = await api.get(`/events/${params.id}`);
+      setEvent(response.data);
+    } catch (error) {
+      console.error("Failed to fetch event", error);
+    }
+  }, [params.id]);
 
-async function getEvent(id: string): Promise<Event | null> {
-  try {
-    // La llamada es relativa a la baseURL de axios (/api)
-    const response = await api.get(`/events/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Failed to fetch event ${id}:`, error);
-    return null;
-  }
-}
-
-export default async function EventDetailPage({ params }: { params: { id: string } }) {
-  const event = await getEvent(params.id);
+  useEffect(() => {
+    fetchEvent();
+  }, [fetchEvent]);
+  
+  const handleRequestConfirmation = async () => {
+    if (!event) return;
+    try {
+      await api.post(`/events/${event.id}/request-confirmation`);
+      toast.success("Solicitud de confirmación enviada a todos los poseedores de entradas.");
+      fetchEvent(); // Refrescar los datos del evento
+    } catch (error) {
+      toast.error("No se pudo enviar la solicitud.");
+    }
+  };
 
   if (!event) {
-    notFound();
+    return <div className="text-center p-8"><p className="text-zinc-400">Cargando evento...</p></div>;
   }
 
   return (
@@ -37,7 +51,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {event.flyerImageUrl && (
           <Image
-            src={`${API_BASE_URL}${event.flyerImageUrl}`}
+            src={event.flyerImageUrl}
             alt={`Flyer de ${event.title}`}
             width={300}
             height={450}
@@ -48,6 +62,22 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <h1 className="text-4xl font-bold text-white">{event.title}</h1>
           <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
           <p className="text-zinc-300 mt-4">{event.description}</p>
+          
+          <div className="mt-6 border-t border-zinc-800 pt-6">
+            <button 
+              onClick={handleRequestConfirmation}
+              disabled={!!event.confirmationSentAt}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 disabled:bg-zinc-700 disabled:cursor-not-allowed"
+            >
+              <BellRing className="h-5 w-5" />
+              <span>{event.confirmationSentAt ? `Solicitud enviada` : 'Solicitar Confirmación de Asistencia'}</span>
+            </button>
+            {event.confirmationSentAt && (
+              <p className="text-xs text-zinc-400 mt-2 text-center">
+                Se pidió confirmación el: {new Date(event.confirmationSentAt).toLocaleString('es-AR')}
+              </p>
+            )}
+          </div>
         </div>
       </div>
       

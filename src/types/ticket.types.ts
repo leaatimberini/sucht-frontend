@@ -1,5 +1,5 @@
 import { type Event } from './event.types';
-import { type User } from './user.types'; // <-- 1. IMPORTAR EL TIPO User
+import { type User } from './user.types';
 
 export interface TicketTier {
   id: string;
@@ -16,10 +16,11 @@ export interface Ticket {
   status: 'valid' | 'used' | 'invalid' | 'partially_used';
   quantity: number;
   redeemedCount: number;
+  confirmedAt: string | null; // <-- Propiedad añadida
   validatedAt: string | null;
   createdAt: string;
   updatedAt: string;
   event: Event;
   tier: TicketTier;
-  user: User; // <-- 2. AÑADIR LA PROPIEDAD 'user'
+  user: User; 
 }
