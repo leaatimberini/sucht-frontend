@@ -10,8 +10,6 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { UploadCloud } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
 // El esquema de validación ya no necesita el campo de la imagen
 const profileSchema = z.object({
   name: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -23,9 +21,7 @@ const profileSchema = z.object({
 type ProfileFormInputs = z.infer<typeof profileSchema>;
 
 export function EditProfileForm({ user }: { user: User }) {
-  const [preview, setPreview] = useState<string | null>(
-    user.profileImageUrl ? `${API_URL}${user.profileImageUrl}` : null
-  );
+  const [preview, setPreview] = useState<string | null>(user.profileImageUrl);
   // --- NUEVO ESTADO PARA MANEJAR EL ARCHIVO DIRECTAMENTE ---
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
