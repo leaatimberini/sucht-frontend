@@ -1,12 +1,10 @@
 'use client';
 
-import { type Event } from "@/types/event.types"; // <-- CORRECCIÓN AQUÍ
+import { type Event } from "@/types/event.types";
 import { ImageOff, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { DeleteEventButton } from "./delete-event-button";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function EventList({ 
   events, 
@@ -44,7 +42,7 @@ export function EventList({
                 <Link href={`/dashboard/events/${event.id}`}>
                   {event.flyerImageUrl ? (
                     <Image 
-                      src={`${API_URL}${event.flyerImageUrl}`} 
+                      src={event.flyerImageUrl} // <-- CORRECCIÓN: Usar la URL completa de Cloudinary
                       alt={`Flyer de ${event.title}`}
                       width={80}
                       height={120}
@@ -83,7 +81,7 @@ export function EventList({
             </tr>
           ))}
         </tbody>
-      </table>
+      </table>a
     </div>
   );
 }
