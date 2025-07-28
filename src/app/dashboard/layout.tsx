@@ -4,7 +4,7 @@ import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare } from "lucide-react";
+import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare, BarChartHorizontal } from "lucide-react"; // <-- 1. IMPORTAR NUEVO ICONO
 
 export default function DashboardLayout({
   children,
@@ -46,8 +46,14 @@ export default function DashboardLayout({
                   <span>Clientes</span>
                 </Link>
               </li>
+              {/* --- 2. NUEVO LINK AÑADIDO --- */}
+              <li>
+                <Link href="/dashboard/rrpp-stats" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <BarChartHorizontal className="h-4 w-4" />
+                  <span>Rendimiento RRPP</span>
+                </Link>
+              </li>
               <li className="border-t border-zinc-700 pt-2 mt-2">
-                {/* CORRECCIÓN: Apunta a la nueva ruta /verifier */}
                 <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <QrCode className="h-4 w-4" />
                   <span>Verificar Acceso</span>
