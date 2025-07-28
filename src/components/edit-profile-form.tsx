@@ -10,9 +10,9 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { UploadCloud } from 'lucide-react';
 
-// El esquema de validación ya no necesita el campo de la imagen
 const profileSchema = z.object({
   name: z.string().min(3, { message: 'El nombre es requerido.' }),
+  username: z.string().min(3, { message: 'El nombre de usuario es requerido.' }).regex(/^[a-zA-Z0-9_.]+$/, { message: 'Solo letras, números, _ o .' }),
   instagramHandle: z.string().optional(),
   whatsappNumber: z.string().optional(),
   dateOfBirth: z.string().min(1, { message: 'La fecha de nacimiento es requerida.' }),
@@ -22,7 +22,6 @@ type ProfileFormInputs = z.infer<typeof profileSchema>;
 
 export function EditProfileForm({ user }: { user: User }) {
   const [preview, setPreview] = useState<string | null>(user.profileImageUrl);
-  // --- NUEVO ESTADO PARA MANEJAR EL ARCHIVO DIRECTAMENTE ---
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
@@ -33,6 +32,7 @@ export function EditProfileForm({ user }: { user: User }) {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user.name,
+      username: user.username || '',
       instagramHandle: user.instagramHandle || '',
       whatsappNumber: user.whatsappNumber || '',
       dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : '',
@@ -42,8 +42,8 @@ export function EditProfileForm({ user }: { user: User }) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setSelectedFile(file); // Guardamos el archivo en nuestro estado
-      setPreview(URL.createObjectURL(file)); // Actualizamos la vista previa
+      setSelectedFile(file);
+      setPreview(URL.createObjectURL(file));
     }
   };
   
@@ -51,12 +51,11 @@ export function EditProfileForm({ user }: { user: User }) {
     const formData = new FormData();
     
     formData.append('name', data.name);
+    formData.append('username', data.username);
     formData.append('instagramHandle', data.instagramHandle || '');
     formData.append('whatsappNumber', data.whatsappNumber || '');
     formData.append('dateOfBirth', data.dateOfBirth);
     
-    // --- LÓGICA CORREGIDA ---
-    // Usamos el archivo de nuestro estado 'selectedFile'
     if (selectedFile) {
       formData.append('profileImage', selectedFile);
     }
@@ -69,8 +68,8 @@ export function EditProfileForm({ user }: { user: User }) {
       if (response.data.profileImageUrl) {
         setPreview(response.data.profileImageUrl);
       }
-    } catch (error) {
-      toast.error('No se pudo actualizar el perfil.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'No se pudo actualizar el perfil.');
     }
   };
 
@@ -86,7 +85,6 @@ export function EditProfileForm({ user }: { user: User }) {
             )}
           </div>
         </label>
-        {/* El input ya no necesita ser registrado con react-hook-form */}
         <input id="profileImage" type="file" className="hidden" onChange={handleFileChange} accept="image/png, image/jpeg"/>
         <p className="text-sm text-zinc-400">Haz clic en el círculo para cambiar tu foto</p>
       </div>
@@ -95,6 +93,11 @@ export function EditProfileForm({ user }: { user: User }) {
         <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-1">Nombre</label>
         <input {...register('name')} id="name" className="w-full bg-zinc-800 rounded-md p-2"/>
         {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+      </div>
+       <div>
+        <label htmlFor="username" className="block text-sm font-medium text-zinc-300 mb-1">Nombre de Usuario (para tu link)</label>
+        <input {...register('username')} id="username" className="w-full bg-zinc-800 rounded-md p-2"/>
+        {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username.message}</p>}
       </div>
       <div>
         <label htmlFor="dateOfBirth" className="block text-sm font-medium text-zinc-300 mb-1">Fecha de Nacimiento</label>
@@ -107,7 +110,7 @@ export function EditProfileForm({ user }: { user: User }) {
       </div>
       <div>
         <label htmlFor="whatsappNumber" className="block text-sm font-medium text-zinc-300 mb-1">WhatsApp (con cód. de país)</label>
-        <input {...register('whatsappNumber')} id="whatsappNumber" placeholder="+5491122334455" className="w-full bg-zinc-800 rounded-md p-2"/>
+        <input {...register('whatsappNumber')} id="whatsappNumber" placeholder="+541122334455" className="w-full bg-zinc-800 rounded-md p-2"/>
       </div>
 
       <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50">
