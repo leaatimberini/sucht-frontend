@@ -5,7 +5,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { Ticket, LayoutGrid, QrCode } from "lucide-react";
+import { Ticket, LayoutGrid, QrCode, BarChartHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function RRPPLayout({
@@ -17,7 +17,6 @@ export default function RRPPLayout({
   const [isVerifier, setIsVerifier] = useState(false);
 
   useEffect(() => {
-    // Calculamos si es verificador solo en el lado del cliente
     setIsVerifier(user?.roles.includes(UserRole.VERIFIER) || false);
   }, [user]);
 
@@ -35,6 +34,13 @@ export default function RRPPLayout({
                 <Link href="/rrpp" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <LayoutGrid className="h-4 w-4" />
                   <span>Mis Eventos</span>
+                </Link>
+              </li>
+              {/* --- ENLACE AÑADIDO --- */}
+              <li>
+                <Link href="/rrpp/stats" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <BarChartHorizontal className="h-4 w-4" />
+                  <span>Mis Estadísticas</span>
                 </Link>
               </li>
               {isVerifier && (
