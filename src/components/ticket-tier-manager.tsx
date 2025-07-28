@@ -8,19 +8,23 @@ import api from "@/lib/axios";
 import { TicketTier } from "@/types/ticket.types";
 import toast from "react-hot-toast";
 import { Modal } from "./ui/modal";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Edit, Trash2 } from "lucide-react";
+import { EditTicketTierForm } from "./edit-ticket-tier-form";
 
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   price: z.coerce.number().min(0, { message: "El precio no puede ser negativo." }),
   quantity: z.coerce.number().int().min(1, { message: "La cantidad debe ser al menos 1." }),
+  validUntil: z.string().optional(),
 });
 
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
 
 export function TicketTierManager({ eventId }: { eventId: string }) {
   const [tiers, setTiers] = useState<TicketTier[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<TicketTier | null>(null);
 
   const {
     register,
@@ -46,15 +50,36 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     }
   }, [eventId, fetchTiers]);
 
-  const onSubmit = async (data: CreateTierFormInputs) => {
+  const onSubmitCreate = async (data: CreateTierFormInputs) => {
     try {
-      await api.post(`/events/${eventId}/ticket-tiers`, data);
+      const payload = {
+        ...data,
+        validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
+      };
+      await api.post(`/events/${eventId}/ticket-tiers`, payload);
       toast.success("Tipo de entrada creado con éxito.");
       reset();
       fetchTiers();
-      setIsModalOpen(false);
+      setIsCreateModalOpen(false);
     } catch (error) {
       toast.error("Error al crear el tipo de entrada.");
+    }
+  };
+  
+  const handleEditClick = (tier: TicketTier) => {
+    setSelectedTier(tier);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = async (tierId: string) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este tipo de entrada?")) {
+      try {
+        await api.delete(`/events/${eventId}/ticket-tiers/${tierId}`);
+        toast.success("Tipo de entrada eliminado.");
+        fetchTiers();
+      } catch (error) {
+        toast.error("Error al eliminar el tipo de entrada.");
+      }
     }
   };
 
@@ -63,7 +88,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
       <div className="flex justify-between items-center mt-8">
         <h3 className="text-xl font-semibold text-white">Entradas Disponibles</h3>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setIsCreateModalOpen(true)}
           className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm"
         >
           <PlusCircle className="h-4 w-4" />
@@ -79,12 +104,16 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
                 <p className="font-semibold text-white">{tier.name}</p>
                 <p className="text-sm text-zinc-400">Cantidad: {tier.quantity}</p>
                 {tier.validUntil && (
-                  <p className="text-xs text-yellow-400">
-                    Válido hasta: {new Date(tier.validUntil).toLocaleString('es-AR')}
+                  <p className="text-xs text-yellow-400 mt-1">
+                    Válido hasta: {new Date(tier.validUntil).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })} hs.
                   </p>
                 )}
               </div>
-              <p className="font-bold text-lg text-pink-500">${tier.price}</p>
+              <div className="flex items-center space-x-4">
+                <p className="font-bold text-lg text-pink-500">${tier.price}</p>
+                <button onClick={() => handleEditClick(tier)} className="text-zinc-400 hover:text-white" title="Editar"><Edit className="h-4 w-4" /></button>
+                <button onClick={() => handleDeleteClick(tier.id)} className="text-zinc-400 hover:text-red-500" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
+              </div>
             </div>
           ))
         ) : (
@@ -94,12 +123,13 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         )}
       </div>
 
+      {/* Modal de Creación */}
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         title="Añadir Nuevo Tipo de Entrada"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmitCreate)} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-1">Nombre (Ej: General)</label>
             <input {...register('name')} id="name" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
@@ -115,6 +145,10 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
             <input {...register('quantity')} id="quantity" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
             {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
           </div>
+          <div>
+            <label htmlFor="validUntil" className="block text-sm font-medium text-zinc-300 mb-1">Válido Hasta (Opcional)</label>
+            <input id="validUntil" type="datetime-local" {...register('validUntil')} className="w-full bg-zinc-800 rounded-md p-2 text-white"/>
+          </div>
           <div className="flex justify-end pt-4">
             <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">
               {isSubmitting ? 'Añadiendo...' : 'Añadir Entrada'}
@@ -122,6 +156,18 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de Edición */}
+      {selectedTier && (
+        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Editando: ${selectedTier.name}`}>
+          <EditTicketTierForm 
+            tier={selectedTier}
+            eventId={eventId}
+            onClose={() => setIsEditModalOpen(false)}
+            onTierUpdated={fetchTiers}
+          />
+        </Modal>
+      )}
     </>
   );
 }
