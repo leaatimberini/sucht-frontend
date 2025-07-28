@@ -14,7 +14,7 @@ export default function HomePage() {
             muted
             className="min-w-full min-h-full object-cover"
           >
-            <source src="/fondo2.webm" type="video/webm" />
+            <source src="https://res.cloudinary.com/di4ikaeke/video/upload/v1753741162/background_c6dman.webm" type="video/webm" />
             {/* Puedes añadir un fallback con una imagen */}
             
           </video>

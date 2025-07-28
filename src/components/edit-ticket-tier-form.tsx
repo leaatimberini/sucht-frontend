@@ -7,10 +7,12 @@ import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 import { type TicketTier } from '@/types/ticket.types';
 
+// ESQUEMA CORREGIDO Y ACTUALIZADO
 const editTicketTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }).optional(),
   price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional(),
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa.").optional(),
+  validUntil: z.string().optional(),
 });
 
 type EditTicketTierFormInputs = z.infer<typeof editTicketTierSchema>;
@@ -30,18 +32,25 @@ export function EditTicketTierForm({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm({ // <-- TU CORRECCIÓN APLICADA
     resolver: zodResolver(editTicketTierSchema),
     defaultValues: {
       name: tier.name,
       price: tier.price,
       quantity: tier.quantity,
+      // Formateamos la fecha para el input datetime-local
+      validUntil: tier.validUntil ? new Date(tier.validUntil).toISOString().substring(0, 16) : '',
     }
   });
 
   const onSubmit = async (data: EditTicketTierFormInputs) => {
     try {
-      await api.patch(`/events/${eventId}/ticket-tiers/${tier.id}`, data);
+      // PAYLOAD Y RUTA DE API CORREGIDOS
+      const payload = {
+        ...data,
+        validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
+      };
+      await api.patch(`/events/${eventId}/ticket-tiers/${tier.id}`, payload);
       toast.success("Tipo de entrada actualizado.");
       onTierUpdated();
       onClose();
@@ -66,6 +75,10 @@ export function EditTicketTierForm({
         <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
         <input {...register('quantity')} id="quantity" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
         {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
+      </div>
+      <div>
+        <label htmlFor="validUntil" className="block text-sm font-medium text-zinc-300 mb-1">Válido Hasta (Opcional)</label>
+        <input id="validUntil" type="datetime-local" {...register('validUntil')} className="w-full bg-zinc-800 rounded-md p-2 text-white"/>
       </div>
       <div className="flex justify-end pt-4">
         <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">
