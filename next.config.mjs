@@ -1,3 +1,4 @@
+import withPWA from 'next-pwa';
 /** @type {import('next').NextConfig} */
 
 // 1. Importar el wrapper correcto: 'next-pwa'
