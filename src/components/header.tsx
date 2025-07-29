@@ -1,18 +1,25 @@
 'use client';
 
-import { useAuthStore } from "@/stores/auth-store";
-import Link from "next/link";
-import { User, LogIn, Ticket } from "lucide-react";
-import { UserRole } from "@/types/user.types";
-import { useEffect, useState } from "react";
+import { useAuthStore } from '@/stores/auth-store';
+import Link from 'next/link';
+import { LogIn, Ticket, User, ChevronDown, LogOut } from 'lucide-react';
+import { UserRole } from '@/types/user.types';
+import { useEffect, useState } from 'react';
 
 export function Header() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [hasMounted, setHasMounted] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  const toggleMenu = () => setShowMenu(!showMenu);
+  const handleLogout = () => {
+    logout();
+    setShowMenu(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-black/50 backdrop-blur-lg">
@@ -21,41 +28,85 @@ export function Header() {
           SUCHT
         </Link>
 
-        <nav className="flex items-center space-x-6 text-sm font-medium text-zinc-300">
+        <nav className="relative flex items-center space-x-6 text-sm font-medium text-zinc-300">
           <Link href="/eventos" className="hover:text-white transition-colors">
             Eventos
           </Link>
 
-          {/* Solo renderizamos el menú del usuario una vez que el componente se ha montado en el cliente */}
           {hasMounted && user ? (
             <>
-              {user.roles.includes(UserRole.ADMIN) && (
-                <Link href="/dashboard" className="hover:text-white transition-colors">
-                  Dashboard
-                </Link>
+              <button
+                onClick={toggleMenu}
+                className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 py-2 px-4 rounded-full transition-colors"
+              >
+                <User className="h-4 w-4" />
+                <span>Mi cuenta</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+
+              {showMenu && (
+                <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg overflow-hidden text-white w-52 z-50 border border-zinc-700">
+                  <Link
+                    href="/mi-cuenta"
+                    onClick={() => setShowMenu(false)}
+                    className="block px-4 py-3 hover:bg-zinc-800"
+                  >
+                    Mis Entradas
+                  </Link>
+                  {user.roles.includes(UserRole.RRPP) && (
+                    <Link
+                      href="/rrpp"
+                      onClick={() => setShowMenu(false)}
+                      className="block px-4 py-3 hover:bg-zinc-800"
+                    >
+                      Panel RRPP
+                    </Link>
+                  )}
+                  {user.roles.includes(UserRole.ADMIN) && (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setShowMenu(false)}
+                        className="block px-4 py-3 hover:bg-zinc-800"
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/verificar"
+                        onClick={() => setShowMenu(false)}
+                        className="block px-4 py-3 hover:bg-zinc-800"
+                      >
+                        Verificar Entradas
+                      </Link>
+                    </>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-3 hover:bg-red-600 transition-colors"
+                  >
+                    <LogOut className="inline-block mr-2 h-4 w-4" />
+                    Cerrar sesión
+                  </button>
+                </div>
               )}
-              {user.roles.includes(UserRole.RRPP) && (
-                <Link href="/rrpp" className="hover:text-white transition-colors">
-                  Panel RRPP
-                </Link>
-              )}
-              <Link href="/mi-cuenta" className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 py-2 px-4 rounded-full transition-colors">
-                <Ticket className="h-4 w-4" />
-                <span>Mis Entradas</span>
-              </Link>
             </>
           ) : hasMounted && !user ? (
             <>
-              <Link href="/login" className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-full transition-colors">
+              <Link
+                href="/login"
+                className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-full transition-colors"
+              >
                 <LogIn className="h-4 w-4" />
                 <span>Ingresar</span>
               </Link>
-              <Link href="/register" className="hidden sm:block hover:text-white transition-colors">
+              <Link
+                href="/register"
+                className="hidden sm:block hover:text-white transition-colors"
+              >
                 Crear Cuenta
               </Link>
             </>
           ) : (
-            // Renderizamos un placeholder simple mientras se determina el estado
             <div className="h-9 w-24 bg-zinc-800 rounded-full animate-pulse"></div>
           )}
         </nav>
