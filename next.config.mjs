@@ -1,7 +1,4 @@
-import withPWA from 'next-pwa';
-/** @type {import('next').NextConfig} */
-
-// 1. Importar el wrapper correcto: 'next-pwa'
+// Usamos 'require' para el paquete PWA, ya que es la sintaxis más compatible.
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -9,9 +6,9 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
 });
 
-// 2. Envolver la configuración con withPWA
-const nextConfig = withPWA({
-  reactStrictMode: true, // Es una buena práctica tenerlo
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -34,6 +31,7 @@ const nextConfig = withPWA({
       },
     ],
   },
-});
+};
 
-module.exports = nextConfig;
+// Envolvemos la configuración principal con la configuración de PWA
+module.exports = withPWA(nextConfig);
