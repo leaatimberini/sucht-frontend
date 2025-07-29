@@ -4,7 +4,7 @@ import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare, BarChartHorizontal } from "lucide-react"; // <-- 1. IMPORTAR NUEVO ICONO
+import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare, BarChartHorizontal, Settings } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -46,7 +46,6 @@ export default function DashboardLayout({
                   <span>Clientes</span>
                 </Link>
               </li>
-              {/* --- 2. NUEVO LINK AÑADIDO --- */}
               <li>
                 <Link href="/dashboard/rrpp-stats" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <BarChartHorizontal className="h-4 w-4" />
@@ -60,9 +59,9 @@ export default function DashboardLayout({
                 </Link>
               </li>
               <li>
-                <Link href="#" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
-                  <BarChart3 className="h-4 w-4" />
-                  <span>Ventas</span>
+                <Link href="/dashboard/settings" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <Settings className="h-4 w-4" />
+                  <span>Configuración</span>
                 </Link>
               </li>
             </ul>
