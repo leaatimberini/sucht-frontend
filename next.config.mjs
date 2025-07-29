@@ -1,5 +1,7 @@
-// Usamos 'require' para el paquete PWA, ya que es la sintaxis más compatible.
-const withPWA = require('next-pwa')({
+// Usamos 'import' porque el archivo es un Módulo ES (.mjs)
+import withPWA from 'next-pwa';
+
+const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
@@ -34,4 +36,4 @@ const nextConfig = {
 };
 
 // Envolvemos la configuración principal con la configuración de PWA
-module.exports = withPWA(nextConfig);
+export default pwaConfig(nextConfig);
