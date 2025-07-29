@@ -93,7 +93,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-xs text-zinc-500 mt-4">
-            sucht.com.ar - desarrollado por{' '}
+          SUCHT - Desarrollado por{' '}
             <Link
               href="https://www.instagram.com/leaa.emanuel"
               target="_blank"
