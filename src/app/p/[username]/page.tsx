@@ -1,54 +1,47 @@
 'use client';
 
-// 1. Añadimos useState a la importación
-import { useEffect, useState } from "react"; 
+import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/axios";
-import { notFound } from "next/navigation";
 import { User } from "@/types/user.types";
 import { Event } from "@/types/event.types";
 import Image from "next/image";
 import Link from "next/link";
 import { Instagram, MessageSquare } from "lucide-react";
 
+// Este componente se ejecuta en el cliente y guarda el username del RRPP
 function PromoterTracker({ username }: { username: string }) {
   useEffect(() => {
     localStorage.setItem('promoterUsername', username);
   }, [username]);
-  return null;
+  return null; // No renderiza nada visualmente
 }
 
 export default function PromoterPage({ params }: { params: { username: string } }) {
   const [promoter, setPromoter] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const getPromoterProfile = async (username: string) => {
-      try {
-        const response = await api.get(`/users/by-username/${username}`);
-        setPromoter(response.data);
-      } catch (error) {
-        // En un componente de cliente, no podemos usar notFound(),
-        // así que mostraremos un mensaje o redirigiremos.
-        // Por ahora, lo dejamos así para que el resto de la página cargue.
-        console.error("Promoter not found", error);
-      }
-    };
-
-    const getActiveEvents = async () => {
-      try {
-        const response = await api.get('/events');
-        setEvents(response.data.filter((event: Event) => new Date(event.endDate) > new Date()));
-      } catch (error) {
-        setEvents([]);
-      }
-    };
-    
-    getPromoterProfile(params.username);
-    getActiveEvents();
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [promoterRes, eventsRes] = await Promise.all([
+        api.get(`/users/by-username/${params.username}`),
+        api.get('/events')
+      ]);
+      setPromoter(promoterRes.data);
+      setEvents(eventsRes.data.filter((event: Event) => new Date(event.endDate) > new Date()));
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [params.username]);
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  if (!promoter) {
+  if (isLoading || !promoter) {
     return <div className="text-center p-8"><p className="text-zinc-400">Cargando perfil del RRPP...</p></div>;
   }
 
@@ -68,7 +61,6 @@ export default function PromoterPage({ params }: { params: { username: string } 
           )}
           <h1 className="text-4xl font-bold text-white mt-4">{promoter.name}</h1>
           <p className="text-pink-500">RRPP Oficial de SUCHT</p>
-          
           <div className="flex items-center space-x-4 mt-4">
             {promoter.instagramHandle && (
               <a href={`https://instagram.com/${promoter.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-zinc-300 hover:text-white">
@@ -89,9 +81,9 @@ export default function PromoterPage({ params }: { params: { username: string } 
           <h2 className="text-2xl font-bold text-white text-center mb-6">Mis Eventos</h2>
           <div className="space-y-6">
             {events.length > 0 ? (
-              // 2. Especificamos el tipo 'Event' aquí
-              events.map((event: Event) => (
-                <Link key={event.id} href={`/eventos/${event.id}`} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800 hover:border-pink-500 transition-all flex items-center space-x-4">
+              events.map(event => (
+                // Añadimos el username del RRPP como un parámetro en la URL del evento
+                <Link key={event.id} href={`/eventos/${event.id}?promoter=${promoter.username}`} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800 hover:border-pink-500 transition-all flex items-center space-x-4">
                   {event.flyerImageUrl && (
                     <Image
                       src={event.flyerImageUrl}
