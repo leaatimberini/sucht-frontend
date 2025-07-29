@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 
 export default function HomePage() {
   return (
@@ -15,8 +16,6 @@ export default function HomePage() {
             className="min-w-full min-h-full object-cover"
           >
             <source src="https://res.cloudinary.com/di4ikaeke/video/upload/v1753741162/background_c6dman.webm" type="video/webm" />
-            {/* Puedes añadir un fallback con una imagen */}
-            
           </video>
         </div>
         <div className="container mx-auto px-4 relative z-10">
@@ -34,7 +33,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Otras secciones (podríamos añadir una breve descripción del boliche, etc.) */}
+      {/* Otras secciones */}
       <section className="py-16 bg-zinc-900 text-center">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-white mb-6">¿Qué es SUCHT?</h2>
@@ -43,6 +42,44 @@ export default function HomePage() {
           </p>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-zinc-800 text-zinc-400 py-6 mt-12">
+        <div className="container mx-auto px-4 flex flex-col items-center space-y-4">
+          <div className="flex space-x-8 text-2xl">
+            <Link
+              href="https://www.instagram.com/sucht.oficial"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram SUCHT"
+              className="hover:text-pink-600 transition-colors"
+            >
+              <FaInstagram />
+            </Link>
+            <Link
+              href="https://wa.me/5491152738137"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp SUCHT"
+              className="hover:text-green-500 transition-colors"
+            >
+              <FaWhatsapp />
+            </Link>
+          </div>
+
+          <p className="text-xs text-zinc-500 mt-4">
+            sucht.com.ar - desarrollado por{' '}
+            <Link
+              href="https://www.instagram.com/leaa.emanuel"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-pink-600"
+            >
+              LET
+            </Link>
+          </p>
+        </div>
+      </footer>
     </>
   );
 }
