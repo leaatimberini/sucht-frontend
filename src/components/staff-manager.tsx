@@ -25,6 +25,7 @@ export function StaffManager({ onStaffChange }: { onStaffChange: () => void }) {
       setSearchedUser(null);
       setSelectedRoles([]);
       setNotFound(true);
+      // CORRECCIÓN: Se usan comillas simples para evitar el error de linting
       toast('Usuario no encontrado. Puedes invitarlo con los roles que selecciones.', { icon: '🧑‍🚀' });
     } finally {
       setIsLoading(false);
