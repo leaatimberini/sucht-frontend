@@ -1,7 +1,16 @@
-import withPWAInit from "@vite-pwa/next";
-
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+
+// 1. Importar el wrapper correcto: 'next-pwa'
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
+
+// 2. Envolver la configuración con withPWA
+const nextConfig = withPWA({
+  reactStrictMode: true, // Es una buena práctica tenerlo
   images: {
     remotePatterns: [
       {
@@ -24,13 +33,6 @@ const nextConfig = {
       },
     ],
   },
-};
-
-const withPWA = withPWAInit({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
 });
 
-export default withPWA(nextConfig);
+module.exports = nextConfig;
