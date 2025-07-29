@@ -1,10 +1,23 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
+import { Poppins } from 'next/font/google';
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+});
 
 export default function HomePage() {
   return (
     <>
+      <style jsx global>{`
+        body {
+          font-family: ${poppins.style.fontFamily};
+        }
+      `}</style>
+
       {/* Sección Hero con Video de Fondo */}
       <section className="relative h-[calc(100vh-5rem)] flex items-center justify-center text-center overflow-hidden">
         {/* Video de Fondo */}
@@ -15,7 +28,10 @@ export default function HomePage() {
             muted
             className="min-w-full min-h-full object-cover"
           >
-            <source src="https://res.cloudinary.com/di4ikaeke/video/upload/v1753741162/background_c6dman.webm" type="video/webm" />
+            <source
+              src="https://res.cloudinary.com/di4ikaeke/video/upload/v1753741162/background_c6dman.webm"
+              type="video/webm"
+            />
           </video>
         </div>
         <div className="container mx-auto px-4 relative z-10">
@@ -26,7 +42,10 @@ export default function HomePage() {
             Música, amigos y noches inolvidables te esperan.
           </p>
           <div className="mt-8">
-            <Link href="/eventos" className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform hover:scale-105">
+            <Link
+              href="/eventos"
+              className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform hover:scale-105"
+            >
               Ver Próximos Eventos
             </Link>
           </div>
@@ -38,7 +57,11 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-white mb-6">¿Qué es SUCHT?</h2>
           <p className="text-zinc-400 max-w-3xl mx-auto">
-            SUCHT es más que un boliche; es una comunidad, una experiencia, un lugar donde la noche cobra vida. Con la mejor música, un ambiente increíble y la gente más divertida de Castelar, te garantizamos una noche que no olvidarás. ¡Descubre nuestros próximos eventos y únete a la fiesta!
+            SUCHT es más que un boliche; es una comunidad, una experiencia, un
+            lugar donde la noche cobra vida. Con la mejor música, un ambiente
+            increíble y la gente más divertida de Castelar, te garantizamos una
+            noche que no olvidarás. ¡Descubre nuestros próximos eventos y únete
+            a la fiesta!
           </p>
         </div>
       </section>

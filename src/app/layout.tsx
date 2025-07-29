@@ -7,13 +7,13 @@ import { Header } from '@/components/header';
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-poppins', // opcional si quieres usar CSS variables
 });
 
 export const metadata: Metadata = {
   title: 'SUCHT',
   description: 'El clásico de Castelar, desde 2010.',
-  // --- AÑADIMOS LA ETIQUETA DEL MANIFIESTO ---
-  manifest: '/manifest.json', 
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -28,9 +28,7 @@ export default function RootLayout({
       >
         <Toaster position="top-center" />
         <Header />
-        <main className="pt-20">
-          {children}
-        </main>
+        <main className="pt-20">{children}</main>
       </body>
     </html>
   );
