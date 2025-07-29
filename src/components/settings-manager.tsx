@@ -29,7 +29,6 @@ export function SettingsManager() {
     resolver: zodResolver(settingsSchema),
   });
 
-  // Cargar la configuración actual al iniciar el componente
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -39,7 +38,7 @@ export function SettingsManager() {
           setCurrentFee(response.data);
         }
       } catch (error) {
-        // No hacer nada si no se encuentra, es la primera vez que se configura
+        // No hacer nada si no se encuentra
       }
     };
     if (user?.roles.includes(UserRole.ADMIN)) {
@@ -53,7 +52,6 @@ export function SettingsManager() {
         await api.post('/configuration', { key: 'adminServiceFee', value: data.adminServiceFee.toString() });
       }
       if (data.mercadoPagoToken) {
-        // Este endpoint actualiza el MP token del usuario logueado
         await api.patch('/users/profile/me', { mercadoPagoAccessToken: data.mercadoPagoToken });
       }
       toast.success("Configuración guardada con éxito.");
@@ -64,7 +62,6 @@ export function SettingsManager() {
 
   return (
     <form onSubmit={handleSubmit(onSaveSettings)} className="space-y-8 max-w-2xl">
-      {/* Sección solo para Admins/Dueños */}
       {user?.roles.includes(UserRole.ADMIN) && (
         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Configuración de Administrador</h2>
@@ -86,10 +83,10 @@ export function SettingsManager() {
         </div>
       )}
 
-      {/* Sección para vincular Mercado Pago (Dueño, Admin, RRPP) */}
       <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
         <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
-        <p className="text-xs text-zinc-500 mt-2 mb-4">Pega tu 'Access Token' de producción de Mercado Pago para recibir los pagos de las ventas de entradas. Puedes encontrarlo en <a href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">tus credenciales de desarrollador</a>.</p>
+        {/* CORRECCIÓN: Se quitaron las comillas simples de 'Access Token' */}
+        <p className="text-xs text-zinc-500 mt-2 mb-4">Pega tu Access Token de producción de Mercado Pago para recibir los pagos de las ventas de entradas. Puedes encontrarlo en <a href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">tus credenciales de desarrollador</a>.</p>
         <div>
           <label htmlFor="mercadoPagoToken" className="block text-sm font-medium text-zinc-300 mb-1">Access Token</label>
           <input 
