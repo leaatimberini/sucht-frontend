@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from "react";
 import { QRCodeSVG } from 'qrcode.react';
 import { EditProfileForm } from "@/components/edit-profile-form";
 import toast from "react-hot-toast";
+import { PushNotificationManager } from "@/components/push-notification-manager";
 
 // Sub-componente para la lógica de mostrar las entradas
 function MisEntradas({ tickets, onConfirm }: { tickets: Ticket[], onConfirm: () => void }) {
@@ -33,7 +34,6 @@ function MisEntradas({ tickets, onConfirm }: { tickets: Ticket[], onConfirm: () 
             <p className="text-zinc-400 text-sm mt-2">{new Date(ticket.event.startDate).toLocaleString('es-AR', { dateStyle: 'full', timeStyle: 'short' })} hs.</p>
             {ticket.tier.validUntil && (<p className="text-xs text-yellow-400 mt-1">Válido hasta: {new Date(ticket.tier.validUntil).toLocaleString('es-AR', {dateStyle: 'short', timeStyle: 'short'})} hs.</p>)}
             
-            {/* Lógica para mostrar el estado o el botón de confirmación */}
             {ticket.event.confirmationSentAt && !ticket.confirmedAt ? (
               <button onClick={() => handleConfirm(ticket.id)} className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg">
                 Confirmar Asistencia
@@ -59,7 +59,7 @@ function MisEntradas({ tickets, onConfirm }: { tickets: Ticket[], onConfirm: () 
 }
 
 export default function MiCuentaPage() {
-  const [activeTab, setActiveTab] = useState<'tickets' | 'profile'>('tickets');
+  const [activeTab, setActiveTab] = useState<'tickets' | 'profile' | 'notifications'>('tickets');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [userData, setUserData] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,19 +90,30 @@ export default function MiCuentaPage() {
     <AuthCheck>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-white mb-2">Hola, {authUser?.email.split('@')[0]}</h1>
-        <p className="text-zinc-400 mb-8">Administra tus entradas y tu perfil.</p>
+        <p className="text-zinc-400 mb-8">Administra tus entradas, tu perfil y notificaciones.</p>
+
         <div className="border-b border-zinc-800 mb-8">
-          <nav className="flex space-x-4">
-            <button onClick={() => setActiveTab('tickets')} className={`py-2 px-4 ${activeTab === 'tickets' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Mis Entradas</button>
-            <button onClick={() => setActiveTab('profile')} className={`py-2 px-4 ${activeTab === 'profile' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Editar Perfil</button>
+          <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto">
+            <button onClick={() => setActiveTab('tickets')} className={`py-2 px-4 whitespace-nowrap ${activeTab === 'tickets' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Mis Entradas</button>
+            <button onClick={() => setActiveTab('profile')} className={`py-2 px-4 whitespace-nowrap ${activeTab === 'profile' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Editar Perfil</button>
+            <button onClick={() => setActiveTab('notifications')} className={`py-2 px-4 whitespace-nowrap ${activeTab === 'notifications' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Notificaciones</button>
           </nav>
         </div>
+
         {isLoading ? (
           <p className="text-zinc-500">Cargando...</p>
-        ) : activeTab === 'tickets' ? (
-          <MisEntradas tickets={tickets} onConfirm={fetchData} />
         ) : (
-          userData && <EditProfileForm user={userData} />
+          <>
+            {activeTab === 'tickets' && <MisEntradas tickets={tickets} onConfirm={fetchData} />}
+            {activeTab === 'profile' && userData && <EditProfileForm user={userData} />}
+            {activeTab === 'notifications' && (
+              <div className="max-w-lg mx-auto">
+                <h2 className="text-2xl font-bold text-white mb-4">Configuración de Notificaciones</h2>
+                <p className="text-zinc-400 mb-6">Activa las notificaciones para no perderte ninguna novedad, recordatorios de eventos y más.</p>
+                <PushNotificationManager />
+              </div>
+            )}
+          </>
         )}
       </div>
     </AuthCheck>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
-import { Header } from '@/components/header'; // <-- 1. IMPORTAR
+import { Header } from '@/components/header';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -11,7 +11,9 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'SUCHT',
-  description: 'La experiencia nocturna definitiva.',
+  description: 'El clásico de Castelar, desde 2010.',
+  // --- AÑADIMOS LA ETIQUETA DEL MANIFIESTO ---
+  manifest: '/manifest.json', 
 };
 
 export default function RootLayout({
@@ -25,8 +27,8 @@ export default function RootLayout({
         className={`${poppins.className} bg-zinc-950 text-zinc-50 antialiased`}
       >
         <Toaster position="top-center" />
-        <Header /> {/* <-- 2. AÑADIR EL HEADER */}
-        <main className="pt-20"> {/* <-- 3. AÑADIR PADDING SUPERIOR PARA NO QUEDAR DETRÁS DEL HEADER */}
+        <Header />
+        <main className="pt-20">
           {children}
         </main>
       </body>

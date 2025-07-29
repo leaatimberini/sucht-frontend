@@ -1,3 +1,5 @@
+import withPWAInit from "@vite-pwa/next";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -6,23 +8,29 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
         port: '5000',
-        pathname: '/**', // Permite cualquier ruta local
+        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'sucht.com.ar',
         port: '',
-        pathname: '/**', // Permite cualquier ruta de tu dominio
+        pathname: '/**',
       },
-      // --- AÑADIMOS LA CONFIGURACIÓN PARA CLOUDINARY ---
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
         port: '',
-        pathname: '/**', // Permite cualquier imagen de tu cuenta de Cloudinary
+        pathname: '/**',
       },
     ],
   },
 };
 
-export default nextConfig;
+const withPWA = withPWAInit({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+});
+
+export default withPWA(nextConfig);
