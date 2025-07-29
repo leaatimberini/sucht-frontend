@@ -1,3 +1,7 @@
+'use client';
+
+// 1. Añadimos useState a la importación
+import { useEffect, useState } from "react"; 
 import api from "@/lib/axios";
 import { notFound } from "next/navigation";
 import { User } from "@/types/user.types";
@@ -6,101 +10,109 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, MessageSquare } from "lucide-react";
 
-// Función para obtener los datos del perfil del RRPP desde la API
-async function getPromoterProfile(username: string): Promise<User | null> {
-  try {
-    // Usamos el endpoint que creamos para buscar por email, pero deberíamos crear uno para username
-    // Por ahora, asumimos que un endpoint GET /users/by-username/:username existe
-    // NOTA: Necesitamos crear este endpoint en el backend.
-    const response = await api.get(`/users/by-username/${username}`);
-    return response.data;
-  } catch (error) {
-    return null;
-  }
+function PromoterTracker({ username }: { username: string }) {
+  useEffect(() => {
+    localStorage.setItem('promoterUsername', username);
+  }, [username]);
+  return null;
 }
 
-// Función para obtener los eventos activos
-async function getActiveEvents(): Promise<Event[]> {
-  try {
-    const response = await api.get('/events');
-    // Filtramos para mostrar solo eventos que no han finalizado
-    return response.data.filter((event: Event) => new Date(event.endDate) > new Date());
-  } catch (error) {
-    return [];
-  }
-}
+export default function PromoterPage({ params }: { params: { username: string } }) {
+  const [promoter, setPromoter] = useState<User | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
 
-export default async function PromoterPage({ params }: { params: { username: string } }) {
-  const [promoter, events] = await Promise.all([
-    getPromoterProfile(params.username),
-    getActiveEvents()
-  ]);
+  useEffect(() => {
+    const getPromoterProfile = async (username: string) => {
+      try {
+        const response = await api.get(`/users/by-username/${username}`);
+        setPromoter(response.data);
+      } catch (error) {
+        // En un componente de cliente, no podemos usar notFound(),
+        // así que mostraremos un mensaje o redirigiremos.
+        // Por ahora, lo dejamos así para que el resto de la página cargue.
+        console.error("Promoter not found", error);
+      }
+    };
+
+    const getActiveEvents = async () => {
+      try {
+        const response = await api.get('/events');
+        setEvents(response.data.filter((event: Event) => new Date(event.endDate) > new Date()));
+      } catch (error) {
+        setEvents([]);
+      }
+    };
+    
+    getPromoterProfile(params.username);
+    getActiveEvents();
+  }, [params.username]);
+
 
   if (!promoter) {
-    notFound();
+    return <div className="text-center p-8"><p className="text-zinc-400">Cargando perfil del RRPP...</p></div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Sección del Perfil del RRPP */}
-      <div className="flex flex-col items-center text-center">
-        {promoter.profileImageUrl && (
-          <Image
-            src={promoter.profileImageUrl}
-            alt={`Foto de ${promoter.name}`}
-            width={128}
-            height={128}
-            className="w-32 h-32 rounded-full object-cover border-4 border-zinc-800"
-          />
-        )}
-        <h1 className="text-4xl font-bold text-white mt-4">{promoter.name}</h1>
-        <p className="text-pink-500">RRPP Oficial de SUCHT</p>
-        
-        <div className="flex items-center space-x-4 mt-4">
-          {promoter.instagramHandle && (
-            <a href={`https://instagram.com/${promoter.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-zinc-300 hover:text-white">
-              <Instagram className="h-5 w-5" />
-              <span>{promoter.instagramHandle}</span>
-            </a>
+    <>
+      <PromoterTracker username={params.username} />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center text-center">
+          {promoter.profileImageUrl && (
+            <Image
+              src={promoter.profileImageUrl}
+              alt={`Foto de ${promoter.name}`}
+              width={128}
+              height={128}
+              className="w-32 h-32 rounded-full object-cover border-4 border-zinc-800"
+            />
           )}
-          {promoter.whatsappNumber && (
-             <a href={`https://wa.me/${promoter.whatsappNumber.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-zinc-300 hover:text-white">
-              <MessageSquare className="h-5 w-5" />
-              <span>WhatsApp</span>
-            </a>
-          )}
+          <h1 className="text-4xl font-bold text-white mt-4">{promoter.name}</h1>
+          <p className="text-pink-500">RRPP Oficial de SUCHT</p>
+          
+          <div className="flex items-center space-x-4 mt-4">
+            {promoter.instagramHandle && (
+              <a href={`https://instagram.com/${promoter.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-zinc-300 hover:text-white">
+                <Instagram className="h-5 w-5" />
+                <span>{promoter.instagramHandle}</span>
+              </a>
+            )}
+            {promoter.whatsappNumber && (
+              <a href={`https://wa.me/${promoter.whatsappNumber.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-zinc-300 hover:text-white">
+                <MessageSquare className="h-5 w-5" />
+                <span>WhatsApp</span>
+              </a>
+            )}
+          </div>
+        </div>
+        <hr className="my-10 border-zinc-800" />
+        <div>
+          <h2 className="text-2xl font-bold text-white text-center mb-6">Mis Eventos</h2>
+          <div className="space-y-6">
+            {events.length > 0 ? (
+              // 2. Especificamos el tipo 'Event' aquí
+              events.map((event: Event) => (
+                <Link key={event.id} href={`/eventos/${event.id}`} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800 hover:border-pink-500 transition-all flex items-center space-x-4">
+                  {event.flyerImageUrl && (
+                    <Image
+                      src={event.flyerImageUrl}
+                      alt={`Flyer de ${event.title}`}
+                      width={80}
+                      height={120}
+                      className="w-20 h-30 object-cover rounded-md"
+                    />
+                  )}
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">{event.title}</h3>
+                    <p className="text-sm text-zinc-400">{new Date(event.startDate).toLocaleDateString('es-AR', { dateStyle: 'long' })}</p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-zinc-500 text-center">No hay eventos próximos en este momento.</p>
+            )}
+          </div>
         </div>
       </div>
-
-      <hr className="my-10 border-zinc-800" />
-
-      {/* Sección de Eventos Disponibles */}
-      <div>
-        <h2 className="text-2xl font-bold text-white text-center mb-6">Mis Eventos</h2>
-        <div className="space-y-6">
-          {events.length > 0 ? (
-            events.map(event => (
-              <Link key={event.id} href={`/eventos/${event.id}?promoter=${promoter.username}`} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800 hover:border-pink-500 transition-all flex items-center space-x-4">
-                {event.flyerImageUrl && (
-                  <Image
-                    src={event.flyerImageUrl}
-                    alt={`Flyer de ${event.title}`}
-                    width={80}
-                    height={120}
-                    className="w-20 h-30 object-cover rounded-md"
-                  />
-                )}
-                <div>
-                  <h3 className="text-xl font-semibold text-white">{event.title}</h3>
-                  <p className="text-sm text-zinc-400">{new Date(event.startDate).toLocaleDateString('es-AR', { dateStyle: 'long' })}</p>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <p className="text-zinc-500 text-center">No hay eventos próximos en este momento.</p>
-          )}
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
