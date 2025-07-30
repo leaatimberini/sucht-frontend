@@ -1,4 +1,5 @@
 export enum UserRole {
+  OWNER = 'owner', // <-- ROL AÑADIDO
   ADMIN = 'admin',
   RRPP = 'rrpp',
   VERIFIER = 'verifier',
@@ -7,7 +8,7 @@ export enum UserRole {
 
 export interface User {
   id: string;
-  username: string | null; // <-- CAMPO AÑADIDO
+  username: string | null;
   email: string;
   name: string;
   roles: UserRole[];

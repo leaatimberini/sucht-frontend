@@ -11,14 +11,13 @@ import { UserRole } from "@/types/user.types";
 
 const settingsSchema = z.object({
   adminServiceFee: z.coerce.number().min(0).max(100).optional(),
-  mercadoPagoToken: z.string().optional(),
+  mercadoPagoAccessToken: z.string().optional(),
 });
 
 type SettingsFormInputs = z.infer<typeof settingsSchema>;
 
 export function SettingsManager() {
-  const user = useAuthStore((state) => state.user);
-  const [currentFee, setCurrentFee] = useState<string>('');
+  const { user } = useAuthStore();
 
   const {
     register,
@@ -29,31 +28,51 @@ export function SettingsManager() {
     resolver: zodResolver(settingsSchema),
   });
 
+  // Cargar la configuración actual al iniciar el componente
   useEffect(() => {
-    const fetchConfig = async () => {
+    const loadSettings = async () => {
       try {
-        const response = await api.get('/configuration/adminServiceFee');
-        if (response.data) {
-          setValue('adminServiceFee', response.data);
-          setCurrentFee(response.data);
+        // Solo el admin puede ver y cargar la tarifa de servicio
+        if (user?.roles.includes(UserRole.ADMIN)) {
+          const feeResponse = await api.get('/configuration/adminServiceFee');
+          if (feeResponse.data && feeResponse.data.value) {
+            setValue('adminServiceFee', parseFloat(feeResponse.data.value));
+          }
+        }
+        // Todos los usuarios (dueño, admin, rrpp) cargan su propio token de MP
+        const profileResponse = await api.get('/users/profile/me');
+        if (profileResponse.data.mercadoPagoAccessToken) {
+          setValue('mercadoPagoAccessToken', profileResponse.data.mercadoPagoAccessToken);
         }
       } catch (error) {
-        // No hacer nada si no se encuentra
+        console.error("Failed to load settings", error);
       }
     };
-    if (user?.roles.includes(UserRole.ADMIN)) {
-      fetchConfig();
+    if (user) {
+      loadSettings();
     }
   }, [user, setValue]);
 
-  const onSaveSettings = async (data: SettingsFormInputs) => {
+  const onSubmit = async (data: SettingsFormInputs) => {
+    const promises = [];
+
+    // Promesa para guardar la tarifa de servicio del admin
+    if (data.adminServiceFee !== undefined && user?.roles.includes(UserRole.ADMIN)) {
+      promises.push(api.post('/configuration', { key: 'adminServiceFee', value: data.adminServiceFee.toString() }));
+    }
+
+    // Promesa para guardar el token de MP del usuario actual
+    if (data.mercadoPagoAccessToken !== undefined) {
+      promises.push(api.patch('/users/profile/me', { mercadoPagoAccessToken: data.mercadoPagoAccessToken }));
+    }
+    
+    if (promises.length === 0) {
+      toast('No hay cambios para guardar.');
+      return;
+    }
+
     try {
-      if (data.adminServiceFee !== undefined) {
-        await api.post('/configuration', { key: 'adminServiceFee', value: data.adminServiceFee.toString() });
-      }
-      if (data.mercadoPagoToken) {
-        await api.patch('/users/profile/me', { mercadoPagoAccessToken: data.mercadoPagoToken });
-      }
+      await Promise.all(promises);
       toast.success("Configuración guardada con éxito.");
     } catch (error) {
       toast.error("No se pudo guardar la configuración.");
@@ -61,7 +80,24 @@ export function SettingsManager() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSaveSettings)} className="space-y-8 max-w-2xl">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
+      {/* Sección para vincular Mercado Pago (Dueño, Admin, RRPP) */}
+      <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+        <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
+        <p className="text-sm text-zinc-400 mt-2 mb-4">Pega tu "Access Token" de producción de Mercado Pago para recibir los pagos de las ventas de entradas. Puedes encontrarlo en <a href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">tus credenciales de desarrollador</a>.</p>
+        <div>
+          <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300 mb-1">Access Token</label>
+          <input 
+            {...register('mercadoPagoAccessToken')} 
+            id="mercadoPagoAccessToken" 
+            type="password"
+            placeholder="APP_USR-..."
+            className="w-full bg-zinc-800 rounded-md p-2 text-white" 
+          />
+        </div>
+      </div>
+
+      {/* Sección solo para Admins */}
       {user?.roles.includes(UserRole.ADMIN) && (
         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Configuración de Administrador</h2>
@@ -82,22 +118,6 @@ export function SettingsManager() {
           </div>
         </div>
       )}
-
-      <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
-        <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
-        {/* CORRECCIÓN: Se quitaron las comillas simples de 'Access Token' */}
-        <p className="text-xs text-zinc-500 mt-2 mb-4">Pega tu Access Token de producción de Mercado Pago para recibir los pagos de las ventas de entradas. Puedes encontrarlo en <a href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">tus credenciales de desarrollador</a>.</p>
-        <div>
-          <label htmlFor="mercadoPagoToken" className="block text-sm font-medium text-zinc-300 mb-1">Access Token</label>
-          <input 
-            {...register('mercadoPagoToken')} 
-            id="mercadoPagoToken" 
-            type="password"
-            placeholder="APP_USR-..."
-            className="w-full bg-zinc-800 rounded-md p-2" 
-          />
-        </div>
-      </div>
       
       <div className="flex justify-end">
         <button type="submit" disabled={isSubmitting} className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">
