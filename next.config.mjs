@@ -1,11 +1,30 @@
 // Usamos 'import' porque el archivo es un Módulo ES (.mjs)
 import withPWA from 'next-pwa';
+import runtimeCaching from 'next-pwa/cache.js'; // 👈 IMPORTANTE
 
 const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+
+  runtimeCaching: [
+    ...runtimeCaching,
+    {
+      urlPattern: /^https:\/\/fonts\.(?:gstatic|googleapis)\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts',
+        expiration: {
+          maxEntries: 10,
+          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 año
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+  ],
 });
 
 /** @type {import('next').NextConfig} */
