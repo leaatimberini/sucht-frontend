@@ -84,7 +84,7 @@ export function SettingsManager() {
       {/* Sección para vincular Mercado Pago (Dueño, Admin, RRPP) */}
       <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
         <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
-        <p className="text-sm text-zinc-400 mt-2 mb-4">Pega tu "Access Token" de producción de Mercado Pago para recibir los pagos de las ventas de entradas. Puedes encontrarlo en <a href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">tus credenciales de desarrollador</a>.</p>
+        <p className="text-sm text-zinc-400 mt-2 mb-4">Pega tu &quot;Access Token&quot; de producción de Mercado Pago para recibir los pagos de las ventas de entradas. Puedes encontrarlo en <a href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">tus credenciales de desarrollador</a>.</p>
         <div>
           <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300 mb-1">Access Token</label>
           <input 
