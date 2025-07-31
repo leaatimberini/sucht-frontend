@@ -1,13 +1,12 @@
 'use client';
 
-// 1. Se añade 'useCallback' a la importación
-import { useEffect, useState, useCallback } from "react";
 import { Event } from "@/types/event.types";
-import api from "@/lib/axios";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
+import { useEffect, useState } from "react";
 import { TicketTier } from "@/types/ticket.types";
 
 const generateTicketSchema = z.object({
@@ -28,29 +27,26 @@ export function TicketGenerator({ event }: { event: Event }) {
   } = useForm<GenerateTicketInputs>({
     resolver: zodResolver(generateTicketSchema)
   });
-
-  // 2. Se envuelve la función en useCallback
-  const fetchTiers = useCallback(async () => {
-    try {
-      // --- LÍNEA CORREGIDA ---
-      const response = await api.get(`/events/${event.id}/ticket-tiers`);
-      // -----------------------
-      setTiers(response.data);
-    } catch (error) {
-      console.error("Failed to fetch ticket tiers", error);
-    }
-  }, [event.id]); // La función depende de event.id
-
+  
   useEffect(() => {
+    const fetchTiers = async () => {
+      try {
+        const response = await api.get(`/events/${event.id}/ticket-tiers`);
+        setTiers(response.data);
+      } catch (error) {
+        console.error("Failed to fetch ticket tiers", error);
+      }
+    };
     fetchTiers();
-  }, [fetchTiers]); // 3. Se añade la función a la lista de dependencias
+  }, [event.id]);
 
   const onSubmit = async (data: GenerateTicketInputs) => {
     try {
-      await api.post('/tickets', {
+      // --- CORRECCIÓN: Apuntamos al endpoint correcto ---
+      await api.post('/tickets/generate-by-rrpp', {
         userEmail: data.userEmail,
         eventId: event.id,
-        ticketTierId: data.ticketTierId,
+        ticketTierId: data.ticketTierId
       });
       toast.success(`Entrada generada para ${data.userEmail}!`);
       reset();
@@ -88,7 +84,7 @@ export function TicketGenerator({ event }: { event: Event }) {
             <option value="">Selecciona un tipo...</option>
             {tiers.map(tier => (
               <option key={tier.id} value={tier.id}>
-                {tier.name} (${tier.price}) - Quedan: {tier.quantity}
+                {tier.name} (${tier.price})
               </option>
             ))}
           </select>
