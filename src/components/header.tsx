@@ -72,7 +72,7 @@ export function Header() {
                         Dashboard
                       </Link>
                       <Link
-                        href="/verificar"
+                        href="/verifier"
                         onClick={() => setShowMenu(false)}
                         className="block px-4 py-3 hover:bg-zinc-800"
                       >

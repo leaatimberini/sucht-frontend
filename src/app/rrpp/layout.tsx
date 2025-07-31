@@ -42,7 +42,6 @@ export default function RRPPLayout({
                   <span>Mis Estadísticas</span>
                 </Link>
               </li>
-              {/* --- ENLACE AÑADIDO --- */}
               <li>
                 <Link href="/rrpp/birthdays" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <Cake className="h-4 w-4" />
@@ -52,6 +51,7 @@ export default function RRPPLayout({
               
               {isVerifier && (
                 <li className="border-t border-zinc-700 pt-2 mt-2">
+                  {/* --- CORRECCIÓN AQUÍ --- */}
                   <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                     <QrCode className="h-4 w-4" />
                     <span>Verificar Acceso</span>

@@ -4,7 +4,7 @@ import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare, BarChartHorizontal, Settings, Bell } from "lucide-react"; // 1. IMPORTAR ICONO BELL
+import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare, BarChartHorizontal, Settings, Bell } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -12,7 +12,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    // 2. AÑADIMOS EL ROL 'OWNER' A LOS PERMITIDOS
     <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER]}> 
       <div className="flex min-h-screen">
         <aside className="w-64 bg-zinc-900 p-4 border-r border-zinc-800 flex flex-col">
@@ -54,12 +53,12 @@ export default function DashboardLayout({
                 </Link>
               </li>
               <li className="border-t border-zinc-700 pt-2 mt-2">
+                {/* --- CORRECCIÓN AQUÍ --- */}
                 <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <QrCode className="h-4 w-4" />
                   <span>Verificar Acceso</span>
                 </Link>
               </li>
-              {/* --- 3. NUEVO LINK AÑADIDO --- */}
               <li>
                 <Link href="/dashboard/notifications" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <Bell className="h-4 w-4" />
