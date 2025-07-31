@@ -9,13 +9,14 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/types/user.types";
 
-// 1. ESQUEMA ACTUALIZADO
+// 1. AÑADIR CAMPO AL ESQUEMA
 const settingsSchema = z.object({
   // --- Campos de Admin ---
   adminServiceFee: z.coerce.number().min(0).max(100).optional(),
   paymentsEnabled: z.boolean().optional(),
   metaPixelId: z.string().trim().optional().default(''),
   googleAnalyticsId: z.string().trim().optional().default(''),
+  termsAndConditionsText: z.string().trim().optional().default(''), // <-- Nuevo campo
 
   // --- Campos de RRPP/Usuario ---
   mercadoPagoAccessToken: z.string().optional(),
@@ -30,20 +31,20 @@ export function SettingsManager() {
     register,
     handleSubmit,
     setValue,
-    watch, // Importamos watch para la renderización condicional
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      paymentsEnabled: false, // Valor por defecto
+      paymentsEnabled: false,
       metaPixelId: '',
-      googleAnalyticsId: ''
+      googleAnalyticsId: '',
+      termsAndConditionsText: ''
     }
   });
   
-  const paymentsEnabled = watch('paymentsEnabled'); // Observamos el valor del switch
+  const paymentsEnabled = watch('paymentsEnabled');
 
-  // 2. LÓGICA DE CARGA DE DATOS REFACTORIZADA (MÁS EFICIENTE)
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -61,6 +62,8 @@ export function SettingsManager() {
           if (config.paymentsEnabled) setValue('paymentsEnabled', config.paymentsEnabled === 'true');
           if (config.metaPixelId) setValue('metaPixelId', config.metaPixelId);
           if (config.googleAnalyticsId) setValue('googleAnalyticsId', config.googleAnalyticsId);
+          // 2. CARGAR EL VALOR DE T&C
+          if (config.termsAndConditionsText) setValue('termsAndConditionsText', config.termsAndConditionsText);
         }
 
         if (profileResponse?.data.mercadoPagoAccessToken) {
@@ -77,7 +80,6 @@ export function SettingsManager() {
     }
   }, [user, setValue]);
 
-  // 3. LÓGICA DE GUARDADO DE DATOS REFACTORIZADA (MÁS EFICIENTE)
   const onSubmit = async (data: SettingsFormInputs) => {
     try {
       const promises = [];
@@ -88,6 +90,8 @@ export function SettingsManager() {
           paymentsEnabled: data.paymentsEnabled?.toString(),
           metaPixelId: data.metaPixelId,
           googleAnalyticsId: data.googleAnalyticsId,
+          // 3. GUARDAR EL VALOR DE T&C
+          termsAndConditionsText: data.termsAndConditionsText,
         };
         promises.push(api.patch('/configuration', configPayload));
       }
@@ -107,7 +111,24 @@ export function SettingsManager() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
       
-      {/* SECCIÓN NUEVA DE MARKETING */}
+      {user?.roles.includes(UserRole.ADMIN) && (
+        <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+          <h2 className="text-xl font-semibold text-white">Términos y Condiciones</h2>
+          <p className="text-sm text-zinc-400 mt-1">
+            Edita el contenido de la página de Términos y Condiciones. El texto se guardará y mostrará públicamente.
+          </p>
+          <div className="mt-4">
+            <textarea
+              id="termsAndConditionsText"
+              {...register('termsAndConditionsText')}
+              rows={15}
+              className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm p-2 font-mono"
+              placeholder="Pega aquí el texto completo de los Términos y Condiciones..."
+            />
+          </div>
+        </div>
+      )}
+
       {user?.roles.includes(UserRole.ADMIN) && (
          <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Marketing y Seguimiento</h2>
@@ -137,7 +158,6 @@ export function SettingsManager() {
         </div>
       )}
 
-      {/* SECCIÓN EXISTENTE DE PASARELA DE PAGOS */}
       {user?.roles.includes(UserRole.ADMIN) && (
         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Pasarela de Pagos</h2>
@@ -154,13 +174,11 @@ export function SettingsManager() {
         </div>
       )}
 
-      {/* SECCIONES CONDICIONALES EXISTENTES */}
       {paymentsEnabled && (
         <>
           <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
             <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago (RRPP)</h2>
             <p className="text-sm text-zinc-400 mt-1">Pega tu Access Token de Producción para recibir pagos.</p>
-             {/* Aquí iría el campo para mercadoPagoAccessToken, si lo quieres visible */}
           </div>
 
           {user?.roles.includes(UserRole.ADMIN) && (

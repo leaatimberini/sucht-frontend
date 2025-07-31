@@ -9,8 +9,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
-// 1. Inicializamos Mercado Pago fuera del componente con tu clave pública
-// Asegúrate de añadir esta variable a tu archivo .env.local y a las variables de entorno de AWS
 const mpPublicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
 if (mpPublicKey) {
   initMercadoPago(mpPublicKey);
@@ -23,7 +21,8 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   const [selectedTierId, setSelectedTierId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [preferenceId, setPreferenceId] = useState<string | null>(null); // <-- 2. Nuevo estado para el ID de pago
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false); // 1. NUEVO ESTADO PARA EL CHECKBOX
   const isLoggedIn = useAuthStore(state => state.isLoggedIn);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,15 +61,12 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
         promoterUsername: promoterUsername,
       };
 
-      // 3. Llamamos al nuevo endpoint de pagos
       const response = await api.post('/payments/create-preference', payload);
       
       if (response.data.type === 'free') {
-        // Si la entrada es gratis, el backend ya la generó
         toast.success(response.data.message);
         router.push('/mi-cuenta');
       } else {
-        // Si la entrada es paga, guardamos el preferenceId para mostrar el botón de pago
         setPreferenceId(response.data.preferenceId);
       }
 
@@ -101,7 +97,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-4">
       <h3 className="text-xl font-semibold text-white">Obtener Entradas</h3>
       
-      {/* 4. Mostramos el formulario o el botón de pago */}
       {!preferenceId ? (
         <>
           <div>
@@ -115,7 +110,30 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
             <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
             <input id="quantity" type="number" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700"/>
           </div>
-          <button onClick={handleAcquire} disabled={isLoading} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50">
+
+          {/* 2. NUEVO BLOQUE PARA EL CHECKBOX DE T&C */}
+          <div className="flex items-start space-x-2 pt-2">
+            <input
+              id="terms-checkbox"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-pink-600 focus:ring-pink-500"
+            />
+            <label htmlFor="terms-checkbox" className="text-sm text-zinc-400">
+              He leído y acepto los{' '}
+              <Link href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="underline hover:text-pink-500">
+                Términos y Condiciones
+              </Link>.
+            </label>
+          </div>
+
+          {/* 3. LÓGICA DEL BOTÓN ACTUALIZADA */}
+          <button 
+            onClick={handleAcquire} 
+            disabled={isLoading || !acceptedTerms} 
+            className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {isLoading ? 'Procesando...' : 'Continuar'}
           </button>
         </>
