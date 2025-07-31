@@ -20,7 +20,7 @@ export function NotificationPrompt({ isSubscribed }: NotificationPromptProps) {
       <div>
         <h3 className="font-bold">¡No te pierdas de nada!</h3>
         <p className="text-sm">
-          Activa las notificaciones en la pestaña 'Notificaciones' para recibir beneficios exclusivos, entradas gratis y saludos en tu cumpleaños.
+          Activa las notificaciones en la pestaña (Notificaciones) para recibir beneficios exclusivos, entradas gratis y saludos en tu cumpleaños.
         </p>
       </div>
     </div>
