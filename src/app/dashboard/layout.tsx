@@ -4,7 +4,18 @@ import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { Calendar, LayoutGrid, BarChart3, Users, QrCode, UserSquare, BarChartHorizontal, Settings, Bell } from "lucide-react";
+import { 
+  Calendar, 
+  LayoutGrid, 
+  Users, 
+  QrCode, 
+  UserSquare, 
+  BarChartHorizontal, 
+  Settings, 
+  Bell,
+  UserX,
+  Trophy // 1. ÍCONO AÑADIDO
+} from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -52,8 +63,20 @@ export default function DashboardLayout({
                   <span>Rendimiento RRPP</span>
                 </Link>
               </li>
+              <li>
+                <Link href="/dashboard/no-shows" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <UserX className="h-4 w-4" />
+                  <span>No-Shows</span>
+                </Link>
+              </li>
+              {/* 2. NUEVO ENLACE A LA PÁGINA DE FIDELIZACIÓN */}
+              <li>
+                <Link href="/dashboard/loyalty" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <Trophy className="h-4 w-4" />
+                  <span>Loyalty</span>
+                </Link>
+              </li>
               <li className="border-t border-zinc-700 pt-2 mt-2">
-                {/* --- CORRECCIÓN AQUÍ --- */}
                 <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <QrCode className="h-4 w-4" />
                   <span>Verificar Acceso</span>

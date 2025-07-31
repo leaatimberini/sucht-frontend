@@ -3,11 +3,12 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { Header } from '@/components/header';
+import { TrackingScripts } from '@/components/tracking-scripts'; // 1. IMPORTAR
 
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-poppins', // opcional si quieres usar CSS variables
+  variable: '--font-poppins',
 });
 
 export const metadata: Metadata = {
@@ -29,6 +30,8 @@ export default function RootLayout({
         <Toaster position="top-center" />
         <Header />
         <main className="pt-20">{children}</main>
+        
+        <TrackingScripts /> {/* 2. AÑADIR EL COMPONENTE */}
       </body>
     </html>
   );

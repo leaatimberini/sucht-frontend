@@ -10,19 +10,21 @@ import { QRCodeSVG } from 'qrcode.react';
 import { EditProfileForm } from "@/components/edit-profile-form";
 import toast from "react-hot-toast";
 import { PushNotificationManager } from "@/components/push-notification-manager";
+import { NotificationPrompt } from "@/components/notification-prompt";
 
-// Sub-componente para la lógica de mostrar las entradas
+// CORRECCIÓN: Aseguramos que esta función devuelve JSX correctamente.
 function MisEntradas({ tickets, onConfirm }: { tickets: Ticket[], onConfirm: () => void }) {
   const handleConfirm = async (ticketId: string) => {
     try {
       await api.post(`/tickets/${ticketId}/confirm-attendance`);
       toast.success("¡Asistencia confirmada! Gracias.");
-      onConfirm(); // Llama a la función para refrescar la lista
+      onConfirm();
     } catch (error) {
       toast.error("No se pudo confirmar la asistencia.");
     }
   };
 
+  // Este 'return' pertenece al componente MisEntradas
   return (
     tickets.length > 0 ? (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -58,10 +60,14 @@ function MisEntradas({ tickets, onConfirm }: { tickets: Ticket[], onConfirm: () 
   );
 }
 
+
+// Extendemos el tipo User para incluir nuestro nuevo flag
+type UserProfile = User & { isPushSubscribed?: boolean };
+
 export default function MiCuentaPage() {
   const [activeTab, setActiveTab] = useState<'tickets' | 'profile' | 'notifications'>('tickets');
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [userData, setUserData] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const authUser = useAuthStore((state) => state.user);
 
@@ -91,6 +97,8 @@ export default function MiCuentaPage() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-white mb-2">Hola, {authUser?.email.split('@')[0]}</h1>
         <p className="text-zinc-400 mb-8">Administra tus entradas, tu perfil y notificaciones.</p>
+        
+        {userData && <NotificationPrompt isSubscribed={!!userData.isPushSubscribed} />}
 
         <div className="border-b border-zinc-800 mb-8">
           <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto">
