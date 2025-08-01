@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
 import { ShieldCheck } from 'lucide-react';
 
+// 1. AÑADIR ESTA LÍNEA PARA RESOLVER EL ERROR DE BUILD
+export const dynamic = 'force-dynamic';
+
 // Metadata para el SEO y el título de la pestaña
 export const metadata: Metadata = {
   title: 'Términos y Condiciones - SUCHT',
@@ -10,10 +13,7 @@ export const metadata: Metadata = {
 // Función para obtener el texto de los T&C desde el backend
 async function getTermsAndConditionsText() {
   try {
-    // Usamos fetch directamente porque es un componente de servidor
-    // La URL debe ser la absoluta de tu API desplegada
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/configuration`, { 
-      // Usamos 'no-store' para asegurar que siempre traiga la última versión
       cache: 'no-store' 
     });
 
@@ -42,9 +42,6 @@ export default async function TermsAndConditionsPage() {
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 sm:p-8">
-          {/* Usamos 'whitespace-pre-wrap' para que el texto respete los saltos de línea 
-            y párrafos tal como los pegaste en el panel de admin.
-          */}
           <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap">
             {termsText}
           </p>
