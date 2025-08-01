@@ -66,14 +66,14 @@ export default function DashboardLayout({
               <li>
                 <Link href="/dashboard/no-shows" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <UserX className="h-4 w-4" />
-                  <span>No-Shows</span>
+                  <span>Ausencias</span>
                 </Link>
               </li>
               {/* 2. NUEVO ENLACE A LA PÁGINA DE FIDELIZACIÓN */}
               <li>
                 <Link href="/dashboard/loyalty" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <Trophy className="h-4 w-4" />
-                  <span>Loyalty</span>
+                  <span>Fidelización</span>
                 </Link>
               </li>
               <li className="border-t border-zinc-700 pt-2 mt-2">
