@@ -8,24 +8,26 @@ import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/types/user.types";
+import Link from "next/link";
 
-// 1. AÑADIR CAMPO AL ESQUEMA
 const settingsSchema = z.object({
-  // --- Campos de Admin ---
-  adminServiceFee: z.coerce.number().min(0).max(100).optional(),
   paymentsEnabled: z.boolean().optional(),
+  rrppCommissionRate: z.coerce.number().min(0).max(100).optional(),
+  adminServiceFee: z.coerce.number().min(0).max(100).optional(),
   metaPixelId: z.string().trim().optional().default(''),
   googleAnalyticsId: z.string().trim().optional().default(''),
-  termsAndConditionsText: z.string().trim().optional().default(''), // <-- Nuevo campo
-
-  // --- Campos de RRPP/Usuario ---
+  termsAndConditionsText: z.string().trim().optional().default(''),
   mercadoPagoAccessToken: z.string().optional(),
 });
 
 type SettingsFormInputs = z.infer<typeof settingsSchema>;
 
+// SE AÑADIÓ 'export' PARA QUE EL COMPONENTE PUEDA SER IMPORTADO
 export function SettingsManager() {
   const { user } = useAuthStore();
+  
+  const isOwner = user?.roles.includes(UserRole.OWNER);
+  const isAdmin = user?.roles.includes(UserRole.ADMIN);
 
   const {
     register,
@@ -37,9 +39,6 @@ export function SettingsManager() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       paymentsEnabled: false,
-      metaPixelId: '',
-      googleAnalyticsId: '',
-      termsAndConditionsText: ''
     }
   });
   
@@ -49,7 +48,7 @@ export function SettingsManager() {
     const loadSettings = async () => {
       try {
         const promises = [];
-        if (user?.roles.includes(UserRole.ADMIN)) {
+        if (isOwner || isAdmin) {
           promises.push(api.get('/configuration'));
         }
         promises.push(api.get('/users/profile/me'));
@@ -58,40 +57,45 @@ export function SettingsManager() {
         
         if (configResponse?.data) {
           const config = configResponse.data;
-          if (config.adminServiceFee) setValue('adminServiceFee', parseFloat(config.adminServiceFee));
           if (config.paymentsEnabled) setValue('paymentsEnabled', config.paymentsEnabled === 'true');
-          if (config.metaPixelId) setValue('metaPixelId', config.metaPixelId);
-          if (config.googleAnalyticsId) setValue('googleAnalyticsId', config.googleAnalyticsId);
-          // 2. CARGAR EL VALOR DE T&C
-          if (config.termsAndConditionsText) setValue('termsAndConditionsText', config.termsAndConditionsText);
+
+          if (isAdmin) {
+            if (config.adminServiceFee) setValue('adminServiceFee', parseFloat(config.adminServiceFee));
+            if (config.metaPixelId) setValue('metaPixelId', config.metaPixelId);
+            if (config.googleAnalyticsId) setValue('googleAnalyticsId', config.googleAnalyticsId);
+            if (config.termsAndConditionsText) setValue('termsAndConditionsText', config.termsAndConditionsText);
+          }
+          if (isOwner) {
+            if (config.rrppCommissionRate) setValue('rrppCommissionRate', parseFloat(config.rrppCommissionRate));
+          }
         }
 
         if (profileResponse?.data.mercadoPagoAccessToken) {
           setValue('mercadoPagoAccessToken', profileResponse.data.mercadoPagoAccessToken);
         }
-
       } catch (error) {
-        console.error("Failed to load settings", error);
         toast.error("No se pudo cargar la configuración.");
       }
     };
     if (user) {
       loadSettings();
     }
-  }, [user, setValue]);
+  }, [user, setValue, isOwner, isAdmin]);
 
   const onSubmit = async (data: SettingsFormInputs) => {
     try {
       const promises = [];
       
-      if (user?.roles.includes(UserRole.ADMIN)) {
+      if (isOwner || isAdmin) {
         const configPayload = {
-          adminServiceFee: data.adminServiceFee?.toString() || '0',
           paymentsEnabled: data.paymentsEnabled?.toString(),
-          metaPixelId: data.metaPixelId,
-          googleAnalyticsId: data.googleAnalyticsId,
-          // 3. GUARDAR EL VALOR DE T&C
-          termsAndConditionsText: data.termsAndConditionsText,
+          ...(isOwner && { rrppCommissionRate: data.rrppCommissionRate?.toString() || '0' }),
+          ...(isAdmin && {
+            adminServiceFee: data.adminServiceFee?.toString() || '0',
+            metaPixelId: data.metaPixelId,
+            googleAnalyticsId: data.googleAnalyticsId,
+            termsAndConditionsText: data.termsAndConditionsText,
+          }),
         };
         promises.push(api.patch('/configuration', configPayload));
       }
@@ -102,7 +106,6 @@ export function SettingsManager() {
 
       await Promise.all(promises);
       toast.success("Configuración guardada con éxito.");
-
     } catch (error) {
       toast.error("No se pudo guardar la configuración.");
     }
@@ -111,93 +114,68 @@ export function SettingsManager() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
       
-      {user?.roles.includes(UserRole.ADMIN) && (
-        <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
-          <h2 className="text-xl font-semibold text-white">Términos y Condiciones</h2>
-          <p className="text-sm text-zinc-400 mt-1">
-            Edita el contenido de la página de Términos y Condiciones. El texto se guardará y mostrará públicamente.
-          </p>
-          <div className="mt-4">
-            <textarea
-              id="termsAndConditionsText"
-              {...register('termsAndConditionsText')}
-              rows={15}
-              className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm p-2 font-mono"
-              placeholder="Pega aquí el texto completo de los Términos y Condiciones..."
-            />
+      {/* SECCIÓN PARA DUEÑO (OWNER) */}
+      {isOwner && (
+        <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 space-y-6">
+          <h2 className="text-xl font-semibold text-white">Configuración de Dueño</h2>
+          <div>
+            <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300">Access Token de Mercado Pago (Cuenta Principal)</label>
+            <input id="mercadoPagoAccessToken" type="password" {...register('mercadoPagoAccessToken')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="APP_USR-..."/>
+            <p className="text-xs text-zinc-500 mt-1">Este token se usará para recibir el dinero de todas las ventas.</p>
+          </div>
+          <div>
+            <label htmlFor="rrppCommissionRate" className="block text-sm font-medium text-zinc-300">Comisión para RRPP (%)</label>
+            <input id="rrppCommissionRate" type="number" step="0.1" {...register('rrppCommissionRate')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="Ej: 10"/>
           </div>
         </div>
       )}
 
-      {user?.roles.includes(UserRole.ADMIN) && (
-         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
-          <h2 className="text-xl font-semibold text-white">Marketing y Seguimiento</h2>
-          <p className="text-sm text-zinc-400 mt-1">IDs para la integración con plataformas de análisis y publicidad.</p>
-          <div className="space-y-4 mt-4">
+      {/* SECCIÓN PARA ADMINISTRADOR (ADMIN) */}
+      {isAdmin && (
+        <>
+          <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+            <h2 className="text-xl font-semibold text-white">Configuración de Administrador</h2>
             <div>
-              <label htmlFor="metaPixelId" className="block text-sm font-medium text-zinc-300">Meta Pixel ID</label>
-              <input
-                id="metaPixelId"
-                type="text"
-                {...register('metaPixelId')}
-                className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm p-2"
-                placeholder="Ej: 123456789012345"
-              />
-            </div>
-            <div>
-              <label htmlFor="googleAnalyticsId" className="block text-sm font-medium text-zinc-300">Google Analytics ID</label>
-              <input
-                id="googleAnalyticsId"
-                type="text"
-                {...register('googleAnalyticsId')}
-                className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm p-2"
-                placeholder="Ej: G-XXXXXXXXXX"
-              />
+              <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300">Access Token de Mercado Pago (Comisión de Servicio)</label>
+              <input id="mercadoPagoAccessToken" type="password" {...register('mercadoPagoAccessToken')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="APP_USR-..."/>
+              <p className="text-xs text-zinc-500 mt-1">Token de la cuenta que recibirá la comisión por servicio.</p>
             </div>
           </div>
-        </div>
+          <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+            <h2 className="text-xl font-semibold text-white">Términos y Condiciones</h2>
+            <textarea id="termsAndConditionsText" {...register('termsAndConditionsText')} rows={15} className="mt-4 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2 font-mono"/>
+          </div>
+          <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+             <h2 className="text-xl font-semibold text-white">Marketing y Seguimiento</h2>
+             <div className="space-y-4 mt-4">
+               <div>
+                 <label htmlFor="metaPixelId" className="block text-sm font-medium text-zinc-300">Meta Pixel ID</label>
+                 <input id="metaPixelId" type="text" {...register('metaPixelId')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="Ej: 123456789012345"/>
+               </div>
+               <div>
+                 <label htmlFor="googleAnalyticsId" className="block text-sm font-medium text-zinc-300">Google Analytics ID</label>
+                 <input id="googleAnalyticsId" type="text" {...register('googleAnalyticsId')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="Ej: G-XXXXXXXXXX"/>
+               </div>
+             </div>
+          </div>
+        </>
       )}
 
-      {user?.roles.includes(UserRole.ADMIN) && (
+      {/* SECCIÓN COMÚN PARA AMBOS */}
+      {(isOwner || isAdmin) && (
         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Pasarela de Pagos</h2>
           <div className="flex items-center justify-between mt-4">
             <div>
               <label htmlFor="paymentsEnabled" className="block text-sm font-medium text-zinc-300">Habilitar Pagos con Mercado Pago</label>
-              <p className="text-xs text-zinc-500">Si está desactivado, todas las entradas se emitirán como gratuitas.</p>
+              <p className="text-xs text-zinc-500">Si está desactivado, todos los productos se emitirán como gratuitos.</p>
             </div>
             <label htmlFor="paymentsEnabled" className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="paymentsEnabled" className="sr-only peer" {...register('paymentsEnabled')} />
-              <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+              <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
             </label>
           </div>
         </div>
-      )}
-
-      {paymentsEnabled && (
-        <>
-          <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
-            <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago (RRPP)</h2>
-            <p className="text-sm text-zinc-400 mt-1">Pega tu Access Token de Producción para recibir pagos.</p>
-          </div>
-
-          {user?.roles.includes(UserRole.ADMIN) && (
-            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
-              <h2 className="text-xl font-semibold text-white">Configuración de Administrador</h2>
-              <div>
-              <label htmlFor="adminServiceFee" className="block text-sm font-medium text-zinc-300">Comisión por Venta (%)</label>
-               <input
-                id="adminServiceFee"
-                type="number"
-                step="0.1"
-                {...register('adminServiceFee')}
-                className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm p-2"
-                placeholder="Ej: 2.5"
-              />
-              </div>
-            </div>
-          )}
-        </>
       )}
       
       <div className="flex justify-end">

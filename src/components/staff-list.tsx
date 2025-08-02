@@ -1,12 +1,18 @@
 'use client';
 
-import { User } from "@/types/user.types";
+import { User, UserRole } from "@/types/user.types";
 import { RoleUpdater } from "./role-updater";
 
-export function StaffList({ staff, onDataChange }: { staff: User[], onDataChange: () => void }) {
+// 1. AÑADIMOS LA PROP 'viewAs'
+export function StaffList({ staff, onDataChange, viewAs = 'ADMIN' }: { staff: User[], onDataChange: () => void, viewAs?: 'ADMIN' | 'OWNER' }) {
   if (staff.length === 0) {
     return <p className="text-zinc-500 mt-4">No hay miembros del staff para mostrar.</p>
   }
+
+  // 2. FILTRAMOS LA LISTA SI LA VISTA ES DEL DUEÑO
+  const filteredStaff = viewAs === 'OWNER'
+    ? staff.filter(user => !user.roles.includes(UserRole.ADMIN))
+    : staff;
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto mt-8">
@@ -20,12 +26,14 @@ export function StaffList({ staff, onDataChange }: { staff: User[], onDataChange
           </tr>
         </thead>
         <tbody>
-          {staff.map((user) => (
+          {/* 3. USAMOS LA LISTA FILTRADA */}
+          {filteredStaff.map((user) => (
             <tr key={user.id} className="border-b border-zinc-800 last:border-b-0">
               <td className="p-4 text-zinc-300">{user.name}</td>
               <td className="p-4 text-zinc-300">{user.email}</td>
               <td className="p-4 text-zinc-300">
-                <RoleUpdater user={user} onRoleUpdated={onDataChange} />
+                {/* 4. PASAMOS LA PROP AL COMPONENTE HIJO */}
+                <RoleUpdater user={user} onRoleUpdated={onDataChange} viewAs={viewAs} />
               </td>
               <td className="p-4 text-zinc-300">
                 {new Date(user.createdAt).toLocaleDateString('es-AR')}

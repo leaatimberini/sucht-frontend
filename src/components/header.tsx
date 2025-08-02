@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '@/stores/auth-store';
 import Link from 'next/link';
-import { LogIn, Ticket, User, ChevronDown, LogOut } from 'lucide-react';
+import { LogIn, User, ChevronDown, LogOut, LayoutGrid, QrCode, BarChartHorizontal } from 'lucide-react';
 import { UserRole } from '@/types/user.types';
 import { useEffect, useState } from 'react';
 
@@ -14,6 +14,12 @@ export function Header() {
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  // 1. CREAMOS FLAGS PARA CADA ROL PARA UN CÓDIGO MÁS LIMPIO
+  const isAdmin = user?.roles.includes(UserRole.ADMIN);
+  const isOwner = user?.roles.includes(UserRole.OWNER);
+  const isRrpp = user?.roles.includes(UserRole.RRPP);
+  const isVerifier = user?.roles.includes(UserRole.VERIFIER);
 
   const toggleMenu = () => setShowMenu(!showMenu);
   const handleLogout = () => {
@@ -41,50 +47,55 @@ export function Header() {
               >
                 <User className="h-4 w-4" />
                 <span>Mi cuenta</span>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className={`h-4 w-4 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
               </button>
 
               {showMenu && (
-                <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg overflow-hidden text-white w-52 z-50 border border-zinc-700">
+                <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-56 z-50 border border-zinc-700">
+                  {/* --- 2. LÓGICA DE MENÚ REFACTORIZADA --- */}
                   <Link
                     href="/mi-cuenta"
                     onClick={() => setShowMenu(false)}
-                    className="block px-4 py-3 hover:bg-zinc-800"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"
                   >
-                    Mis Entradas
+                    <User size={16}/> Mis Entradas
                   </Link>
-                  {user.roles.includes(UserRole.RRPP) && (
+
+                  {(isAdmin || isOwner) && (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setShowMenu(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"
+                    >
+                      <LayoutGrid size={16} /> Panel de Control
+                    </Link>
+                  )}
+                  
+                  {isRrpp && (
                     <Link
                       href="/rrpp"
                       onClick={() => setShowMenu(false)}
-                      className="block px-4 py-3 hover:bg-zinc-800"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"
                     >
-                      Panel RRPP
+                       <BarChartHorizontal size={16} /> Panel RRPP
                     </Link>
                   )}
-                  {user.roles.includes(UserRole.ADMIN) && (
-                    <>
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setShowMenu(false)}
-                        className="block px-4 py-3 hover:bg-zinc-800"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        href="/verifier"
-                        onClick={() => setShowMenu(false)}
-                        className="block px-4 py-3 hover:bg-zinc-800"
-                      >
-                        Verificar Entradas
-                      </Link>
-                    </>
+
+                  {(isVerifier || isAdmin) && (
+                    <Link
+                      href="/verifier"
+                      onClick={() => setShowMenu(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"
+                    >
+                      <QrCode size={16} /> Verificar Entradas
+                    </Link>
                   )}
+
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-3 hover:bg-red-600 transition-colors"
+                    className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-red-600/80 transition-colors border-t border-zinc-700"
                   >
-                    <LogOut className="inline-block mr-2 h-4 w-4" />
+                    <LogOut size={16} />
                     Cerrar sesión
                   </button>
                 </div>
@@ -98,12 +109,6 @@ export function Header() {
               >
                 <LogIn className="h-4 w-4" />
                 <span>Ingresar</span>
-              </Link>
-              <Link
-                href="/register"
-                className="hidden sm:block hover:text-white transition-colors"
-              >
-                Crear Cuenta
               </Link>
             </>
           ) : (

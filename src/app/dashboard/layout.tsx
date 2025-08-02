@@ -14,7 +14,8 @@ import {
   Settings, 
   Bell,
   UserX,
-  Trophy // 1. ÍCONO AÑADIDO
+  Trophy,
+  CreditCard // 1. ÍCONO AÑADIDO
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -37,6 +38,13 @@ export default function DashboardLayout({
                 <Link href="/dashboard" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <LayoutGrid className="h-4 w-4" />
                   <span>Métricas</span>
+                </Link>
+              </li>
+              {/* 2. NUEVO ENLACE A LA PÁGINA DE VENTAS */}
+              <li>
+                <Link href="/dashboard/sales" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <CreditCard className="h-4 w-4" />
+                  <span>Ventas</span>
                 </Link>
               </li>
               <li>
@@ -69,7 +77,6 @@ export default function DashboardLayout({
                   <span>Ausencias</span>
                 </Link>
               </li>
-              {/* 2. NUEVO ENLACE A LA PÁGINA DE FIDELIZACIÓN */}
               <li>
                 <Link href="/dashboard/loyalty" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <Trophy className="h-4 w-4" />

@@ -6,12 +6,16 @@ import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { Check, Edit } from "lucide-react";
 
-export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated: () => void }) {
+// 1. AÑADIMOS LA PROP 'viewAs'
+export function RoleUpdater({ user, onRoleUpdated, viewAs = 'ADMIN' }: { user: User, onRoleUpdated: () => void, viewAs?: 'ADMIN' | 'OWNER' }) {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(user.roles);
   const [isLoading, setIsLoading] = useState(false);
 
-  const staffRoles = [UserRole.RRPP, UserRole.VERIFIER, UserRole.ADMIN];
+  // 2. FILTRAMOS LOS ROLES DISPONIBLES SEGÚN QUIÉN ESTÉ VIENDO
+  const availableRoles = viewAs === 'OWNER'
+    ? [UserRole.RRPP, UserRole.VERIFIER]
+    : [UserRole.RRPP, UserRole.VERIFIER, UserRole.ADMIN];
 
   const handleRoleToggle = (role: UserRole) => {
     setSelectedRoles(prev => 
@@ -22,7 +26,12 @@ export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await api.patch(`/users/${user.id}/roles`, { roles: selectedRoles });
+      // Aseguramos que el rol de cliente se mantenga si no es un admin
+      const finalRoles = selectedRoles.includes(UserRole.ADMIN) 
+        ? selectedRoles 
+        : Array.from(new Set([...selectedRoles, UserRole.CLIENT]));
+
+      await api.patch(`/users/${user.id}/roles`, { roles: finalRoles });
       toast.success(`Roles de ${user.name} actualizados.`);
       onRoleUpdated();
       setIsEditing(false);
@@ -37,9 +46,9 @@ export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated
     return (
       <div className="flex items-center space-x-2">
         <div className="flex flex-wrap gap-1">
-          {user.roles.map(role => (
-            <span key={role} className="bg-zinc-700 text-zinc-300 text-xs font-semibold px-2 py-1 rounded-full">
-              {role.toUpperCase()}
+          {user.roles.filter(r => r !== UserRole.CLIENT).map(role => (
+            <span key={role} className="bg-zinc-700 text-zinc-300 text-xs font-semibold px-2 py-1 rounded-full capitalize">
+              {role}
             </span>
           ))}
         </div>
@@ -53,7 +62,8 @@ export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated
   return (
     <div className="flex items-center space-x-2">
       <div className="flex flex-wrap gap-x-3 gap-y-1">
-        {staffRoles.map(role => (
+        {/* 3. USAMOS LA LISTA DE ROLES FILTRADA */}
+        {availableRoles.map(role => (
           <label key={role} className="flex items-center space-x-1.5 cursor-pointer text-xs">
             <input
               type="checkbox"
@@ -61,7 +71,7 @@ export function RoleUpdater({ user, onRoleUpdated }: { user: User, onRoleUpdated
               onChange={() => handleRoleToggle(role)}
               className="h-3.5 w-3.5 rounded-sm bg-zinc-700 text-pink-600 focus:ring-pink-500 border-zinc-600"
             />
-            <span>{role.toUpperCase()}</span>
+            <span className="capitalize">{role}</span>
           </label>
         ))}
       </div>

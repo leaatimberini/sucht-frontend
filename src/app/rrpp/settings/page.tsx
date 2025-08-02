@@ -1,6 +1,6 @@
 'use client';
 
-import { SettingsManager } from "@/components/settings-manager";
+import { RRPPSettingsForm } from "@/components/rrpp-settings-form"; // Importamos el nuevo componente
 
 export default function RRPPSettingsPage() {
     return (
@@ -9,10 +9,10 @@ export default function RRPPSettingsPage() {
                 Configuración de Pagos
             </h1>
             <p className="text-zinc-400 mb-8">
-                Vincula tu cuenta de Mercado Pago para recibir tus comisiones por las ventas de entradas.
+                Vincula tu cuenta de Mercado Pago para recibir tus comisiones por las ventas.
             </p>
 
-            <SettingsManager />
+            <RRPPSettingsForm /> 
         </div>
     );
 }

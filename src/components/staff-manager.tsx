@@ -6,12 +6,18 @@ import { User, UserRole } from '@/types/user.types';
 import toast from 'react-hot-toast';
 import { Search } from 'lucide-react';
 
-export function StaffManager({ onStaffChange }: { onStaffChange: () => void }) {
+// 1. Añadimos la nueva prop 'viewAs'
+export function StaffManager({ onStaffChange, viewAs = 'ADMIN' }: { onStaffChange: () => void, viewAs?: 'ADMIN' | 'OWNER' }) {
   const [searchedUser, setSearchedUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [emailToSearch, setEmailToSearch] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
   const [notFound, setNotFound] = useState(false);
+
+  // 2. Definimos los roles disponibles según la vista
+  const availableRoles = viewAs === 'OWNER'
+    ? [UserRole.RRPP, UserRole.VERIFIER]
+    : [UserRole.RRPP, UserRole.VERIFIER, UserRole.ADMIN];
 
   const handleSearch = async () => {
     if (!emailToSearch) return;
@@ -25,7 +31,6 @@ export function StaffManager({ onStaffChange }: { onStaffChange: () => void }) {
       setSearchedUser(null);
       setSelectedRoles([]);
       setNotFound(true);
-      // CORRECCIÓN: Se usan comillas simples para evitar el error de linting
       toast('Usuario no encontrado. Puedes invitarlo con los roles que selecciones.', { icon: '🧑‍🚀' });
     } finally {
       setIsLoading(false);
@@ -87,7 +92,8 @@ export function StaffManager({ onStaffChange }: { onStaffChange: () => void }) {
           <div className="mt-4 space-y-2">
             <p className="font-medium text-zinc-300">Seleccionar Roles de Staff:</p>
             <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-              {[UserRole.RRPP, UserRole.VERIFIER, UserRole.ADMIN].map(role => (
+              {/* 3. Usamos el array de roles filtrado */}
+              {availableRoles.map(role => (
                 <label key={role} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
