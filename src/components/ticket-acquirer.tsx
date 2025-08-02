@@ -8,14 +8,15 @@ import { useAuthStore } from "@/stores/auth-store";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+import { Wallet } from '@mercadopago/sdk-react'; // Eliminamos initMercadoPago
 
-const mpPublicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
-if (mpPublicKey) {
-  initMercadoPago(mpPublicKey);
-} else {
-  console.error("Mercado Pago public key is not configured.");
-}
+// ELIMINAMOS LA LÓGICA DE INICIALIZACIÓN DEL SDK DE AQUÍ
+// const mpPublicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
+// if (mpPublicKey) {
+//   initMercadoPago(mpPublicKey);
+// } else {
+//   console.error("Mercado Pago public key is not configured.");
+// }
 
 export function TicketAcquirer({ eventId }: { eventId: string }) {
   const [tiers, setTiers] = useState<TicketTier[]>([]);
@@ -65,7 +66,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
 
       const response = await api.post('/tickets/acquire', payload);
       toast.success('Producto adquirido con éxito.');
-      // CORRECCIÓN: Redirigimos al usuario después de la adquisición
       router.push('/mi-cuenta');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
@@ -170,7 +170,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
                 className="mt-1 accent-pink-600"
               />
               <label htmlFor="termsAccepted" className="text-sm text-zinc-400">
-                Acepto los <Link href="/terminos-y-condiciones" target="_blank" className="underline text-pink-500">Términos y Condiciones</Link>
+                Acepto los <Link href="/terms-and-conditions" target="_blank" className="underline text-pink-500">Términos y Condiciones</Link>
               </label>
             </div>
           )}
