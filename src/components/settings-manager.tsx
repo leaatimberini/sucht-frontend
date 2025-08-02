@@ -22,7 +22,6 @@ const settingsSchema = z.object({
 
 type SettingsFormInputs = z.infer<typeof settingsSchema>;
 
-// SE AÑADIÓ 'export' PARA QUE EL COMPONENTE PUEDA SER IMPORTADO
 export function SettingsManager() {
   const { user } = useAuthStore();
   
@@ -42,8 +41,6 @@ export function SettingsManager() {
     }
   });
   
-  const paymentsEnabled = watch('paymentsEnabled');
-
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -58,7 +55,6 @@ export function SettingsManager() {
         if (configResponse?.data) {
           const config = configResponse.data;
           if (config.paymentsEnabled) setValue('paymentsEnabled', config.paymentsEnabled === 'true');
-
           if (isAdmin) {
             if (config.adminServiceFee) setValue('adminServiceFee', parseFloat(config.adminServiceFee));
             if (config.metaPixelId) setValue('metaPixelId', config.metaPixelId);
@@ -87,16 +83,18 @@ export function SettingsManager() {
       const promises = [];
       
       if (isOwner || isAdmin) {
-        const configPayload = {
+        const configPayload: any = {
           paymentsEnabled: data.paymentsEnabled?.toString(),
-          ...(isOwner && { rrppCommissionRate: data.rrppCommissionRate?.toString() || '0' }),
-          ...(isAdmin && {
-            adminServiceFee: data.adminServiceFee?.toString() || '0',
-            metaPixelId: data.metaPixelId,
-            googleAnalyticsId: data.googleAnalyticsId,
-            termsAndConditionsText: data.termsAndConditionsText,
-          }),
         };
+        if (isOwner) {
+          configPayload.rrppCommissionRate = data.rrppCommissionRate?.toString() || '0';
+        }
+        if (isAdmin) {
+          configPayload.adminServiceFee = data.adminServiceFee?.toString() || '0';
+          configPayload.metaPixelId = data.metaPixelId;
+          configPayload.googleAnalyticsId = data.googleAnalyticsId;
+          configPayload.termsAndConditionsText = data.termsAndConditionsText;
+        }
         promises.push(api.patch('/configuration', configPayload));
       }
 
@@ -114,15 +112,32 @@ export function SettingsManager() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
       
-      {/* SECCIÓN PARA DUEÑO (OWNER) */}
-      {isOwner && (
+      {/* --- SECCIÓN DE PAGOS UNIFICADA --- */}
+      {(isOwner || isAdmin) && (
         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 space-y-6">
-          <h2 className="text-xl font-semibold text-white">Configuración de Dueño</h2>
+          <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
           <div>
-            <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300">Access Token de Mercado Pago (Cuenta Principal)</label>
-            <input id="mercadoPagoAccessToken" type="password" {...register('mercadoPagoAccessToken')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="APP_USR-..."/>
-            <p className="text-xs text-zinc-500 mt-1">Este token se usará para recibir el dinero de todas las ventas.</p>
+            <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300">
+              Access Token de Producción
+            </label>
+            <input 
+              id="mercadoPagoAccessToken" 
+              type="password" 
+              {...register('mercadoPagoAccessToken')} 
+              className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" 
+              placeholder="APP_USR-..."
+            />
+            {/* Texto descriptivo dinámico según el rol */}
+            {isOwner && <p className="text-xs text-zinc-500 mt-1">Como Dueño, este token se usará para recibir el dinero de todas las ventas.</p>}
+            {isAdmin && !isOwner && <p className="text-xs text-zinc-500 mt-1">Como Admin, este token se usará para recibir la comisión por servicio.</p>}
           </div>
+        </div>
+      )}
+
+      {/* --- SECCIONES ESPECÍFICAS DE DUEÑO (OWNER) --- */}
+      {isOwner && (
+        <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+          <h2 className="text-xl font-semibold text-white">Configuración de Comisiones</h2>
           <div>
             <label htmlFor="rrppCommissionRate" className="block text-sm font-medium text-zinc-300">Comisión para RRPP (%)</label>
             <input id="rrppCommissionRate" type="number" step="0.1" {...register('rrppCommissionRate')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="Ej: 10"/>
@@ -130,15 +145,14 @@ export function SettingsManager() {
         </div>
       )}
 
-      {/* SECCIÓN PARA ADMINISTRADOR (ADMIN) */}
+      {/* --- SECCIONES ESPECÍFICAS DE ADMINISTRADOR (ADMIN) --- */}
       {isAdmin && (
         <>
           <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
             <h2 className="text-xl font-semibold text-white">Configuración de Administrador</h2>
             <div>
-              <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300">Access Token de Mercado Pago (Comisión de Servicio)</label>
-              <input id="mercadoPagoAccessToken" type="password" {...register('mercadoPagoAccessToken')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="APP_USR-..."/>
-              <p className="text-xs text-zinc-500 mt-1">Token de la cuenta que recibirá la comisión por servicio.</p>
+              <label htmlFor="adminServiceFee" className="block text-sm font-medium text-zinc-300">Comisión por Servicio (%)</label>
+              <input id="adminServiceFee" type="number" step="0.1" {...register('adminServiceFee')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="Ej: 2.5"/>
             </div>
           </div>
           <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
@@ -161,7 +175,7 @@ export function SettingsManager() {
         </>
       )}
 
-      {/* SECCIÓN COMÚN PARA AMBOS */}
+      {/* SECCIÓN COMÚN */}
       {(isOwner || isAdmin) && (
         <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Pasarela de Pagos</h2>
