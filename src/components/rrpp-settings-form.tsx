@@ -57,7 +57,7 @@ export function RRPPSettingsForm() {
        <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
           <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
           <p className="text-sm text-zinc-400 mt-1">
-            Para recibir tus comisiones, debes vincular tu "Access Token" de producción de Mercado Pago.
+            Para recibir tus comisiones, debes vincular tu Access Token de producción de Mercado Pago.
           </p>
           <div className="mt-4">
             <label htmlFor="mercadoPagoAccessToken" className="block text-sm font-medium text-zinc-300">
