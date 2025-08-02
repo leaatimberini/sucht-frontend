@@ -6,8 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { type Ticket } from '@/types/ticket.types';
 import { DashboardFilters } from '@/components/dashboard-filters';
-import { AlertCircle } from 'lucide-react';
-// Se quita la importación de 'es' para simplificar la llamada
+import { AlertCircle, Trash2 } from 'lucide-react'; // CORRECCIÓN: Importamos el icono de basura
+import toast from 'react-hot-toast'; // CORRECCIÓN: Importamos toast
 import { formatInTimeZone } from 'date-fns-tz';
 
 interface Filters {
@@ -35,11 +35,24 @@ export default function SalesHistoryPage() {
     }
   }, []);
 
+  // NUEVA FUNCIÓN: Para manejar la eliminación de tickets
+  const handleDeleteTicket = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
+      try {
+        await api.delete(`/tickets/${id}`);
+        toast.success('Ticket eliminado con éxito.');
+        fetchHistory(filters); // Volvemos a cargar los datos
+      } catch (error) {
+        toast.error('Error al eliminar el ticket.');
+        console.error(error);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchHistory(filters);
   }, [fetchHistory, filters]);
 
-  // Función para formatear la fecha a la zona horaria local de Buenos Aires
   const formatDateTimeToBuenosAires = (dateString: string) => {
     if (!dateString) return '';
     return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
@@ -75,14 +88,13 @@ export default function SalesHistoryPage() {
                 <th className="p-4 text-sm font-semibold text-white">Pagado</th>
                 <th className="p-4 text-sm font-semibold text-white">Estado</th>
                 <th className="p-4 text-sm font-semibold text-white">RRPP</th>
-                <th className="p-4 text-sm font-semibold text-white">Acciones</th>
+                <th className="p-4 text-sm font-semibold text-white">Acciones</th> {/* CORRECCIÓN: Añadimos el encabezado */}
               </tr>
             </thead>
             <tbody>
               {history.map((ticket) => (
                 <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 transition-colors">
                   <td className="p-4 text-zinc-400 text-sm">
-                    {/* CORRECCIÓN: Usamos la función auxiliar para formatear la fecha */}
                     {formatDateTimeToBuenosAires(ticket.createdAt)}hs
                   </td>
                   <td className="p-4">
@@ -109,7 +121,9 @@ export default function SalesHistoryPage() {
                     {ticket.promoter ? `@${ticket.promoter.username}` : 'N/A'}
                   </td>
                   <td className="p-4">
-                    <button>
+                    {/* CORRECCIÓN: Renderizamos el botón de eliminar */}
+                    <button onClick={() => handleDeleteTicket(ticket.id)} className="text-red-500 hover:text-red-400">
+                      <Trash2 className="h-5 w-5" />
                     </button>
                   </td>
                 </tr>
