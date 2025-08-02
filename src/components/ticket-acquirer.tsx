@@ -65,6 +65,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
 
       const response = await api.post('/tickets/acquire', payload);
       toast.success('Producto adquirido con éxito.');
+      // CORRECCIÓN: Redirigimos al usuario después de la adquisición
       router.push('/mi-cuenta');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
@@ -87,7 +88,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
 
       const response = await api.post('/payments/create-preference', payload);
       setPreferenceId(response.data.preferenceId);
-
     } catch (error: any) {
       toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
     } finally {
@@ -185,7 +185,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
         </>
       ) : (
         <div id="wallet_container">
-          {/* CORRECCIÓN: Se elimina la propiedad 'customization' */}
           <Wallet initialization={{ preferenceId: preferenceId }} />
         </div>
       )}
