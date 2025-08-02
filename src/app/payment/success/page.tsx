@@ -1,71 +1,53 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import api from '@/lib/axios';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, Loader, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import toast from 'react-hot-toast'; // <-- IMPORTACIÓN AÑADIDA
+import toast from 'react-hot-toast';
 
 function SuccessContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
-    const finalizePurchase = async () => {
-      // Obtenemos los datos que nos envía Mercado Pago en la URL
-      const paymentId = searchParams.get('payment_id');
-      const status = searchParams.get('status');
-      const externalReference = searchParams.get('external_reference');
+    // Obtenemos los parámetros de la URL
+    const status = searchParams.get('status');
 
-      if (paymentId && status === 'approved' && externalReference) {
-        try {
-          // Enviamos los datos al backend para que cree el ticket
-          await api.post('/payments/finalize-purchase', {
-            externalReference,
-          });
-          // Si todo sale bien, redirigimos al usuario a su cuenta para ver la entrada
-          toast.success("¡Compra exitosa! Redirigiendo a tus entradas...");
-          router.push('/mi-cuenta');
-        } catch (err) {
-          setError('Hubo un error al registrar tu entrada. Por favor, contacta a soporte.');
-          setIsLoading(false);
-        }
-      } else {
-        setError('Información de pago inválida o rechazada.');
-        setIsLoading(false);
-      }
-    };
-
-    finalizePurchase();
+    if (status === 'approved') {
+      // No hacemos ninguna llamada al backend desde aquí por seguridad.
+      // La confirmación del ticket la gestiona el webhook de Mercado Pago.
+      // Simplemente mostramos un mensaje de éxito.
+      setIsProcessing(false);
+      toast.success("¡Pago aprobado! El ticket se está generando.");
+    } else {
+      // Aunque estemos en la página de éxito, si el status no es 'approved',
+      // redirigimos a la página de fallo.
+      router.push('/payment/failure');
+    }
   }, [searchParams, router]);
 
-  if (isLoading) {
+  if (isProcessing) {
     return (
       <div className="text-center">
         <Loader className="h-12 w-12 text-pink-500 animate-spin mx-auto" />
-        <p className="mt-4 text-zinc-300">Procesando tu compra, por favor espera...</p>
+        <p className="mt-4 text-zinc-300">Tu pago ha sido aprobado. Procesando la compra, por favor espera...</p>
         <p className="text-xs text-zinc-500 mt-2">No cierres esta ventana.</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center">
-        <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-red-500">Error en la Compra</h2>
-        <p className="mt-2 text-zinc-400">{error}</p>
-         <Link href="/eventos" className="mt-6 inline-block bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg">
-            Volver a Eventos
-        </Link>
-      </div>
-    );
-  }
-
-  return null; // El usuario será redirigido si todo es exitoso
+  return (
+    <div className="text-center">
+      <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+      <h2 className="text-2xl font-bold text-white">¡Compra Exitosa!</h2>
+      <p className="mt-2 text-zinc-400">Tu ticket se está generando. Puedes verlo en tu panel de control.</p>
+      <Link href="/mi-cuenta" className="mt-6 inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg">
+        Ver mis entradas
+      </Link>
+    </div>
+  );
 }
 
 export default function PaymentSuccessPage() {

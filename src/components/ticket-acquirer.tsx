@@ -1,15 +1,16 @@
+// frontend/src/components/ticket-acquirer.tsx
 'use client';
 
 import { useEffect, useState, useMemo } from "react";
 import api from "@/lib/axios";
-import { TicketTier, ProductType } from "@/types/ticket.types"; // Asumiendo que ProductType está en tus tipos
+import { TicketTier, ProductType } from "@/types/ticket.types";
 import { useAuthStore } from "@/stores/auth-store";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
-const mpPublicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+const mpPublicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
 if (mpPublicKey) {
   initMercadoPago(mpPublicKey);
 } else {
@@ -23,65 +24,98 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full'); // 1. NUEVO ESTADO PARA EL TIPO DE PAGO
+  const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
+  
+  const [termsAndConditionsText, setTermsAndConditionsText] = useState<string | null>(null);
+
   const isLoggedIn = useAuthStore(state => state.isLoggedIn);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const fetchTiers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get(`/events/${eventId}/ticket-tiers`);
-        setTiers(response.data);
-      } catch (error) { console.error("Failed to fetch tiers", error); }
+        const [tiersRes, configRes] = await Promise.all([
+          api.get(`/events/${eventId}/ticket-tiers`),
+          api.get('/configuration')
+        ]);
+        setTiers(tiersRes.data);
+        if (configRes.data.termsAndConditionsText) {
+          setTermsAndConditionsText(configRes.data.termsAndConditionsText);
+        }
+      } catch (error) { console.error("Failed to fetch data", error); }
     };
-    fetchTiers();
+    fetchData();
   }, [eventId]);
 
-  // 2. HELPER PARA ENCONTRAR EL TIER SELECCIONADO
   const selectedTier = useMemo(() => {
     return tiers.find(tier => tier.id === selectedTierId);
   }, [selectedTierId, tiers]);
 
-  const handleAcquire = async () => {
-    if (!isLoggedIn()) {
-      toast.error("Debes iniciar sesión.");
-      router.push('/login');
-      return;
-    }
-    if (!selectedTierId) {
-      toast.error("Por favor, selecciona un tipo de entrada.");
-      return;
-    }
-
+  const handleAcquireFree = async () => {
     setIsLoading(true);
     try {
       const promoterUsername = searchParams.get('promoter');
-      // 3. PAYLOAD ACTUALIZADO CON EL TIPO DE PAGO
       const payload = {
         eventId,
         ticketTierId: selectedTierId,
         quantity,
         promoterUsername,
-        paymentType, // Se envía 'full' o 'partial'
       };
 
-      const response = await api.post('/payments/create-preference', payload);
-      
-      if (response.data.type === 'free') {
-        toast.success(response.data.message);
-        router.push('/mi-cuenta');
-      } else {
-        setPreferenceId(response.data.preferenceId);
-      }
+      const response = await api.post('/tickets/acquire', payload);
+      toast.success('Producto adquirido con éxito.');
+      router.push('/mi-cuenta');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
     } finally {
       setIsLoading(false);
     }
   };
-  
-  // ... (código para usuario no logueado y sin tiers no cambia)
+
+  const handleAcquirePaid = async () => {
+    setIsLoading(true);
+    try {
+      const promoterUsername = searchParams.get('promoter');
+      const payload = {
+        eventId,
+        ticketTierId: selectedTierId,
+        quantity,
+        promoterUsername,
+        paymentType,
+      };
+
+      const response = await api.post('/payments/create-preference', payload);
+      setPreferenceId(response.data.preferenceId);
+
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isFree = selectedTier?.price === 0;
+
+  if (!isLoggedIn()) {
+    return (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 text-center space-y-4">
+        <h3 className="text-xl font-semibold text-white">Obtener Entradas</h3>
+        <p className="text-zinc-400">Debes iniciar sesión para obtener entradas.</p>
+        <Link href="/login" className="w-full inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg">
+          Iniciar Sesión
+        </Link>
+      </div>
+    );
+  }
+
+  if (tiers.length === 0) {
+    return (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 text-center text-zinc-400">
+        No hay entradas disponibles para este evento.
+      </div>
+    );
+  }
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-4">
@@ -91,13 +125,12 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
         <>
           <div>
             <label htmlFor="ticket-tier" className="block text-sm font-medium text-zinc-300 mb-1">Producto</label>
-            <select id="ticket-tier" value={selectedTierId} onChange={(e) => setSelectedTierId(e.target.value)} className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700">
+            <select id="ticket-tier" value={selectedTierId} onChange={(e) => { setSelectedTierId(e.target.value); setPaymentType('full'); }} className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700">
               <option value="">Selecciona una opción...</option>
               {tiers.map(tier => (<option key={tier.id} value={tier.id}>{tier.name} - ${tier.price}</option>))}
             </select>
           </div>
           
-          {/* Ocultamos cantidad para Mesas VIP, asumimos que siempre es 1 */}
           {selectedTier?.productType !== ProductType.VIP_TABLE && (
             <div>
               <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
@@ -105,7 +138,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
             </div>
           )}
 
-          {/* 4. NUEVA UI CONDICIONAL PARA OPCIONES DE PAGO */}
           {selectedTier && selectedTier.allowPartialPayment && (
             <div className="pt-2">
               <label className="block text-sm font-medium text-zinc-300 mb-2">Opción de Pago</label>
@@ -127,22 +159,34 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
               </div>
             </div>
           )}
-
-          <div className="flex items-start space-x-2 pt-2">
-            {/* ... (checkbox de T&C sin cambios) ... */}
-          </div>
-
+          
+          {termsAndConditionsText && (
+            <div className="flex items-start space-x-2 pt-2">
+              <input
+                type="checkbox"
+                id="termsAccepted"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-1 accent-pink-600"
+              />
+              <label htmlFor="termsAccepted" className="text-sm text-zinc-400">
+                Acepto los <Link href="/terminos-y-condiciones" target="_blank" className="underline text-pink-500">Términos y Condiciones</Link>
+              </label>
+            </div>
+          )}
+          
           <button 
-            onClick={handleAcquire} 
+            onClick={isFree ? handleAcquireFree : handleAcquirePaid}
             disabled={isLoading || !acceptedTerms || !selectedTierId} 
             className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Procesando...' : 'Continuar'}
+            {isLoading ? 'Procesando...' : (isFree ? 'Obtener gratis' : 'Pagar')}
           </button>
         </>
       ) : (
         <div id="wallet_container">
-          {/* ... (código de Mercado Pago Wallet sin cambios) ... */}
+          {/* CORRECCIÓN: Se elimina la propiedad 'customization' */}
+          <Wallet initialization={{ preferenceId: preferenceId }} />
         </div>
       )}
     </div>
