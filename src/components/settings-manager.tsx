@@ -3,12 +3,11 @@
 import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/types/user.types";
 
-// Importamos los nuevos formularios
+// Importamos los nuevos formularios granulares
 import { OwnerSettingsForm } from "./forms/owner-settings-form";
 import { AdminSettingsForm } from "./forms/admin-settings-form";
-// Suponiendo que creamos también los otros formularios
-// import { MarketingForm } from "./forms/marketing-form";
-// import { TermsAndConditionsForm } from "./forms/tc-form";
+import { TermsAndConditionsForm } from "./forms/terms-and-conditions-form";
+import { MarketingForm } from "./forms/marketing-form";
 
 export function SettingsManager() {
   const { user } = useAuthStore();
@@ -16,16 +15,17 @@ export function SettingsManager() {
   const isOwner = user?.roles.includes(UserRole.OWNER);
   const isAdmin = user?.roles.includes(UserRole.ADMIN);
 
-  // NOTA: Un usuario puede ser AMBOS, en cuyo caso verá todos los paneles.
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-2xl">
+      {/* Formularios que ve el Dueño */}
       {isOwner && <OwnerSettingsForm />}
+
+      {/* Formularios que ve el Admin */}
       {isAdmin && (
         <>
           <AdminSettingsForm />
-          {/* Aquí irían los otros formularios de Admin */}
-          {/* <TermsAndConditionsForm /> */}
-          {/* <MarketingForm /> */}
+          <TermsAndConditionsForm />
+          <MarketingForm />
         </>
       )}
     </div>
