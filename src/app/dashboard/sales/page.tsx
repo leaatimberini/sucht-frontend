@@ -75,6 +75,7 @@ export default function SalesHistoryPage() {
                 <th className="p-4 text-sm font-semibold text-white">Pagado</th>
                 <th className="p-4 text-sm font-semibold text-white">Estado</th>
                 <th className="p-4 text-sm font-semibold text-white">RRPP</th>
+                <th className="p-4 text-sm font-semibold text-white">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -106,6 +107,10 @@ export default function SalesHistoryPage() {
                   </td>
                   <td className="p-4 text-zinc-300">
                     {ticket.promoter ? `@${ticket.promoter.username}` : 'N/A'}
+                  </td>
+                  <td className="p-4">
+                    <button>
+                    </button>
                   </td>
                 </tr>
               ))}
