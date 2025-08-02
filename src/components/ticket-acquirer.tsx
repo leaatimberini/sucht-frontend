@@ -8,15 +8,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Wallet } from '@mercadopago/sdk-react'; // Eliminamos initMercadoPago
-
-// ELIMINAMOS LA LÓGICA DE INICIALIZACIÓN DEL SDK DE AQUÍ
-// const mpPublicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
-// if (mpPublicKey) {
-//   initMercadoPago(mpPublicKey);
-// } else {
-//   console.error("Mercado Pago public key is not configured.");
-// }
+import { Wallet } from '@mercadopago/sdk-react';
 
 export function TicketAcquirer({ eventId }: { eventId: string }) {
   const [tiers, setTiers] = useState<TicketTier[]>([]);
@@ -54,6 +46,10 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   }, [selectedTierId, tiers]);
 
   const handleAcquireFree = async () => {
+    if (quantity <= 0) { // CORRECCIÓN: Validamos que la cantidad sea mayor a 0
+      toast.error("La cantidad debe ser mayor a cero.");
+      return;
+    }
     setIsLoading(true);
     try {
       const promoterUsername = searchParams.get('promoter');
@@ -64,7 +60,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
         promoterUsername,
       };
 
-      const response = await api.post('/tickets/acquire', payload);
+      await api.post('/tickets/acquire', payload);
       toast.success('Producto adquirido con éxito.');
       router.push('/mi-cuenta');
     } catch (error: any) {
@@ -75,6 +71,10 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   };
 
   const handleAcquirePaid = async () => {
+    if (quantity <= 0) { // CORRECCIÓN: Validamos que la cantidad sea mayor a 0
+      toast.error("La cantidad debe ser mayor a cero.");
+      return;
+    }
     setIsLoading(true);
     try {
       const promoterUsername = searchParams.get('promoter');
@@ -134,7 +134,14 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
           {selectedTier?.productType !== ProductType.VIP_TABLE && (
             <div>
               <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad</label>
-              <input id="quantity" type="number" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700"/>
+              <input 
+                id="quantity" 
+                type="number" 
+                min="1" 
+                value={quantity} 
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700"
+              />
             </div>
           )}
 
