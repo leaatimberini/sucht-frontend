@@ -1,4 +1,6 @@
+// frontend/src/app/dashboard/settings/forms/terms-and-conditions-form.tsx
 'use client';
+
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,18 +8,26 @@ import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 
+// --- CORRECCIÓN CRÍTICA EN EL ESQUEMA ---
 const schema = z.object({
-  termsAndConditionsText: z.string().trim().optional(),
+  termsAndConditionsText: z.string().trim().min(1, 'El texto no puede estar vacío.'),
 });
 type FormInputs = z.infer<typeof schema>;
 
 export function TermsAndConditionsForm() {
-    const { register, handleSubmit, setValue, formState: { isSubmitting } } = useForm<FormInputs>({ resolver: zodResolver(schema) });
+    const { register, handleSubmit, setValue, formState: { isSubmitting, errors } } = useForm<FormInputs>({ resolver: zodResolver(schema) });
 
     useEffect(() => {
         const loadData = async () => {
-            const res = await api.get('/configuration');
-            if (res.data.termsAndConditionsText) setValue('termsAndConditionsText', res.data.termsAndConditionsText);
+            try {
+                const res = await api.get('/configuration');
+                if (res.data.termsAndConditionsText) {
+                    setValue('termsAndConditionsText', res.data.termsAndConditionsText);
+                }
+            } catch (error) {
+                console.error("Failed to load terms and conditions data", error);
+                toast.error("Error al cargar los Términos y Condiciones.");
+            }
         };
         loadData();
     }, [setValue]);
@@ -27,6 +37,7 @@ export function TermsAndConditionsForm() {
             await api.patch('/configuration', { termsAndConditionsText: data.termsAndConditionsText });
             toast.success('Términos y Condiciones actualizados.');
         } catch (error) {
+            console.error("Failed to save terms and conditions", error);
             toast.error('No se pudo guardar el texto.');
         }
     };
@@ -40,6 +51,7 @@ export function TermsAndConditionsForm() {
               rows={15}
               className="block w-full bg-zinc-800 border-zinc-700 rounded-md p-2 font-mono"
             />
+            {errors.termsAndConditionsText && <p className="text-red-500 text-sm mt-1">{errors.termsAndConditionsText.message}</p>}
             <div className="flex justify-end">
                 <button type="submit" disabled={isSubmitting} className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">
                     {isSubmitting ? 'Guardando...' : 'Guardar Términos'}

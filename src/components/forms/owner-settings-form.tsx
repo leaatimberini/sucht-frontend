@@ -1,3 +1,4 @@
+// frontend/src/app/dashboard/settings/forms/owner-settings-form.tsx
 'use client';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 import Link from 'next/link';
 
+// 1. Esquema de Zod corregido para recibir boolean y number
 const schema = z.object({
   mercadoPagoAccessToken: z.string().optional().default(''),
   rrppCommissionRate: z.coerce.number().min(0).max(100).optional(),
@@ -19,29 +21,44 @@ export function OwnerSettingsForm() {
 
   useEffect(() => {
     const loadData = async () => {
-      const [configRes, profileRes] = await Promise.all([api.get('/configuration'), api.get('/users/profile/me')]);
-      if (configRes.data.rrppCommissionRate) setValue('rrppCommissionRate', parseFloat(configRes.data.rrppCommissionRate));
-      if (configRes.data.paymentsEnabled) setValue('paymentsEnabled', configRes.data.paymentsEnabled === 'true');
-      if (profileRes.data.mercadoPagoAccessToken) setValue('mercadoPagoAccessToken', profileRes.data.mercadoPagoAccessToken);
+      try {
+        const [configRes, profileRes] = await Promise.all([api.get('/configuration'), api.get('/users/profile/me')]);
+        
+        // 2. Lógica de carga de datos revisada
+        if (configRes.data.rrppCommissionRate) setValue('rrppCommissionRate', parseFloat(configRes.data.rrppCommissionRate));
+        if (configRes.data.paymentsEnabled) setValue('paymentsEnabled', configRes.data.paymentsEnabled === 'true');
+        
+        // 3. Corrección del nombre de la propiedad
+        if (profileRes.data.mpAccessToken) setValue('mercadoPagoAccessToken', profileRes.data.mpAccessToken);
+
+      } catch (error) {
+        console.error("Failed to load initial data", error);
+        toast.error("Error al cargar la configuración inicial.");
+      }
     };
     loadData();
   }, [setValue]);
 
   const onSubmit = async (data: FormInputs) => {
     try {
+      // 4. Corrección CRÍTICA: Enviar los datos en su tipo nativo
       const configPayload = {
-        rrppCommissionRate: data.rrppCommissionRate?.toString() || '0',
-        paymentsEnabled: data.paymentsEnabled?.toString(),
+        rrppCommissionRate: data.rrppCommissionRate,
+        paymentsEnabled: data.paymentsEnabled,
       };
+      
       const profilePayload = {
-        mercadoPagoAccessToken: data.mercadoPagoAccessToken,
+        mpAccessToken: data.mercadoPagoAccessToken, // 5. Corrección del nombre de la propiedad
       };
+      
       await Promise.all([
         api.patch('/configuration', configPayload),
         api.patch('/users/profile/me', profilePayload)
       ]);
+      
       toast.success('Configuración de Dueño guardada.');
     } catch (error) {
+      console.error("Failed to save settings", error);
       toast.error('No se pudo guardar la configuración.');
     }
   };
@@ -58,7 +75,7 @@ export function OwnerSettingsForm() {
         <label htmlFor="rrppCommissionRate" className="block text-sm font-medium text-zinc-300">Comisión para RRPP (%)</label>
         <input id="rrppCommissionRate" type="number" step="0.1" {...register('rrppCommissionRate')} className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2" placeholder="Ej: 10"/>
       </div>
-       <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <label htmlFor="paymentsEnabled" className="block text-sm font-medium text-zinc-300">Habilitar Pagos</label>
           <p className="text-xs text-zinc-500">Si está desactivado, todos los productos se emitirán como gratuitos.</p>
