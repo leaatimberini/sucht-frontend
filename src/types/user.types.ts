@@ -20,8 +20,11 @@ export interface User {
   whatsappNumber?: string;
   dateOfBirth?: Date;
   
-  // CORRECCIÓN: Añadimos las nuevas propiedades de Mercado Pago
   mpAccessToken?: string;
   mpUserId?: string;
   rrppCommissionRate?: number;
+
+  // CORRECCIÓN: Añadimos las nuevas propiedades de fecha
+  createdAt: Date;
+  updatedAt: Date;
 }
