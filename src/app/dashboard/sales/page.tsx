@@ -6,8 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { type Ticket } from '@/types/ticket.types';
 import { DashboardFilters } from '@/components/dashboard-filters';
-import { AlertCircle, Trash2 } from 'lucide-react'; // CORRECCIÓN: Importamos el icono de basura
-import toast from 'react-hot-toast'; // CORRECCIÓN: Importamos toast
+import { AlertCircle, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 
 interface Filters {
@@ -35,7 +35,6 @@ export default function SalesHistoryPage() {
     }
   }, []);
 
-  // NUEVA FUNCIÓN: Para manejar la eliminación de tickets
   const handleDeleteTicket = async (id: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
       try {
@@ -53,6 +52,7 @@ export default function SalesHistoryPage() {
     fetchHistory(filters);
   }, [fetchHistory, filters]);
 
+  // Función para formatear la fecha a la zona horaria local de Buenos Aires
   const formatDateTimeToBuenosAires = (dateString: string) => {
     if (!dateString) return '';
     return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
@@ -88,7 +88,7 @@ export default function SalesHistoryPage() {
                 <th className="p-4 text-sm font-semibold text-white">Pagado</th>
                 <th className="p-4 text-sm font-semibold text-white">Estado</th>
                 <th className="p-4 text-sm font-semibold text-white">RRPP</th>
-                <th className="p-4 text-sm font-semibold text-white">Acciones</th> {/* CORRECCIÓN: Añadimos el encabezado */}
+                <th className="p-4 text-sm font-semibold text-white">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -121,7 +121,6 @@ export default function SalesHistoryPage() {
                     {ticket.promoter ? `@${ticket.promoter.username}` : 'N/A'}
                   </td>
                   <td className="p-4">
-                    {/* CORRECCIÓN: Renderizamos el botón de eliminar */}
                     <button onClick={() => handleDeleteTicket(ticket.id)} className="text-red-500 hover:text-red-400">
                       <Trash2 className="h-5 w-5" />
                     </button>
