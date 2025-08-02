@@ -9,20 +9,29 @@ import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { UploadCloud } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const profileSchema = z.object({
   name: z.string().min(3, { message: 'El nombre es requerido.' }),
   username: z.string().min(3, { message: 'El nombre de usuario es requerido.' }).regex(/^[a-zA-Z0-9_.]+$/, { message: 'Solo letras, números, _ o .' }),
-  instagramHandle: z.string().optional(),
-  whatsappNumber: z.string().optional(),
-  dateOfBirth: z.string().min(1, { message: 'La fecha de nacimiento es requerida.' }),
+  instagramHandle: z.string().optional().nullable(),
+  whatsappNumber: z.string().optional().nullable(),
+  dateOfBirth: z.string().min(1, { message: 'La fecha de nacimiento es requerida.' }).optional().nullable(),
 });
 
 type ProfileFormInputs = z.infer<typeof profileSchema>;
 
+// Función auxiliar para formatear la fecha a YYYY-MM-DD
+const formatDateToInput = (date?: Date | string | null): string => {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toISOString().split('T')[0];
+};
+
 export function EditProfileForm({ user }: { user: User }) {
-  const [preview, setPreview] = useState<string | null>(user.profileImageUrl);
+  const [preview, setPreview] = useState<string | null>(user.profileImageUrl ?? null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const router = useRouter();
 
   const {
     register,
@@ -35,7 +44,8 @@ export function EditProfileForm({ user }: { user: User }) {
       username: user.username || '',
       instagramHandle: user.instagramHandle || '',
       whatsappNumber: user.whatsappNumber || '',
-      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : '',
+      // CORRECCIÓN: Usamos la función auxiliar para formatear la fecha
+      dateOfBirth: formatDateToInput(user.dateOfBirth),
     },
   });
 
@@ -50,11 +60,11 @@ export function EditProfileForm({ user }: { user: User }) {
   const onSubmit = async (data: ProfileFormInputs) => {
     const formData = new FormData();
     
-    formData.append('name', data.name);
-    formData.append('username', data.username);
-    formData.append('instagramHandle', data.instagramHandle || '');
-    formData.append('whatsappNumber', data.whatsappNumber || '');
-    formData.append('dateOfBirth', data.dateOfBirth);
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value.toString());
+      }
+    });
     
     if (selectedFile) {
       formData.append('profileImage', selectedFile);
@@ -68,6 +78,7 @@ export function EditProfileForm({ user }: { user: User }) {
       if (response.data.profileImageUrl) {
         setPreview(response.data.profileImageUrl);
       }
+      router.refresh();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'No se pudo actualizar el perfil.');
     }
@@ -94,7 +105,7 @@ export function EditProfileForm({ user }: { user: User }) {
         <input {...register('name')} id="name" className="w-full bg-zinc-800 rounded-md p-2"/>
         {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
       </div>
-       <div>
+      <div>
         <label htmlFor="username" className="block text-sm font-medium text-zinc-300 mb-1">Nombre de Usuario (para tu link)</label>
         <input {...register('username')} id="username" className="w-full bg-zinc-800 rounded-md p-2"/>
         {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username.message}</p>}
