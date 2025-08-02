@@ -1,122 +1,103 @@
 // frontend/src/app/rrpp/settings/rrpp-settings-form.tsx
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-import Link from 'next/link';
-
-// 1. Esquema de validación para los campos del RRPP
-const rrppSettingsSchema = z.object({
-  mpAccessToken: z.string().optional().default(''),
-  mpUserId: z.string().optional().default(''), // NUEVO: Campo para el ID de usuario de Mercado Pago
-});
-
-type RRPPSettingsFormInputs = z.infer<typeof rrppSettingsSchema>;
+import { useSearchParams } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth-store';
+import { User } from '@/types/user.types';
+import { CheckCircle, Loader } from 'lucide-react';
 
 export function RRPPSettingsForm() {
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { isSubmitting, errors },
-  } = useForm({
-    resolver: zodResolver(rrppSettingsSchema),
-  });
+  const [isLinked, setIsLinked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const { user } = useAuthStore();
+  const [rrppCommissionRate, setRrppCommissionRate] = useState<number | null>(null);
 
-  // Al cargar el componente, obtenemos el token y el ID del usuario
   useEffect(() => {
-    const fetchProfile = async () => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success) {
+      toast.success('¡Tu cuenta de Mercado Pago fue vinculada con éxito!');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('success');
+      window.history.replaceState({}, document.title, url.toString());
+    } else if (error) {
+      toast.error('No se pudo vincular la cuenta. Por favor, inténtalo de nuevo.');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, document.title, url.toString());
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const checkStatus = async () => {
       try {
         const response = await api.get('/users/profile/me');
-        // 2. CORRECCIÓN: Usamos el nombre de propiedad 'mpAccessToken'
-        if (response.data.mpAccessToken) {
-          setValue('mpAccessToken', response.data.mpAccessToken);
-        }
-        // NUEVO: Obtenemos el mpUserId del perfil
-        if (response.data.mpUserId) {
-          setValue('mpUserId', response.data.mpUserId);
-        }
+        const userData: User = response.data;
+        setIsLinked(!!userData.mpAccessToken && !!userData.mpUserId);
+
+        // CORRECCIÓN: Asignamos null si el valor es undefined
+        setRrppCommissionRate(userData.rrppCommissionRate ?? null);
       } catch (error) {
         toast.error('No se pudo cargar tu configuración actual.');
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchProfile();
-  }, [setValue]);
+    checkStatus();
+  }, [user]);
 
-  // Al enviar el formulario, actualizamos el perfil
-  const onSubmit = async (data: RRPPSettingsFormInputs) => {
+  const handleConnect = async () => {
     try {
-      // 3. CORRECCIÓN: Enviamos los datos con los nombres de propiedad correctos
-      await api.patch('/users/profile/me', {
-        mpAccessToken: data.mpAccessToken,
-        mpUserId: data.mpUserId, // NUEVO: Enviamos el mpUserId
-      });
-      toast.success('¡Tu cuenta de Mercado Pago fue vinculada con éxito!');
+      const response = await api.get('/payments/connect/mercadopago');
+      window.location.href = response.data;
     } catch (error) {
-      toast.error('No se pudo vincular la cuenta. Verifica tus credenciales.');
+      toast.error('Error al generar el enlace de conexión.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-6">
       <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
         <h2 className="text-xl font-semibold text-white">Vincular Mercado Pago</h2>
         <p className="text-sm text-zinc-400 mt-1">
-          Para recibir tus comisiones, debes vincular tu Access Token y tu ID de usuario de producción de Mercado Pago.
+          Para recibir tus comisiones, debes vincular tu cuenta de Mercado Pago con la aplicación.
         </p>
-        <div className="mt-4">
-          <label htmlFor="mpAccessToken" className="block text-sm font-medium text-zinc-300">
-            Access Token de Producción
-          </label>
-          <input
-            id="mpAccessToken"
-            type="password"
-            {...register('mpAccessToken')}
-            className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2 font-mono"
-            placeholder="APP_USR-..."
-          />
-          {errors.mpAccessToken && <p className="text-xs text-red-500 mt-1">{errors.mpAccessToken.message}</p>}
-          <p className="text-xs text-zinc-500 mt-2">
-            Puedes encontrar tu Access Token en la sección{' '}
-            <Link href="https://www.mercadopago.com.ar/developers/panel/credentials" target="_blank" rel="noopener noreferrer" className="underline hover:text-pink-500">
-              Credenciales
-            </Link>
-            {' '}de tu cuenta de Mercado Pago.
-          </p>
-        </div>
 
-        {/* NUEVO: Campo para el ID de usuario */}
-        <div className="mt-4">
-          <label htmlFor="mpUserId" className="block text-sm font-medium text-zinc-300">
-            ID de Usuario de Producción
-          </label>
-          <input
-            id="mpUserId"
-            type="text"
-            {...register('mpUserId')}
-            className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2 font-mono"
-            placeholder="Ej: 123456789"
-          />
-          {errors.mpUserId && <p className="text-xs text-red-500 mt-1">{errors.mpUserId.message}</p>}
-          <p className="text-xs text-zinc-500 mt-2">
-            Tu ID de usuario se encuentra en la URL de tu panel de Mercado Pago después de iniciar sesión.
-          </p>
-        </div>
+        {isLoading ? (
+          <div className="flex items-center space-x-2 mt-4 text-zinc-500">
+            <Loader className="h-4 w-4 animate-spin" />
+            <p>Cargando estado...</p>
+          </div>
+        ) : isLinked ? (
+          <div className="mt-4 flex items-center space-x-2 text-green-500">
+            <CheckCircle className="h-6 w-6" />
+            <p className="font-semibold">Cuenta de Mercado Pago vinculada.</p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleConnect}
+            className="mt-4 bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
+          >
+            Vincular mi cuenta de Mercado Pago
+          </button>
+        )}
       </div>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
-        >
-          {isSubmitting ? 'Guardando...' : 'Guardar Configuración'}
-        </button>
+      <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+        <h2 className="text-xl font-semibold text-white">Mi Comisión</h2>
+        <p className="text-sm text-zinc-400 mt-1">
+          Tu tasa de comisión por ventas es del{' '}
+          <span className="font-bold text-pink-500">
+            {rrppCommissionRate !== null ? `${rrppCommissionRate}%` : 'Cargando...'}
+          </span>
+        </p>
       </div>
-    </form>
+    </div>
   );
 }
