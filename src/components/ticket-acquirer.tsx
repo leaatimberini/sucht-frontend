@@ -197,4 +197,5 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
       )}
     </div>
   );
+  
 }
