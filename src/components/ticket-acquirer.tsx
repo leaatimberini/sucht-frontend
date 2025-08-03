@@ -18,7 +18,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
-  
   const [termsAndConditionsText, setTermsAndConditionsText] = useState<string | null>(null);
 
   const isLoggedIn = useAuthStore(state => state.isLoggedIn);
@@ -46,7 +45,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   }, [selectedTierId, tiers]);
 
   const handleAcquireFree = async () => {
-    if (quantity <= 0) { // CORRECCIÓN: Validamos que la cantidad sea mayor a 0
+    if (quantity <= 0) {
       toast.error("La cantidad debe ser mayor a cero.");
       return;
     }
@@ -71,7 +70,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   };
 
   const handleAcquirePaid = async () => {
-    if (quantity <= 0) { // CORRECCIÓN: Validamos que la cantidad sea mayor a 0
+    if (quantity <= 0) {
       toast.error("La cantidad debe ser mayor a cero.");
       return;
     }
@@ -139,7 +138,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
                 type="number" 
                 min="1" 
                 value={quantity} 
-                onChange={(e) => setQuantity(Number(e.target.value))}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
                 className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700"
               />
             </div>
