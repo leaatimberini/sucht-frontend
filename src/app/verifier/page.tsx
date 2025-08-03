@@ -1,3 +1,4 @@
+// frontend/src/app/verifier/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -37,7 +38,8 @@ export default function VerifierPage() {
 
           {/* Contenido de las Pestañas */}
           <div className="mt-6">
-            {activeTab === 'scanner' && <QrScanner />}
+            {/* CORRECCIÓN: Pasamos el 'selectedEventId' al QrScanner */}
+            {activeTab === 'scanner' && <QrScanner eventId={selectedEventId} />}
             {activeTab === 'history' && <ScanHistory eventId={selectedEventId} />}
             {activeTab === 'premium' && <PremiumProductsList eventId={selectedEventId} />}
           </div>
