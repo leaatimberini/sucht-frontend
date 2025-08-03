@@ -1,18 +1,18 @@
 // src/app/eventos/page.tsx
-'use client';
-
 import api from "@/lib/axios";
 import { type Event } from "@/types/event.types";
 import Image from "next/image";
 import Link from "next/link";
-import { formatInTimeZone } from 'date-fns-tz'; // CORRECCIÓN: Importamos date-fns-tz
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { formatInTimeZone } from 'date-fns-tz';
 
-// --- AÑADIDO: Revalidación Incremental ---
-// Esto le dice a Next.js que vuelva a generar esta página cada 60 segundos
-// para buscar nuevos eventos sin necesidad de un nuevo despliegue.
+// --- CORRECCIÓN: La revalidación es un número, no un objeto ---
 export const revalidate = 60; 
+
+// Función para formatear la fecha a la zona horaria local de Buenos Aires
+const formatEventDate = (dateString: string) => {
+  if (!dateString) return '';
+  return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
+};
 
 async function getEvents(): Promise<Event[]> {
   try {
@@ -26,12 +26,6 @@ async function getEvents(): Promise<Event[]> {
 
 export default async function EventosPage() {
   const events = await getEvents();
-
-  // Función para formatear la fecha a la zona horaria local de Buenos Aires
-  const formatEventDate = (dateString: string) => {
-    if (!dateString) return '';
-    return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">
