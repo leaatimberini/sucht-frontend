@@ -139,7 +139,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
                 type="number" 
                 min="1" 
                 value={quantity} 
-                onChange={(e) => setQuantity(Number(e.target.value))}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
                 className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700"
               />
             </div>
@@ -184,7 +184,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
           
           <button 
             onClick={isFree ? handleAcquireFree : handleAcquirePaid}
-            disabled={isLoading || !acceptedTerms || !selectedTierId || (isFree && quantity <= 0)} 
+            disabled={isLoading || !acceptedTerms || !selectedTierId} 
             className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Procesando...' : (isFree ? 'Obtener gratis' : 'Pagar')}
