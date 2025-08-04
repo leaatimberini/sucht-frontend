@@ -139,7 +139,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
                 type="number" 
                 min="1" 
                 value={quantity} 
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                onChange={(e) => setQuantity(Number(e.target.value))}
                 className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700"
               />
             </div>

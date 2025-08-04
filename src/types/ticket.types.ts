@@ -11,13 +11,13 @@ export enum ProductType {
 
 // CORRECCIÓN: Se añade el enum TicketStatus
 export enum TicketStatus {
-  VALID = 'valid',
-  USED = 'used',
-  PARTIALLY_USED = 'partially_used',
-  INVALID = 'invalid',
-  PARTIALLY_PAID = 'partially_paid',
-  REDEEMED = 'redeemed',
-  INVALIDATED = 'invalidated',
+  VALID = 'valid',
+  USED = 'used',
+  PARTIALLY_USED = 'partially_used',
+  INVALID = 'invalid',
+  PARTIALLY_PAID = 'partially_paid',
+  REDEEMED = 'redeemed',
+  INVALIDATED = 'invalidated',
 }
 
 export interface TicketTier {
@@ -28,6 +28,7 @@ export interface TicketTier {
   validUntil: string | null;
   createdAt: string;
   updatedAt: string;
+  isFree: boolean; // CORRECCIÓN: Añadimos la nueva propiedad 'isFree'
   productType: ProductType;
   allowPartialPayment: boolean;
   partialPaymentPrice: number | null;
