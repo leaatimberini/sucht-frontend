@@ -8,8 +8,23 @@ import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Wallet } from '@mercadopago/sdk-react';
+import { Loader } from "lucide-react"; // Importamos un ícono de carga
+
+// Un componente simple para el estado de carga inicial
+function TicketAcquirerSkeleton() {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-4 flex flex-col items-center justify-center min-h-[200px]">
+      <Loader className="animate-spin text-pink-500" size={32} />
+      <p className="text-zinc-400">Cargando opciones...</p>
+    </div>
+  );
+}
+
 
 export function TicketAcquirer({ eventId }: { eventId: string }) {
+  // 1. AÑADIMOS UN ESTADO PARA CONTROLAR LA HIDRATACIÓN
+  const [isClient, setIsClient] = useState(false);
+
   const [tiers, setTiers] = useState<TicketTier[]>([]);
   const [selectedTierId, setSelectedTierId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -23,6 +38,11 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   const isLoggedIn = useAuthStore(state => state.isLoggedIn);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // 2. ESTE useEffect MARCA EL COMPONENTE COMO "MONTADO" EN EL CLIENTE
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,12 +114,13 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     }
   };
 
-  // --- LÍNEA CORREGIDA ---
-  // La lógica ahora se basa en el campo booleano 'isFree' que viene de la API,
-  // en lugar de depender implícitamente del precio. Esto hace que el componente
-  // sea consistente con los formularios de creación/edición de Tiers.
   const isFree = selectedTier?.isFree;
-  // -----------------------
+
+  // 3. MIENTRAS NO ESTEMOS EN EL CLIENTE, MOSTRAMOS UN ESTADO DE CARGA.
+  // ESTO GARANTIZA QUE EL SERVIDOR Y EL CLIENTE RENDERIZAN LO MISMO INICIALMENTE.
+  if (!isClient) {
+    return <TicketAcquirerSkeleton />;
+  }
 
   if (!isLoggedIn()) {
     return (
