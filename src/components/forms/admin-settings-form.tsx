@@ -1,4 +1,4 @@
-// frontend/src/app/dashboard/settings/forms/admin-settings-form.tsx
+// frontend/src/components/forms/admin-settings-form.tsx
 'use client';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,7 +22,6 @@ export function AdminSettingsForm() {
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
   
-  // CORRECCIÓN: El tipo del estado es el que ya definimos arriba
   const [initialData, setInitialData] = useState<AdminSettingsFormInputs | null>(null);
 
   const {
@@ -78,12 +77,19 @@ export function AdminSettingsForm() {
       }
     };
     fetchData();
-  }, [reset, user, setValue, searchParams]); // Añadimos dependencias faltantes
+  }, [reset, user, setValue, searchParams]);
   
+  // 1. ESTA ES LA FUNCIÓN CORRECTA AHORA
   const handleConnect = async () => {
     try {
+      // Usamos api.get (que envía el token) para obtener la URL
       const response = await api.get('/payments/connect/mercadopago');
-      window.location.href = response.data;
+      const { authUrl } = response.data;
+      
+      // Una vez que tenemos la URL, redirigimos el navegador
+      if (authUrl) {
+        window.location.href = authUrl;
+      }
     } catch (error) {
       toast.error('Error al generar el enlace de conexión.');
     }
@@ -121,12 +127,14 @@ export function AdminSettingsForm() {
               <p className="font-semibold">Cuenta de Mercado Pago vinculada.</p>
             </div>
           ) : (
-            <a
-  href={`${process.env.NEXT_PUBLIC_API_URL}/payments/connect/mercadopago`}
-  className="mt-4 inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
->
-  Vincular mi cuenta de Mercado Pago
-</a>
+            // 2. VOLVEMOS A USAR UN BOTÓN CON onClick
+            <button
+              type="button"
+              onClick={handleConnect}
+              className="mt-4 inline-block bg-pink-600 hover-bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
+            >
+              Vincular mi cuenta de Mercado Pago
+            </button>
           )}
         </div>
 
@@ -148,7 +156,7 @@ export function AdminSettingsForm() {
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
+            className="bg-pink-600 hover-bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
           >
             {isSubmitting ? 'Guardando...' : 'Guardar'}
           </button>
