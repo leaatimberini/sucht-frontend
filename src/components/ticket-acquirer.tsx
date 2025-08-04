@@ -1,4 +1,3 @@
-// frontend/src/components/ticket-acquirer.tsx
 'use client';
 
 import { useEffect, useState, useMemo } from "react";
@@ -61,7 +60,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
       };
 
       await api.post('/tickets/acquire', payload);
-      toast.success('Producto adquirido con éxito.');
+      toast.success('Producto adquirido con éxito. Redirigiendo...');
       router.push('/mi-cuenta');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
@@ -95,7 +94,12 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     }
   };
 
-  const isFree = selectedTier?.price === 0;
+  // --- LÍNEA CORREGIDA ---
+  // La lógica ahora se basa en el campo booleano 'isFree' que viene de la API,
+  // en lugar de depender implícitamente del precio. Esto hace que el componente
+  // sea consistente con los formularios de creación/edición de Tiers.
+  const isFree = selectedTier?.isFree;
+  // -----------------------
 
   if (!isLoggedIn()) {
     return (
@@ -127,7 +131,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
             <label htmlFor="ticket-tier" className="block text-sm font-medium text-zinc-300 mb-1">Producto</label>
             <select id="ticket-tier" value={selectedTierId} onChange={(e) => { setSelectedTierId(e.target.value); setPaymentType('full'); }} className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700">
               <option value="">Selecciona una opción...</option>
-              {tiers.map(tier => (<option key={tier.id} value={tier.id}>{tier.name} - ${tier.price}</option>))}
+              {tiers.map(tier => (<option key={tier.id} value={tier.id}>{tier.name} - {tier.isFree ? 'Gratis' : `$${tier.price}`}</option>))}
             </select>
           </div>
           
@@ -184,10 +188,10 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
           
           <button 
             onClick={isFree ? handleAcquireFree : handleAcquirePaid}
-            disabled={isLoading || !acceptedTerms || !selectedTierId} 
+            disabled={isLoading || (termsAndConditionsText ? !acceptedTerms : false) || !selectedTierId} 
             className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Procesando...' : (isFree ? 'Obtener gratis' : 'Pagar')}
+            {isLoading ? 'Procesando...' : (isFree ? 'Obtener Gratis' : 'Pagar')}
           </button>
         </>
       ) : (
