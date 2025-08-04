@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-import { useSearchParams } from 'next/navigation';
+// 1. Importamos useRouter para poder refrescar los datos
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, Loader } from 'lucide-react';
 import { User } from '@/types/user.types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -21,7 +22,8 @@ export function AdminSettingsForm() {
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
-  
+  const router = useRouter(); // 2. Inicializamos el router
+
   const [initialData, setInitialData] = useState<AdminSettingsFormInputs | null>(null);
 
   const {
@@ -43,13 +45,15 @@ export function AdminSettingsForm() {
       const url = new URL(window.location.href);
       url.searchParams.delete('success');
       window.history.replaceState({}, document.title, url.toString());
+      // 3. Forzamos la recarga de los datos del servidor para esta página
+      router.refresh(); 
     } else if (error) {
       toast.error('No se pudo vincular la cuenta. Por favor, inténtalo de nuevo.');
       const url = new URL(window.location.href);
       url.searchParams.delete('error');
       window.history.replaceState({}, document.title, url.toString());
     }
-  }, [searchParams]);
+  }, [searchParams, router]); // 4. Añadimos router a las dependencias
 
   useEffect(() => {
     const fetchData = async () => {
@@ -79,14 +83,11 @@ export function AdminSettingsForm() {
     fetchData();
   }, [reset, user, setValue, searchParams]);
   
-  // 1. ESTA ES LA FUNCIÓN CORRECTA AHORA
   const handleConnect = async () => {
     try {
-      // Usamos api.get (que envía el token) para obtener la URL
       const response = await api.get('/payments/connect/mercadopago');
       const { authUrl } = response.data;
       
-      // Una vez que tenemos la URL, redirigimos el navegador
       if (authUrl) {
         window.location.href = authUrl;
       }
@@ -127,11 +128,10 @@ export function AdminSettingsForm() {
               <p className="font-semibold">Cuenta de Mercado Pago vinculada.</p>
             </div>
           ) : (
-            // 2. VOLVEMOS A USAR UN BOTÓN CON onClick
             <button
               type="button"
               onClick={handleConnect}
-              className="mt-4 inline-block bg-pink-600 hover-bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
+              className="mt-4 inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
             >
               Vincular mi cuenta de Mercado Pago
             </button>
@@ -156,7 +156,7 @@ export function AdminSettingsForm() {
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="bg-pink-600 hover-bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
+            className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
           >
             {isSubmitting ? 'Guardando...' : 'Guardar'}
           </button>
