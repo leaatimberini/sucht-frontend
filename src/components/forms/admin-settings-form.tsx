@@ -121,13 +121,12 @@ export function AdminSettingsForm() {
               <p className="font-semibold">Cuenta de Mercado Pago vinculada.</p>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleConnect}
-              className="mt-4 bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
-            >
-              Vincular mi cuenta de Mercado Pago
-            </button>
+            <a
+  href={`${process.env.NEXT_PUBLIC_API_URL}/payments/connect/mercadopago`}
+  className="mt-4 inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
+>
+  Vincular mi cuenta de Mercado Pago
+</a>
           )}
         </div>
 
