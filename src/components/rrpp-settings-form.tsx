@@ -4,57 +4,40 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-// 1. Importamos useRouter para poder refrescar los datos
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
-import { User } from '@/types/user.types';
-import { CheckCircle, Loader } from 'lucide-react';
+import { CheckCircle, Loader, XCircle } from 'lucide-react'; // <-- Se importa XCircle
 
 export function RRPPSettingsForm() {
-  const [isLinked, setIsLinked] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // El estado ahora depende directamente del usuario en el store de Zustand
+  const { user, fetchUser } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
-  const router = useRouter(); // 2. Inicializamos el router
-  const [rrppCommissionRate, setRrppCommissionRate] = useState<number | null>(null);
+  const router = useRouter();
 
+  // Efecto para manejar los callbacks de la vinculación de MP
   useEffect(() => {
     const success = searchParams.get('success');
     const error = searchParams.get('error');
 
     if (success) {
       toast.success('¡Tu cuenta de Mercado Pago fue vinculada con éxito!');
+      fetchUser(); // Refrescamos los datos del usuario para obtener el nuevo estado
+      // Limpiamos la URL
       const url = new URL(window.location.href);
       url.searchParams.delete('success');
       window.history.replaceState({}, document.title, url.toString());
-      // 3. Forzamos la recarga de los datos del servidor para esta página
-      router.refresh();
     } else if (error) {
       toast.error('No se pudo vincular la cuenta. Por favor, inténtalo de nuevo.');
       const url = new URL(window.location.href);
       url.searchParams.delete('error');
       window.history.replaceState({}, document.title, url.toString());
     }
-  }, [searchParams, router]); // 4. Añadimos router a las dependencias
+  }, [searchParams, fetchUser, router]);
 
-  useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const response = await api.get('/users/profile/me');
-        const userData: User = response.data;
-        setIsLinked(!!userData.mpAccessToken && !!userData.mpUserId);
-        setRrppCommissionRate(userData.rrppCommissionRate ?? null);
-      } catch (error) {
-        toast.error('No se pudo cargar tu configuración actual.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkStatus();
-  }, [user, searchParams]);
-
-  // 5. Corregimos handleConnect para usar la lógica final y robusta
+  // Función para iniciar la vinculación
   const handleConnect = async () => {
+    setIsLoading(true);
     try {
       const response = await api.get('/payments/connect/mercadopago');
       const { authUrl } = response.data;
@@ -64,6 +47,31 @@ export function RRPPSettingsForm() {
       }
     } catch (error) {
       toast.error('Error al generar el enlace de conexión.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // ==========================================================
+  // ===== NUEVA FUNCIÓN PARA DESVINCULAR LA CUENTA MP ======
+  // ==========================================================
+  const handleUnlink = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas desvincular tu cuenta de Mercado Pago? No podrás recibir comisiones hasta que la vuelvas a vincular.')) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      toast.loading('Desvinculando...');
+      await api.delete('/payments/connect/mercadopago');
+      toast.dismiss();
+      toast.success('Cuenta desvinculada exitosamente.');
+      // Forzamos la recarga de los datos del usuario para actualizar el estado
+      fetchUser();
+    } catch (error) {
+      toast.dismiss();
+      toast.error('No se pudo desvincular la cuenta.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,23 +83,37 @@ export function RRPPSettingsForm() {
           Para recibir tus comisiones, debes vincular tu cuenta de Mercado Pago con la aplicación.
         </p>
 
-        {isLoading ? (
+        {/* El estado de carga y vinculación ahora depende del objeto 'user' del store */}
+        {!user ? (
           <div className="flex items-center space-x-2 mt-4 text-zinc-500">
             <Loader className="h-4 w-4 animate-spin" />
             <p>Cargando estado...</p>
           </div>
-        ) : isLinked ? (
-          <div className="mt-4 flex items-center space-x-2 text-green-500">
-            <CheckCircle className="h-6 w-6" />
-            <p className="font-semibold">Cuenta de Mercado Pago vinculada.</p>
+        ) : user.isMpLinked ? (
+          // ===== NUEVA UI PARA CUANDO LA CUENTA ESTÁ VINCULADA =====
+          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <div className="flex items-center space-x-2 text-green-500 bg-green-900/50 px-3 py-1 rounded-full">
+              <CheckCircle className="h-5 w-5" />
+              <p className="font-semibold text-sm">Cuenta Vinculada</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleUnlink}
+              disabled={isLoading}
+              className="flex items-center space-x-2 text-red-400 hover:text-red-300 text-sm font-semibold disabled:opacity-50"
+            >
+              <XCircle className="h-4 w-4" />
+              <span>Desvincular</span>
+            </button>
           </div>
         ) : (
           <button
             type="button"
             onClick={handleConnect}
-            className="mt-4 bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg"
+            disabled={isLoading}
+            className="mt-4 bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
           >
-            Vincular mi cuenta de Mercado Pago
+            {isLoading ? 'Procesando...' : 'Vincular mi cuenta de Mercado Pago'}
           </button>
         )}
       </div>
@@ -101,7 +123,8 @@ export function RRPPSettingsForm() {
         <p className="text-sm text-zinc-400 mt-1">
           Tu tasa de comisión por ventas es del{' '}
           <span className="font-bold text-pink-500">
-            {rrppCommissionRate !== null ? `${rrppCommissionRate}%` : 'Cargando...'}
+            {/* Leemos la comisión directamente del objeto 'user' del store */}
+            {user?.rrppCommissionRate !== null && user?.rrppCommissionRate !== undefined ? `${user.rrppCommissionRate}%` : 'No definida'}
           </span>
         </p>
       </div>

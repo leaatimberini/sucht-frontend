@@ -6,10 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-// 1. Importamos useRouter para poder refrescar los datos
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, Loader } from 'lucide-react';
-import { User } from '@/types/user.types';
+import { CheckCircle, Loader, XCircle } from 'lucide-react'; // <-- Se importa XCircle
 import { useAuthStore } from '@/stores/auth-store';
 
 const adminSettingsSchema = z.object({
@@ -18,61 +16,48 @@ const adminSettingsSchema = z.object({
 type AdminSettingsFormInputs = z.infer<typeof adminSettingsSchema>;
 
 export function AdminSettingsForm() {
-  const [isLinked, setIsLinked] = useState(false);
+  // El estado ahora depende directamente del usuario en el store de Zustand
+  const { user, fetchUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
-  const router = useRouter(); // 2. Inicializamos el router
-
-  const [initialData, setInitialData] = useState<AdminSettingsFormInputs | null>(null);
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     formState: { isSubmitting },
-  } = useForm({
-    resolver: zodResolver(adminSettingsSchema),
-    defaultValues: initialData || {},
-  });
+  } = useForm<AdminSettingsFormInputs>();
 
+  // Efecto para manejar los callbacks de la vinculación de MP
   useEffect(() => {
     const success = searchParams.get('success');
     const error = searchParams.get('error');
     if (success) {
       toast.success('¡Tu cuenta de Mercado Pago fue vinculada con éxito!');
+      fetchUser(); // Refrescamos los datos del usuario para obtener el nuevo estado
       const url = new URL(window.location.href);
       url.searchParams.delete('success');
       window.history.replaceState({}, document.title, url.toString());
-      // 3. Forzamos la recarga de los datos del servidor para esta página
-      router.refresh(); 
     } else if (error) {
       toast.error('No se pudo vincular la cuenta. Por favor, inténtalo de nuevo.');
       const url = new URL(window.location.href);
       url.searchParams.delete('error');
       window.history.replaceState({}, document.title, url.toString());
     }
-  }, [searchParams, router]); // 4. Añadimos router a las dependencias
+  }, [searchParams, fetchUser, router]);
 
+  // Efecto para cargar la configuración inicial del formulario
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchConfig = async () => {
+      setIsLoading(true);
       try {
-        const [configRes, profileRes] = await Promise.all([
-          api.get('/configuration'),
-          api.get('/users/profile/me'),
-        ]);
-
-        const configData = configRes.data;
-        const profileData: User = profileRes.data;
-
+        const response = await api.get('/configuration');
+        const configData = response.data;
         const dataForForm = {
-          adminServiceFee: configData.adminServiceFee ?? null,
+          adminServiceFee: configData.adminServiceFee ?? 0,
         };
-
-        setInitialData(dataForForm);
         reset(dataForForm);
-        setIsLinked(!!profileData.mpAccessToken);
       } catch (error) {
         toast.error('No se pudo cargar la configuración.');
         console.error(error);
@@ -80,14 +65,14 @@ export function AdminSettingsForm() {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, [reset, user, setValue, searchParams]);
+    fetchConfig();
+  }, [reset]);
   
+  // Función para iniciar la vinculación
   const handleConnect = async () => {
     try {
       const response = await api.get('/payments/connect/mercadopago');
       const { authUrl } = response.data;
-      
       if (authUrl) {
         window.location.href = authUrl;
       }
@@ -96,13 +81,29 @@ export function AdminSettingsForm() {
     }
   };
 
+  // ==========================================================
+  // ===== NUEVA FUNCIÓN PARA DESVINCULAR LA CUENTA MP ======
+  // ==========================================================
+  const handleUnlink = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas desvincular tu cuenta de Mercado Pago?')) {
+      return;
+    }
+    try {
+      toast.loading('Desvinculando...');
+      await api.delete('/payments/connect/mercadopago');
+      toast.dismiss();
+      toast.success('Cuenta desvinculada exitosamente.');
+      // Forzamos la recarga de los datos del usuario para actualizar el estado
+      fetchUser();
+    } catch (error) {
+      toast.dismiss();
+      toast.error('No se pudo desvincular la cuenta.');
+    }
+  };
+
   const onSubmit = async (data: AdminSettingsFormInputs) => {
     try {
-      const configPayload = {
-        adminServiceFee: data.adminServiceFee,
-      };
-      
-      await api.patch('/configuration', configPayload);
+      await api.patch('/configuration', { adminServiceFee: data.adminServiceFee });
       toast.success('Comisión de servicio guardada.');
     } catch (error) {
       toast.error('No se pudo guardar la configuración.');
@@ -122,10 +123,22 @@ export function AdminSettingsForm() {
               <Loader className="h-4 w-4 animate-spin" />
               <p>Cargando estado...</p>
             </div>
-          ) : isLinked ? (
-            <div className="mt-4 flex items-center space-x-2 text-green-500">
-              <CheckCircle className="h-6 w-6" />
-              <p className="font-semibold">Cuenta de Mercado Pago vinculada.</p>
+          ) : user?.isMpLinked ? (
+            // ===== NUEVA UI PARA CUANDO LA CUENTA ESTÁ VINCULADA =====
+            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              <div className="flex items-center space-x-2 text-green-500 bg-green-900/50 px-3 py-1 rounded-full">
+                <CheckCircle className="h-5 w-5" />
+                <p className="font-semibold text-sm">Cuenta Vinculada</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleUnlink}
+                disabled={isSubmitting}
+                className="flex items-center space-x-2 text-red-400 hover:text-red-300 text-sm font-semibold disabled:opacity-50"
+              >
+                <XCircle className="h-4 w-4" />
+                <span>Desvincular</span>
+              </button>
             </div>
           ) : (
             <button
@@ -147,7 +160,7 @@ export function AdminSettingsForm() {
             type="number"
             step="0.1"
             {...register('adminServiceFee')}
-            className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2"
+            className="mt-1 block w-full bg-zinc-800 border-zinc-700 rounded-md p-2 text-white"
             placeholder="Ej: 2.5"
           />
         </div>
