@@ -5,12 +5,11 @@ import api from "@/lib/axios";
 import { TicketTier, ProductType } from "@/types/ticket.types";
 import { useAuthStore } from "@/stores/auth-store";
 import toast from "react-hot-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Wallet } from '@mercadopago/sdk-react';
-import { Loader } from "lucide-react"; // Importamos un ícono de carga
+import { Loader } from "lucide-react";
 
-// Un componente simple para el estado de carga inicial
 function TicketAcquirerSkeleton() {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-4 flex flex-col items-center justify-center min-h-[200px]">
@@ -20,11 +19,8 @@ function TicketAcquirerSkeleton() {
   );
 }
 
-
 export function TicketAcquirer({ eventId }: { eventId: string }) {
-  // 1. AÑADIMOS UN ESTADO PARA CONTROLAR LA HIDRATACIÓN
   const [isClient, setIsClient] = useState(false);
-
   const [tiers, setTiers] = useState<TicketTier[]>([]);
   const [selectedTierId, setSelectedTierId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -32,14 +28,11 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
-  
   const [termsAndConditionsText, setTermsAndConditionsText] = useState<string | null>(null);
 
   const isLoggedIn = useAuthStore(state => state.isLoggedIn);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // 2. ESTE useEffect MARCA EL COMPONENTE COMO "MONTADO" EN EL CLIENTE
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -71,16 +64,17 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     }
     setIsLoading(true);
     try {
-      const promoterUsername = searchParams.get('promoter');
+      // ===== CORRECCIÓN CLAVE: Leemos desde localStorage =====
+      const promoterUsername = localStorage.getItem('promoterUsername');
       const payload = {
         eventId,
         ticketTierId: selectedTierId,
         quantity,
-        promoterUsername,
+        promoterUsername, // Se envía el valor de localStorage (puede ser null si no hay)
       };
 
       await api.post('/tickets/acquire', payload);
-      toast.success('Producto adquirido con éxito. Redirigiendo...');
+      toast.success('Entrada adquirida con éxito. Redirigiendo...');
       router.push('/mi-cuenta');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "No se pudo procesar la solicitud.");
@@ -96,12 +90,13 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     }
     setIsLoading(true);
     try {
-      const promoterUsername = searchParams.get('promoter');
+      // ===== CORRECCIÓN CLAVE: Leemos desde localStorage =====
+      const promoterUsername = localStorage.getItem('promoterUsername');
       const payload = {
         eventId,
         ticketTierId: selectedTierId,
         quantity,
-        promoterUsername,
+        promoterUsername, // Se envía el valor de localStorage (puede ser null si no hay)
         paymentType,
       };
 
@@ -116,8 +111,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
 
   const isFree = selectedTier?.isFree;
 
-  // 3. MIENTRAS NO ESTEMOS EN EL CLIENTE, MOSTRAMOS UN ESTADO DE CARGA.
-  // ESTO GARANTIZA QUE EL SERVIDOR Y EL CLIENTE RENDERIZAN LO MISMO INICIALMENTE.
   if (!isClient) {
     return <TicketAcquirerSkeleton />;
   }
