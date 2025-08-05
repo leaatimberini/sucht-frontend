@@ -68,7 +68,7 @@ export function OwnerSettingsForm() {
 
         const dataForForm = {
           rrppCommissionRate: configData.rrppCommissionRate ?? null,
-          paymentsEnabled: configData.paymentsEnabled === 'true',
+          paymentsEnabled: configData.paymentsEnabled,
         };
 
         setInitialData(dataForForm);
