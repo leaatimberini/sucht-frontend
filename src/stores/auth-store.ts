@@ -5,7 +5,6 @@ import { persist } from 'zustand/middleware';
 import axios from 'axios';
 import api from '@/lib/axios';
 
-// UserState actualizado con el campo rrppCommissionRate
 interface UserState {
   id: string;
   email: string;
@@ -13,7 +12,7 @@ interface UserState {
   roles: string[];
   profileImageUrl: string | null;
   isMpLinked: boolean;
-  rrppCommissionRate: number | null; // <-- Campo crucial añadido
+  rrppCommissionRate: number | null;
 }
 
 interface AuthState {
@@ -33,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         try {
+          // Esta lógica espera la respuesta { accessToken, user } del backend
           const response = await api.post('/auth/login', credentials);
           const { accessToken, user } = response.data;
           
@@ -72,6 +72,7 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
+// Lógica de inicialización
 const initialToken = useAuthStore.getState().token;
 if (initialToken) {
   api.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
