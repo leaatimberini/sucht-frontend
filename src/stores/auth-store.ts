@@ -22,6 +22,7 @@ interface AuthState {
   logout: () => void;
   isLoggedIn: () => boolean;
   fetchUser: () => Promise<void>;
+  init: () => void; // <-- Nueva función de inicialización
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,7 +33,6 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         try {
-          // Esta lógica espera la respuesta { accessToken, user } del backend
           const response = await api.post('/auth/login', credentials);
           const { accessToken, user } = response.data;
           
@@ -64,6 +64,15 @@ export const useAuthStore = create<AuthState>()(
           get().logout();
         }
       },
+      
+      // La lógica de inicialización ahora vive aquí, para ser llamada de forma segura
+      init: () => {
+        const token = get().token;
+        if (token) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          get().fetchUser();
+        }
+      },
     }),
     {
       name: 'auth-storage',
@@ -72,9 +81,4 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
-// Lógica de inicialización
-const initialToken = useAuthStore.getState().token;
-if (initialToken) {
-  api.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
-  useAuthStore.getState().fetchUser();
-}
+// Se elimina el bloque de inicialización de aquí para romper la dependencia circular.

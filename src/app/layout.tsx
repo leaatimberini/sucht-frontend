@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import { Header } from '@/components/header';
 import { TrackingScripts } from '@/components/tracking-scripts';
 import { MercadoPagoProvider } from '@/components/mercado-pago-provider'; // CORRECCIÓN: Importamos el provider de Mercado Pago
-
+import { AppInitializer } from "@/components/app-initializer";
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
@@ -30,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${poppins.className} bg-zinc-950 text-zinc-50 antialiased`}
       >
+        <AppInitializer />
         <MercadoPagoProvider> {/* CORRECCIÓN: Envolvemos la aplicación con el provider */}
           <Toaster position="top-center" />
           <Header />
