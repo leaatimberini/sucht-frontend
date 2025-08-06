@@ -16,7 +16,7 @@ import {
   UserX,
   Trophy,
   CreditCard,
-  Gift // <-- 1. Ícono añadido
+  Gift // <-- Ícono para Premios
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -83,15 +83,12 @@ export default function DashboardLayout({
                   <span>Fidelización</span>
                 </Link>
               </li>
-
-                  {/* ===== 2. NUEVO ENLACE A GESTIÓN DE PREMIOS ===== */}
                   <li>
                     <Link href="/dashboard/rewards" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                       <Gift className="h-4 w-4" />
                       <span>Premios</span>
                     </Link>
                   </li>
-
               <li className="border-t border-zinc-700 pt-2 mt-2">
                 <Link href="/verifier" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <QrCode className="h-4 w-4" />
@@ -113,12 +110,12 @@ export default function DashboardLayout({
             </ul>
           </nav>
           
-          <div className="mt-auto"> {/* Se añade mt-auto para empujar el botón hacia abajo */}
+          <div className="mt-auto">
             <LogoutButton />
           </div>
         </aside>
         
-        <main className="flex-1 bg-black"> {/* Se ajusta el fondo del contenido principal */}
+        <main className="flex-1 p-8 bg-black">
           {children}
         </main>
       </div>
