@@ -1,5 +1,3 @@
-// src/app/dashboard/sales/page.tsx
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -55,6 +53,8 @@ export default function SalesHistoryPage() {
   // Función para formatear la fecha a la zona horaria local de Buenos Aires
   const formatDateTimeToBuenosAires = (dateString: string) => {
     if (!dateString) return '';
+    // 'America/Argentina/Buenos_Aires' es la zona horaria
+    // 'dd/MM/yyyy HH:mm' es el formato de visualización
     return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
   };
 
@@ -95,7 +95,7 @@ export default function SalesHistoryPage() {
               {history.map((ticket) => (
                 <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 transition-colors">
                   <td className="p-4 text-zinc-400 text-sm">
-                    {formatDateTimeToBuenosAires(ticket.createdAt)}hs
+                    {formatDateTimeToBuenosAires(ticket.createdAt)} hs
                   </td>
                   <td className="p-4">
                     <p className="font-semibold text-zinc-200">{ticket.user.name}</p>
