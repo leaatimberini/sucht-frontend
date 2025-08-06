@@ -1,4 +1,3 @@
-// frontend/src/components/forms/feature-settings-form.tsx
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -10,7 +9,6 @@ import api from '@/lib/axios';
 
 const schema = z.object({
   isRewardsStoreEnabled: z.boolean().optional(),
-  // Aquí podríamos añadir más feature flags en el futuro
 });
 type FormInputs = z.infer<typeof schema>;
 
@@ -19,10 +17,14 @@ export function FeatureSettingsForm() {
 
     useEffect(() => {
         const loadData = async () => {
-            const res = await api.get('/configuration');
-            reset({
-              isRewardsStoreEnabled: res.data.isRewardsStoreEnabled === 'true'
-            });
+            try {
+                const res = await api.get('/configuration');
+                reset({
+                  isRewardsStoreEnabled: res.data.isRewardsStoreEnabled === 'true'
+                });
+            } catch (error) {
+                console.error("Failed to load feature settings", error);
+            }
         };
         loadData();
     }, [reset]);
@@ -42,7 +44,8 @@ export function FeatureSettingsForm() {
             <div className="flex items-center justify-between">
               <div>
                 <label htmlFor="isRewardsStoreEnabled" className="block text-sm font-medium text-zinc-300">Tienda de Canje de Puntos</label>
-                <p className="text-xs text-zinc-500">Si está activado, los clientes verán la pestaña "Premios" en su panel.</p>
+                {/* ===== CORRECCIÓN: Se cambian las comillas dobles por simples ===== */}
+                <p className="text-xs text-zinc-500">Si está activado, los clientes verán la pestaña 'Premios' en su panel.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="isRewardsStoreEnabled" className="sr-only peer" {...register('isRewardsStoreEnabled')} />
