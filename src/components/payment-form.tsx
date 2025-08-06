@@ -18,16 +18,22 @@ export function PaymentForm({ preferenceId, amount }: PaymentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (paymentData: any) => {
+    // =================================================================
+    // ===== PRUEBA DE FUEGO: Ver qué nos devuelve Mercado Pago =====
+    console.log('Datos recibidos de Mercado Pago onSubmit:', paymentData);
+    // =================================================================
+
     setIsSubmitting(true);
     toast.loading('Procesando pago...');
 
     try {
+      // Asumimos que el ID está en 'paymentData.id', el log nos lo confirmará
       const payload = {
         paymentId: String(paymentData.id),
       };
-      
+
       await api.post('/payments/finalize-purchase', payload);
-      
+
       toast.dismiss();
       toast.success('¡Pago realizado con éxito!');
       router.push('/payment/success');
@@ -47,17 +53,12 @@ export function PaymentForm({ preferenceId, amount }: PaymentFormProps) {
       <CardPayment
         initialization={{
           amount: amount,
-          // preferenceId: preferenceId, // <-- LÍNEA ELIMINADA: Esta propiedad no es válida aquí.
         }}
         onSubmit={handleSubmit}
         onReady={() => console.log('Mercado Pago CardPayment Brick is ready.')}
         onError={(error) => console.error('Mercado Pago CardPayment Brick error:', error)}
         customization={{
-          visual: {
-            style: {
-              theme: 'dark',
-            }
-          }
+          visual: { style: { theme: 'dark' } }
         }}
       />
       {isSubmitting && (
