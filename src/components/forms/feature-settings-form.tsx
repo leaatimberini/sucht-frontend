@@ -45,7 +45,7 @@ export function FeatureSettingsForm() {
               <div>
                 <label htmlFor="isRewardsStoreEnabled" className="block text-sm font-medium text-zinc-300">Tienda de Canje de Puntos</label>
                 {/* ===== CORRECCIÓN: Se cambian las comillas dobles por simples ===== */}
-                <p className="text-xs text-zinc-500">Si está activado, los clientes verán la pestaña 'Premios' en su panel.</p>
+                <p className="text-xs text-zinc-500">Si está activado, los clientes verán la pestaña Premios en su panel.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="isRewardsStoreEnabled" className="sr-only peer" {...register('isRewardsStoreEnabled')} />
