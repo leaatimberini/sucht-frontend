@@ -3,11 +3,11 @@
 import { SettingsManager } from "@/components/settings-manager";
 import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/types/user.types";
+import { PointsSettingsForm } from "@/components/forms/points-settings-form"; // Importa el nuevo formulario
 
 export default function SettingsPage() {
     const { user } = useAuthStore();
     
-    // Mostramos un título diferente si es el Dueño o Admin
     const isOwner = user?.roles.includes(UserRole.OWNER);
 
     return (
@@ -19,7 +19,10 @@ export default function SettingsPage() {
                 Administra las comisiones, las cuentas para recibir los pagos y otras configuraciones de la plataforma.
             </p>
 
-            <SettingsManager />
+            <div className="space-y-8">
+              <SettingsManager />
+              <PointsSettingsForm />
+            </div>
         </div>
     );
 }
