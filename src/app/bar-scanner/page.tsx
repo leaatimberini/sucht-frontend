@@ -4,9 +4,13 @@
 import { useState } from 'react';
 import { AuthCheck } from "@/components/auth-check";
 import { UserRole } from '@/types/user.types';
-import { QrScanner } from '@/components/qr-scanner'; // Reutilizamos el componente de escáner
+import { QrScanner } from '@/components/qr-scanner';
+import { RedeemedRewardsHistory } from '@/components/redeemed-rewards-history'; // <-- 1. Importar
+
+type BarScannerTab = 'scanner' | 'history';
 
 export default function BarScannerPage() {
+  const [activeTab, setActiveTab] = useState<BarScannerTab>('scanner');
 
   return (
     <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.BARRA]}>
@@ -18,13 +22,21 @@ export default function BarScannerPage() {
           </p>
         </div>
 
-        {/* Reutilizamos el componente QrScanner, pero le pasamos un `scanType` diferente.
-          Esto nos permitirá modificar el QrScanner para que apunte a diferentes endpoints 
-          dependiendo del tipo de escaneo que se esté realizando.
-        */}
-        <div className='max-w-md mx-auto'>
-            <QrScanner scanType="reward" />
+        {/* --- 2. AÑADIMOS LAS PESTAÑAS DE NAVEGACIÓN --- */}
+        <div className="border-b border-zinc-800 mb-8">
+          <nav className="flex justify-center space-x-4">
+            <button onClick={() => setActiveTab('scanner')} className={`py-2 px-4 ${activeTab === 'scanner' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Escanear</button>
+            <button onClick={() => setActiveTab('history')} className={`py-2 px-4 ${activeTab === 'history' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Historial</button>
+          </nav>
         </div>
+
+        {/* --- 3. RENDERIZADO CONDICIONAL DEL CONTENIDO --- */}
+        {activeTab === 'scanner' && (
+          <div className='max-w-md mx-auto'>
+              <QrScanner scanType="reward" />
+          </div>
+        )}
+        {activeTab === 'history' && <RedeemedRewardsHistory />}
 
       </div>
     </AuthCheck>
