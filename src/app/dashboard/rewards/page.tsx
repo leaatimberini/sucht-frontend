@@ -18,9 +18,10 @@ interface Reward {
   pointsCost: number;
   stock: number | null;
   isActive: boolean;
-  redemptionLocation: 'door' | 'bar';
+  redemptionLocation: 'door' | 'bar'; // Se añade para el formulario
 }
 
+// Se añade el tipo para el historial
 interface RedeemedReward {
   id: string;
   user: { name: string; email: string; };
@@ -34,22 +35,27 @@ const rewardSchema = z.object({
   pointsCost: z.coerce.number().min(1, 'El costo debe ser mayor a 0'),
   stock: z.coerce.number().min(0).optional().nullable(),
   isActive: z.boolean().default(true),
-  redemptionLocation: z.enum(['door', 'bar']).default('bar'),
+  redemptionLocation: z.enum(['door', 'bar']).default('bar'), // Se añade al schema
 });
 type RewardFormInputs = z.infer<typeof rewardSchema>;
 
-
 export default function RewardsManagementPage() {
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [history, setHistory] = useState<RedeemedReward[]>([]);
+  const [history, setHistory] = useState<RedeemedReward[]>([]); // <-- Estado para el historial
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
     resolver: zodResolver(rewardSchema),
   });
 
+  // Se actualiza fetchData para que pida ambos datos
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -72,6 +78,7 @@ export default function RewardsManagementPage() {
 
   const openModalToCreate = () => {
     setEditingReward(null);
+    // Se añade redemptionLocation al reset del formulario
     reset({ name: '', description: null, pointsCost: 0, stock: null, isActive: true, redemptionLocation: 'bar' });
     setIsModalOpen(true);
   };
