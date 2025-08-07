@@ -6,6 +6,7 @@ export enum UserRole {
   ADMIN = 'admin',
   RRPP = 'rrpp',
   VERIFIER = 'verifier',
+  BARRA = 'barra',
   CLIENT = 'client',
 }
 
