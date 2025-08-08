@@ -54,9 +54,7 @@ export default async function EventoDetailPage({ params }: { params: { id: strin
             <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
             <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
 
-            {/* Use the ShareButton component here */}
-            <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
-
+           
             <div className="mt-8 space-y-4">
               <h2 className="text-2xl font-bold text-white">Entradas</h2>
               {tiers?.map(tier => (
