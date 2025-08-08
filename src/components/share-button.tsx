@@ -34,14 +34,20 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
       toast.error('No hay un flyer disponible para descargar.');
       return;
     }
-    const link = document.createElement('a');
-    link.href = flyerImageUrl;
-    link.download = `flyer-${eventTitle.replace(/ /g, '-')}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Flyer descargado. ¡Sube esta imagen a tu historia!');
-    setStep(2);
+
+    try {
+      const link = document.createElement('a');
+      link.href = flyerImageUrl;
+      link.download = `flyer-${eventTitle.replace(/ /g, '-')}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Flyer descargado. ¡Sube esta imagen a tu historia!');
+      setStep(2);
+    } catch (error) {
+      console.error("Error al intentar descargar el flyer:", error);
+      toast.error("No se pudo descargar el flyer. Intenta de nuevo.");
+    }
   };
 
   const handleCopyLink = () => {
@@ -88,7 +94,7 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
             </button>
             <h2 className="text-xl font-bold text-white mb-4">Compartir en Historias</h2>
             <p className="text-sm text-zinc-400 mb-6">Sigue estos pasos para compartir y ganar puntos. ¡Cada amigo que asista con tu link te dará más puntos!</p>
-            
+
             <div className="space-y-4">
               <button
                 onClick={handleDownloadFlyer}
