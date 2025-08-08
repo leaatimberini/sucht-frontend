@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { TicketAcquirer } from "@/components/ticket-acquirer";
 import { TicketTier } from "@/types/ticket.types";
-import { ShareButton } from "@/components/share-button"; // Import the new component
+import { ShareButton } from "@/components/share-button";
 
 export const revalidate = 60;
 
@@ -54,7 +54,8 @@ export default async function EventoDetailPage({ params }: { params: { id: strin
             <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
             <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
 
-           
+            <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl} />
+            
             <div className="mt-8 space-y-4">
               <h2 className="text-2xl font-bold text-white">Entradas</h2>
               {tiers?.map(tier => (
