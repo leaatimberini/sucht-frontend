@@ -7,15 +7,15 @@ import { Instagram, Download, Link as LinkIcon, CheckCircle, X } from 'lucide-re
 import { useAuthStore } from '@/stores/auth-store';
 
 export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: string, eventTitle: string, flyerImageUrl: string | null }) {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [step, setStep] = useState(1); // Controla los pasos del modal
-  const { user } = useAuthStore();
+  const [step, setStep] = useState(1);
+  const { user } = useAuthStore();
 
-  useEffect(() => {
-    const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
-    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent));
-  }, []);
+  useEffect(() => {
+    const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent));
+  }, []);
 
   const handleOpenModal = () => {
     if (!user) {
@@ -34,7 +34,6 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
       toast.error('No hay un flyer disponible para descargar.');
       return;
     }
-    // Creamos un enlace temporal para forzar la descarga
     const link = document.createElement('a');
     link.href = flyerImageUrl;
     link.download = `flyer-${eventTitle.replace(/ /g, '-')}.png`;
@@ -42,7 +41,7 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
     link.click();
     document.body.removeChild(link);
     toast.success('Flyer descargado. ¡Sube esta imagen a tu historia!');
-    setStep(2); // Avanzamos al siguiente paso
+    setStep(2);
   };
 
   const handleCopyLink = () => {
@@ -50,7 +49,7 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
     const shareUrl = `https://sucht.com.ar/p/${user.username}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success('¡Link copiado! Pégalo como "sticker de enlace" en tu historia.');
-    setStep(3); // Avanzamos al último paso
+    setStep(3);
   };
 
   const handleConfirmShare = async () => {
@@ -60,19 +59,18 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
       toast.dismiss();
       toast.success('¡Gracias por compartir! Has ganado puntos.');
       setIsModalOpen(false);
-      setStep(1); // Reseteamos los pasos para la próxima vez
+      setStep(1);
     } catch (error: any) {
       toast.dismiss();
       toast.error(error.response?.data?.message || 'Ocurrió un error.');
     }
   };
 
-  // El botón solo se muestra si el usuario está en un dispositivo móvil
-  if (!isMobile) {
-    return null;
-  }
+  if (!isMobile) {
+    return null;
+  }
 
-  return (
+  return (
     <>
       <button
         onClick={handleOpenModal}
@@ -92,7 +90,6 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
             <p className="text-sm text-zinc-400 mb-6">Sigue estos pasos para compartir y ganar puntos. ¡Cada amigo que asista con tu link te dará más puntos!</p>
             
             <div className="space-y-4">
-              {/* Paso 1: Descargar Flyer */}
               <button
                 onClick={handleDownloadFlyer}
                 disabled={step !== 1}
@@ -102,7 +99,6 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
                 {step > 1 ? <CheckCircle className="text-green-500" /> : <Download />}
               </button>
 
-              {/* Paso 2: Copiar Link */}
               <button
                 onClick={handleCopyLink}
                 disabled={step !== 2}
@@ -112,7 +108,6 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
                 {step > 2 ? <CheckCircle className="text-green-500" /> : <LinkIcon />}
               </button>
 
-              {/* Paso 3: Confirmar y Ganar Puntos */}
               <button
                 onClick={handleConfirmShare}
                 disabled={step !== 3}
@@ -125,5 +120,5 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
         </div>
       )}
     </>
-  );
+  );
 }
