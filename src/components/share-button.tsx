@@ -30,6 +30,7 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
     }
 
     const shareUrl = `https://sucht.com.ar/p/${user.username}`;
+    const stickerUrl = "https://res.cloudinary.com/di4ikaeke/image/upload/v1754630226/yovoyaSUCHT_uh23kb.png";
     
     try {
       toast.loading('Preparando historia...');
@@ -39,7 +40,7 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
       toast.dismiss();
       toast.success('¡Link copiado! Pégalo como sticker en tu historia.');
 
-      const instagramUrl = `instagram-stories://share?source_application=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}&background_image_url=${encodeURIComponent(flyerImageUrl)}`;
+      const instagramUrl = `instagram-stories://share?source_application=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}&sticker_asset_uri=${encodeURIComponent(stickerUrl)}&background_asset_uri=${encodeURIComponent(flyerImageUrl)}`;
       
       window.location.href = instagramUrl;
 
