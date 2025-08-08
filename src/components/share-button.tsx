@@ -6,7 +6,6 @@ import api from '@/lib/axios';
 import { Instagram, Download, Link as LinkIcon, CheckCircle, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
-
 export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: string, eventTitle: string, flyerImageUrl: string | null }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -122,5 +121,4 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
       )}
     </>
   );
-
 }
