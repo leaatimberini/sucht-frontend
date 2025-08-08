@@ -6,8 +6,7 @@ import { type Ticket } from '@/types/ticket.types';
 import { DashboardFilters } from '@/components/dashboard-filters';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz'; // 👈 Se usa solo formatInTimeZone
 
 interface Filters {
   eventId?: string;
@@ -54,9 +53,8 @@ export default function SalesHistoryPage() {
   // Función para formatear la fecha a la zona horaria local de Buenos Aires
   const formatDateTimeToBuenosAires = (dateString: string) => {
     if (!dateString) return '';
-    const dateUTC = new Date(dateString);
-    const dateBuenosAires = toZonedTime(dateUTC, 'America/Argentina/Buenos_Aires');
-    return format(dateBuenosAires, 'dd/MM/yyyy HH:mm');
+    // Usamos formatInTimeZone para convertir y formatear en un solo paso
+    return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
   };
 
   return (
