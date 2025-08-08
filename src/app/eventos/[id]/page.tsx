@@ -63,7 +63,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
             <h1 className="text-4xl font-bold text-white">{event.title}</h1>
             <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
             <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
-            <ShareButton eventId={event.id} eventTitle={event.title} />
+            <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
             <div className="mt-8 space-y-4">
               <h2 className="text-2xl font-bold text-white">Entradas</h2>
               {tiers?.map(tier => (

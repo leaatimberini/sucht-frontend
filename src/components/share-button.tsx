@@ -4,68 +4,73 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-import { Share2 } from 'lucide-react';
+import { Instagram } from 'lucide-react'; // Cambiamos el ícono a Instagram
 import { useAuthStore } from '@/stores/auth-store';
 
-export function ShareButton({ eventId, eventTitle }: { eventId: string, eventTitle: string }) {
-  const [isMobile, setIsMobile] = useState(false);
-  const { user } = useAuthStore();
+// El componente ahora necesita la URL del flyer del evento
+export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: string, eventTitle: string, flyerImageUrl: string | null }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const { user } = useAuthStore();
 
-  useEffect(() => {
-    // Detectamos si el código se ejecuta en un navegador y si es un dispositivo móvil
-    const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
-    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent));
-  }, []);
+  useEffect(() => {
+    const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent));
+  }, []);
 
-  const handleShare = async () => {
-    if (!user) {
-      toast.error('Debes iniciar sesión para ganar puntos por compartir.');
+  const handleShare = async () => {
+    if (!user) {
+      toast.error('Debes iniciar sesión para ganar puntos por compartir.');
+      return;
+    }
+    if (!user.username) {
+      toast.error('Debes configurar tu nombre de usuario en "Mi Cuenta" para poder compartir.');
+      return;
+    }
+    if (!flyerImageUrl) {
+      toast.error('No hay un flyer disponible para compartir para este evento.');
       return;
     }
-    if (!user.username) {
-      toast.error('Debes configurar tu nombre de usuario en "Mi Cuenta" para poder compartir.');
-      return;
-    }
 
-    // Usamos el link de referido personal del usuario
-    const shareUrl = `https://sucht.com.ar/p/${user.username}`;
-    
-    try {
-      // 1. Otorgamos los puntos al usuario por la acción de compartir
-      await api.post('/point-transactions/social-share', { eventId });
+    const shareUrl = `https://sucht.com.ar/p/${user.username}`;
+    
+    try {
+      toast.loading('Preparando historia...');
+      // 1. Otorgamos los puntos al usuario
+      await api.post('/point-transactions/social-share', { eventId });
 
-      // 2. Intentamos usar la API de Share nativa del navegador
-      if (navigator.share) {
-        await navigator.share({
-          title: `¡No te pierdas ${eventTitle} en SUCHT!`,
-          text: `¡Conseguí tus entradas a través de mi link!`,
-          url: shareUrl,
-        });
-        toast.success('¡Gracias por compartir!');
-      } else {
-        // Fallback: Si la API de Share no está disponible, copiamos al portapapeles
-        navigator.clipboard.writeText(shareUrl);
-        toast.success('¡Tu link de referido fue copiado al portapapeles!');
-      }
-    } catch (error) {
-      console.error('Error al compartir o dar puntos:', error);
+      // 2. Copiamos el enlace de referido al portapapeles
       navigator.clipboard.writeText(shareUrl);
-      toast.error('No se pudieron otorgar los puntos, ¡pero puedes compartir el enlace!');
-    }
-  };
 
-  // No renderizamos el botón si no estamos en un dispositivo móvil o si el usuario no tiene username
-  if (!isMobile || !user?.username) {
-    return null;
-  }
+      // 3. Notificamos al usuario
+      toast.dismiss();
+      toast.success('¡Link copiado! Pégalo como sticker en tu historia.');
 
-  return (
-    <button
-      onClick={handleShare}
-      className="flex items-center justify-center gap-2 w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity"
-    >
-      <Share2 size={20} />
-      Compartir y Ganar Puntos
-    </button>
-  );
+      // 4. Construimos la URL para abrir Instagram Stories con el flyer
+      // Nota: Instagram requiere que la imagen esté codificada para la URL
+      const instagramUrl = `instagram-stories://share?source_application=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}&sticker_asset_uri=${encodeURIComponent(flyerImageUrl)}`;
+      
+      // 5. Redirigimos al usuario
+      window.location.href = instagramUrl;
+
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error al compartir o dar puntos:', error);
+      toast.error('No se pudo abrir Instagram. ¡Inténtalo de nuevo desde tu celular!');
+    }
+  };
+
+  // No renderizamos el botón si no estamos en un dispositivo móvil
+  if (!isMobile) {
+    return null;
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      className="flex items-center justify-center gap-2 w-full mt-6 bg-gradient-to-r from-purple-600 via-pink-600 to-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity"
+    >
+      <Instagram size={20} />
+      Compartir en Instagram
+    </button>
+  );
 }
