@@ -29,19 +29,26 @@ export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: s
     setIsModalOpen(true);
   };
 
-  const handleDownloadFlyer = () => {
+  const handleDownloadFlyer = async () => {
     if (!flyerImageUrl) {
       toast.error('No hay un flyer disponible para descargar.');
       return;
     }
-    const link = document.createElement('a');
-    link.href = flyerImageUrl;
-    link.download = `flyer-${eventTitle.replace(/ /g, '-')}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Flyer descargado. ¡Sube esta imagen a tu historia!');
-    setStep(2);
+    try {
+      toast.loading('Generando descarga segura...');
+      const response = await api.post('/cloudinary/signed-download-url', { publicId: flyerImageUrl });
+      const { downloadUrl } = response.data;
+      
+      window.open(downloadUrl, '_blank');
+
+      toast.dismiss();
+      toast.success('Flyer descargado. ¡Sube esta imagen a tu historia!');
+      setStep(2);
+    } catch (error) {
+      toast.dismiss();
+      console.error("Error al generar la URL de descarga:", error);
+      toast.error("No se pudo descargar el flyer. Intenta de nuevo.");
+    }
   };
 
   const handleCopyLink = () => {
