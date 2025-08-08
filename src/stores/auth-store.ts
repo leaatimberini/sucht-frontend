@@ -4,16 +4,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 import api from '@/lib/axios';
+import { User } from '@/types/user.types';
 
-interface UserState {
-  id: string;
-  email: string;
-  name: string | null;
-  roles: string[];
-  profileImageUrl: string | null;
-  isMpLinked: boolean;
-  rrppCommissionRate: number | null;
-}
+// The UserState now uses the full User type for compatibility
+type UserState = User;
 
 interface AuthState {
   token: string | null;
@@ -22,7 +16,7 @@ interface AuthState {
   logout: () => void;
   isLoggedIn: () => boolean;
   fetchUser: () => Promise<void>;
-  init: () => void; // <-- Nueva función de inicialización
+  init: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -65,7 +59,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
-      // La lógica de inicialización ahora vive aquí, para ser llamada de forma segura
       init: () => {
         const token = get().token;
         if (token) {
@@ -80,5 +73,3 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
-
-// Se elimina el bloque de inicialización de aquí para romper la dependencia circular.
