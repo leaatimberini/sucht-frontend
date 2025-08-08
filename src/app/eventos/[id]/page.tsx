@@ -1,67 +1,93 @@
-'use client';
+import api from "@/lib/axios";
+import { type Event } from "@/types/event.types";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import { TicketAcquirer } from "@/components/ticket-acquirer";
+import { TicketTier } from "@/types/ticket.types";
+import { ShareButton } from "@/components/share-button"; // Import the new component
 
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import api from '@/lib/axios';
-import { Instagram } from 'lucide-react';
-import { useAuthStore } from '@/stores/auth-store';
+export const revalidate = 60;
 
-export function ShareButton({ eventId, eventTitle, flyerImageUrl }: { eventId: string, eventTitle: string, flyerImageUrl: string | null }) {
-  const [isMobile, setIsMobile] = useState(false);
-  const { user } = useAuthStore();
-
-  useEffect(() => {
-    const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
-    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent));
-  }, []);
-
-  const handleShare = async () => {
-    if (!user) {
-      toast.error('Debes iniciar sesión para ganar puntos por compartir.');
-      return;
-    }
-    if (!user.username) {
-      toast.error('Debes configurar tu nombre de usuario en "Mi Cuenta" para poder compartir.');
-      return;
-    }
-    if (!flyerImageUrl) {
-      toast.error('No hay un flyer disponible para compartir para este evento.');
-      return;
-    }
-
-    const shareUrl = `https://sucht.com.ar/p/${user.username}`;
-    const stickerUrl = "https://res.cloudinary.com/di4ikaeke/image/upload/v1754630226/yovoyaSUCHT_uh23kb.png"; // URL del logo de SUCHT
-    
-    try {
-      toast.loading('Preparando historia...');
-      await api.post('/point-transactions/social-share', { eventId });
-
-      navigator.clipboard.writeText(shareUrl);
-      toast.dismiss();
-      toast.success('¡Link copiado! Pégalo como sticker en tu historia.');
-
-      const instagramUrl = `instagram-stories://share?source_application=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}&sticker_asset_uri=${encodeURIComponent(stickerUrl)}&background_asset_uri=${encodeURIComponent(flyerImageUrl)}`;
-      
-      window.location.href = instagramUrl;
-
-    } catch (error) {
-      toast.dismiss();
-      console.error('Error al compartir o dar puntos:', error);
-      toast.error('No se pudo abrir Instagram. ¡Inténtalo de nuevo desde tu celular!');
-    }
-  };
-
-  if (!isMobile) {
+async function getEvent(id: string): Promise<Event | null> {
+  try {
+    const response = await api.get(`/events/${id}`);
+    return response.data;
+  } catch (error) {
     return null;
   }
+}
+
+async function getEventTiers(eventId: string): Promise<TicketTier[] | null> {
+  try {
+    const response = await api.get(`/events/${eventId}/ticket-tiers`);
+    return response.data;
+  } catch (error) {
+    return null;
+  }
+}
+
+export default async function EventoDetailPage({ params }: { params: { id: string } }) {
+  const event = await getEvent(params.id);
+  const tiers = await getEventTiers(params.id);
+
+  if (!event) {
+    notFound();
+  }
+  
+  const isEventFinished = new Date() > new Date(event.endDate);
 
   return (
-    <button
-      onClick={handleShare}
-      className="flex items-center justify-center gap-2 w-full mt-6 bg-gradient-to-r from-purple-600 via-pink-600 to-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity"
-    >
-      <Instagram size={20} />
-      Compartir en Instagram
-    </button>
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2">
+          {event.flyerImageUrl && (
+            <Image
+              src={event.flyerImageUrl}
+              alt={`Flyer de ${event.title}`}
+              width={700}
+              height={1050}
+              className="w-full rounded-lg object-cover"
+            />
+          )}
+          <div className="mt-8">
+            <h1 className="text-4xl font-bold text-white">{event.title}</h1>
+            <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
+            <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
+
+            {/* Use the ShareButton component here */}
+            <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
+
+            <div className="mt-8 space-y-4">
+              <h2 className="text-2xl font-bold text-white">Entradas</h2>
+              {tiers?.map(tier => (
+                <div key={tier.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <p className="text-white font-semibold">{tier.name}</p>
+                    <p className="text-pink-500 font-bold">${tier.price}</p>
+                  </div>
+                  <div className="mt-2 text-sm text-zinc-400">
+                    {tier.quantity > 0 ? (
+                      <p>Quedan {tier.quantity} disponibles</p>
+                    ) : (
+                      <p className="text-red-500 font-semibold">¡AGOTADO!</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="lg:col-span-1">
+          {isEventFinished ? (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 text-center">
+              <h3 className="text-xl font-semibold text-white">Evento Finalizado</h3>
+              <p className="text-zinc-400 mt-2">Gracias por acompañarnos.</p>
+            </div>
+          ) : (
+            <TicketAcquirer eventId={event.id} />
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
