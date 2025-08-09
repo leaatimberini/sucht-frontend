@@ -10,27 +10,28 @@ import { AppInitializer } from "@/components/app-initializer";
 const poppins = localFont({
   src: [
     {
-      path: './fonts/poppins/Poppins-Regular.woff2',
+      // CORRECCIÓN: La ruta ahora usa el alias '@/app/' para resolver desde el directorio src/app
+      path: '@/app/fonts/poppins/Poppins-Regular.woff2',
       weight: '400',
       style: 'normal',
     },
     {
-      path: './fonts/poppins/Poppins-Medium.woff2',
+      path: '@/app/fonts/poppins/Poppins-Medium.woff2',
       weight: '500',
       style: 'normal',
     },
     {
-      path: './fonts/poppins/Poppins-SemiBold.woff2',
+      path: '@/app/fonts/poppins/Poppins-SemiBold.woff2',
       weight: '600',
       style: 'normal',
     },
     {
-      path: './fonts/poppins/Poppins-Bold.woff2',
+      path: '@/app/fonts/poppins/Poppins-Bold.woff2',
       weight: '700',
       style: 'normal',
     },
     {
-      path: './fonts/poppins/Poppins-ExtraBold.woff2',
+      path: '@/app/fonts/poppins/Poppins-ExtraBold.woff2',
       weight: '800',
       style: 'normal',
     },
