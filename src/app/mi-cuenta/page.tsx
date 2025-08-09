@@ -81,7 +81,7 @@ export default function MiCuentaPage() {
         
         {userData?.isBirthdayWeek && (
           <div className="mb-8">
-           
+            
           </div>
         )}
         

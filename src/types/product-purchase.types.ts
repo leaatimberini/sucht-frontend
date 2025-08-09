@@ -1,4 +1,5 @@
 import { Product } from "./product.types";
+import { User } from "./user.types"; // Añadir esta importación
 
 export interface ProductPurchase {
     id: string;
@@ -9,7 +10,7 @@ export interface ProductPurchase {
     amountPaid: number;
     paymentId: string;
     redeemedAt: string | null;
-    createdAt: string; // <-- Esta es la propiedad que faltaba y causa el error.
+    createdAt: string;
     updatedAt: string;
     product: Product;
     event: {
@@ -17,4 +18,5 @@ export interface ProductPurchase {
         title: string;
         startDate: string;
     };
+    user: User; // <-- Propiedad que faltaba
 }
