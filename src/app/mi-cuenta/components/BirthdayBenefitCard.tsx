@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { Gift, Users, Loader } from 'lucide-react';
@@ -55,7 +55,6 @@ export function BirthdayBenefitCard({ events }: { events: Event[] }) {
         <p className="text-zinc-400">Celebra con nosotros. Tienes beneficios especiales disponibles esta semana.</p>
       </div>
 
-      {/* Beneficio de Ingreso Grupal */}
       <div className="bg-zinc-800 p-4 rounded-lg">
         <h3 className="font-semibold text-white flex items-center gap-2"><Users size={18} /> Ingreso para tu grupo</h3>
         <div className="mt-4 space-y-4">
@@ -98,7 +97,6 @@ export function BirthdayBenefitCard({ events }: { events: Event[] }) {
         </div>
       </div>
 
-      {/* Beneficio de Regalo */}
       <div className="bg-zinc-800 p-4 rounded-lg">
         <h3 className="font-semibold text-white">Tu Regalo: Champagne</h3>
         <button
