@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local';
+import { Poppins } from 'next/font/google'; // Volvimos a usar Google Fonts
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { Header } from '@/components/header';
@@ -7,34 +7,10 @@ import { TrackingScripts } from '@/components/tracking-scripts';
 import { MercadoPagoProvider } from '@/components/mercado-pago-provider';
 import { AppInitializer } from "@/components/app-initializer";
 
-const poppins = localFont({
-  src: [
-    {
-      path: '@/app/fonts/poppins/Poppins-Regular.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '@/app/fonts/poppins/Poppins-Medium.woff2',
-      weight: '500',
-      style: 'normal',
-    },
-    {
-      path: '@/app/fonts/poppins/Poppins-SemiBold.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-    {
-      path: '@/app/fonts/poppins/Poppins-Bold.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '@/app/fonts/poppins/Poppins-ExtraBold.woff2',
-      weight: '800',
-      style: 'normal',
-    },
-  ],
+// Configuración de la fuente desde Google Fonts
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-poppins',
 });
 
@@ -50,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={poppins.variable}>
+    <html lang="es" className={poppins.className}>
       <body
         className={`${poppins.className} bg-zinc-950 text-zinc-50 antialiased`}
       >

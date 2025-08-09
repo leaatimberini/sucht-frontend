@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
-import { fontFamily } from "tailwindcss/defaultTheme";
+// Eliminamos la importación de 'fontFamily' de 'tailwindcss/defaultTheme'
+// import { fontFamily } from "tailwindcss/defaultTheme";
 
 const config: Config = {
   darkMode: ["class"],
@@ -10,9 +11,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ["var(--font-poppins)", ...fontFamily.sans],
-      },
+      // Eliminamos la configuración de fontFamily
+      // fontFamily: {
+      //   sans: ["var(--font-poppins)", ...fontFamily.sans],
+      // },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
