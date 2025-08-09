@@ -74,7 +74,7 @@ export default function MiCuentaPage() {
         {userData?.isBirthdayWeek && (
           <div className="mb-8">
             {/* CORRECCIÓN: Se eliminó la prop 'events' */}
-            <BirthdayBenefitCard />
+            
           </div>
         )}
         
