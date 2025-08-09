@@ -6,10 +6,9 @@ import api from '@/lib/axios';
 import { Ticket } from '@/types/ticket.types';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
-import { ProductPurchase } from '@/types/product-purchase.types'; // Importar el tipo de producto
+import { ProductPurchase } from '@/types/product-purchase.types';
 
 // --- DEFINICIÓN DE TIPOS ACTUALIZADA ---
-// Añadimos 'product' al tipo ScanType
 type ScanType = 'ticket' | 'reward' | 'product';
 
 interface ScanResultData {
@@ -17,7 +16,7 @@ interface ScanResultData {
   userName?: string;
   ticketType?: string;
   rewardName?: string;
-  productName?: string; // Nuevo campo para productos
+  productName?: string;
   validatedAt?: string;
 }
 
@@ -39,7 +38,6 @@ function ScanResult({ result, onScanNext }: { result: ResultState, onScanNext: (
           {result.data.userName && <p className="text-zinc-300 mt-2 text-lg font-semibold">{result.data.userName}</p>}
           {result.data.ticketType && <p className="text-zinc-400 text-sm">{result.data.ticketType}</p>}
           {result.data.rewardName && <p className="text-pink-400 font-semibold">{result.data.rewardName}</p>}
-          {/* NUEVO: Mostrar el nombre del producto */}
           {result.data.productName && <p className="text-pink-400 font-semibold">{result.data.productName}</p>}
         </>
       ) : (
@@ -56,7 +54,7 @@ function ScanResult({ result, onScanNext }: { result: ResultState, onScanNext: (
   );
 }
 
-// ===== NUEVO: Interfaz para canjear productos =====
+// --- Interfaz para canjear productos ---
 function RedeemProductInterface({ productPurchase, onRedeemed, onCancel }: { productPurchase: ProductPurchase, onRedeemed: (result: ResultState) => void, onCancel: () => void }) {
   const [isRedeeming, setIsRedeeming] = useState(false);
 
@@ -172,8 +170,9 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
           response = await api.post(`/rewards/validate/${decodedText}`);
           setResult({ type: 'success', data: response.data });
           toast.dismiss();
-        } else if (scanType === 'product') { // NUEVO: Lógica para productos
-          response = await api.get(`/store/purchase/${decodedText}`);
+        } else if (scanType === 'product') { 
+          // CORRECCIÓN CLAVE: Se usa POST para el endpoint de validación
+          response = await api.post(`/store/purchase/validate/${decodedText}`);
           setScannedData(response.data);
           toast.dismiss();
           toast.success('Producto encontrado.');
@@ -206,7 +205,6 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
     setResult(redeemResult);
   }
   
-  // RENDERIZADO: Mostrar la interfaz correcta según el tipo de escaneo
   if (result) {
     return <ScanResult result={result} onScanNext={resetScanner} />;
   }
@@ -214,7 +212,6 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
     if (scanType === 'ticket') {
       return <RedeemInterface ticket={scannedData} onRedeemed={handleFinalRedeem} onCancel={resetScanner} />;
     }
-    // NUEVO: Renderizar la interfaz para productos
     if (scanType === 'product') {
       return <RedeemProductInterface productPurchase={scannedData} onRedeemed={handleFinalRedeem} onCancel={resetScanner} />;
     }
