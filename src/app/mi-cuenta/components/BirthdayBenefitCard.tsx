@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 export function BirthdayBenefitCard() {
   // Estado para el flujo en varios pasos: 'initial' -> 'form' -> 'claimed'
   const [step, setStep] = useState<'initial' | 'form' | 'claimed'>('initial');
-  
+
   const [benefit, setBenefit] = useState<BirthdayBenefit | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +60,14 @@ export function BirthdayBenefitCard() {
       } else if (typeof errorData === 'string') {
         errorMessage = errorData;
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleUpdateGuestLimit = async () => {
     if (guestInput < 0) {
       toast.error("El número de invitados no puede ser negativo.");
@@ -100,14 +100,14 @@ export function BirthdayBenefitCard() {
       {children}
     </div>
   );
-  
-  const QrDisplay = ({ title, description, qrData, qrId }: { title: string, description: string, qrData: string, qrId: string }) => (
-    <div className="bg-white p-4 rounded-lg flex flex-col items-center text-center">
-      <QRCode value={qrData} size={150} />
-      <div className="mt-4 text-black">
+
+  const QrDisplay = ({ title, description, qrData }: { title: string, description: string, qrData: string }) => (
+    <div className="bg-white p-4 rounded-lg flex flex-col items-center text-center shadow-md">
+      <QRCode value={qrData} size={180} className="mb-4" />
+      <div className="mt-2 text-black">
         <p className="font-bold text-lg">{title}</p>
         <p className="text-sm text-zinc-700">{description}</p>
-        <p className="text-xs text-zinc-500 mt-1 break-all">ID: {qrId}</p>
+        {/* ¡ID OCULTO! */}
       </div>
     </div>
   );
@@ -135,7 +135,7 @@ export function BirthdayBenefitCard() {
       </CardWrapper>
     );
   }
-  
+
   // --- VISTA 2: FORMULARIO DE INVITADOS ---
   if (step === 'form') {
       return (
@@ -144,19 +144,19 @@ export function BirthdayBenefitCard() {
           <Users className="mx-auto text-pink-400 mb-4" size={48} />
           <h2 className="text-2xl font-bold text-white">Lista de Invitados</h2>
           <p className="text-zinc-300 mt-2 mb-4">¿Cuántos invitados quieres traer al evento? <br/>El ingreso es hasta las 3 AM y deben entrar todos juntos.</p>
-          
+
           <div className="my-6">
               <label htmlFor="guest-input" className="block mb-2 font-semibold">Número de invitados:</label>
               <input id="guest-input" type="number" value={guestInput} onChange={handleInputChange} className="bg-zinc-800 text-white p-2 rounded-md w-24 text-center" />
               <p className="text-xs text-zinc-500 mt-2">(Podrás modificarlo 2 veces más tarde si es necesario)</p>
           </div>
-  
+
           {error && (
               <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md mb-4 flex items-center gap-2">
                   <AlertTriangle size={20}/> <p>{error}</p>
               </div>
           )}
-  
+
           <button onClick={handleClaimBenefit} disabled={isLoading} className="bg-green-600 hover:bg-green-700 disabled:bg-green-900/50 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
             {isLoading ? <Loader2 className="animate-spin" /> : 'Confirmar y Generar QRs'}
           </button>
@@ -172,23 +172,23 @@ export function BirthdayBenefitCard() {
     const expirationDate = new Date(benefit.expiresAt);
     return (
         <CardWrapper>
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-6">
               <PartyPopper className="text-amber-400" size={40} />
               <div>
                 <h2 className="text-2xl font-bold text-white">¡Tu Beneficio de Cumpleaños!</h2>
                 <p className="text-zinc-300">¡Felicidades! Usa estos QRs para el evento <strong>{benefit.event.title}</strong>.</p>
               </div>
             </div>
-            
-            <div className="grid md:grid-cols-2 gap-6 mt-6">
-              <QrDisplay title="QR de Ingreso" description={`Para vos y tus ${benefit.guestLimit} invitados. Deben ingresar todos juntos.`} qrData={entryQrData} qrId={benefit.entryQrId} />
-              <QrDisplay title="QR de Regalo" description="Presenta este QR en la barra para canjear tu champagne." qrData={giftQrData} qrId={benefit.giftQrId} />
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <QrDisplay title="QR de Ingreso" description={`Para vos y tus ${benefit.guestLimit} invitados. Deben ingresar todos juntos.`} qrData={entryQrData} />
+              <QrDisplay title="QR de Regalo" description="Presenta este QR en la barra para canjear tu champagne." qrData={giftQrData} />
             </div>
-            
+
             <div className="text-center mt-6 p-3 bg-zinc-800/50 rounded-lg">
                 <p className="font-semibold text-red-400">¡Importante! El ingreso es válido hasta las {format(expirationDate, "HH:mm 'hs'.")}</p>
             </div>
-            
+
             {isEditing ? (
               <div className="mt-6 text-center">
                 <h4 className="font-semibold mb-2">Modificar número de invitados:</h4>
