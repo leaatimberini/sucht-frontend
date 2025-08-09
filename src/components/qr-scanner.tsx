@@ -7,10 +7,9 @@ import { Ticket } from '@/types/ticket.types';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { ProductPurchase } from '@/types/product-purchase.types';
-import { isUuid } from '@/lib/utils'; // Esta función debe ser una utilidad que verifique si una cadena es un UUID.
+import { isUuid } from '@/lib/utils';
 
 // --- DEFINICIÓN DE TIPOS ACTUALIZADA ---
-// Añadimos 'birthday-entry' y 'birthday-gift' al tipo ScanType
 type ScanType = 'ticket' | 'reward' | 'product' | 'birthday-entry' | 'birthday-gift';
 
 interface ScanResultData {
@@ -162,7 +161,7 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
       try {
         toast.loading('Verificando QR...');
         let response;
-        let qrData: any = { type: scanType, id: decodedText }; // Valor por defecto
+        let qrData: any = { type: scanType, id: decodedText };
 
         try {
           qrData = JSON.parse(decodedText);
@@ -192,11 +191,13 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
                 setScannedData(response.data);
                 break;
             case 'BIRTHDAY_ENTRY':
-                response = await api.post(`/tickets/validate-birthday-entry/${id}`);
+                // CORRECCIÓN: URL ajustada para coincidir con el BirthdayController
+                response = await api.post(`/birthday/validate-entry/${id}`);
                 setScannedData(response.data);
                 break;
             case 'BIRTHDAY_GIFT':
-                response = await api.post(`/rewards/validate-birthday-gift/${id}`);
+                // CORRECCIÓN: URL ajustada para coincidir con el BirthdayController
+                response = await api.post(`/birthday/validate-gift/${id}`);
                 setResult({ type: 'success', data: response.data });
                 break;
             default:
