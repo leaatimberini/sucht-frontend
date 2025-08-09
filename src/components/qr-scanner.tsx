@@ -7,9 +7,11 @@ import { Ticket } from '@/types/ticket.types';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { ProductPurchase } from '@/types/product-purchase.types';
+import { isUuid } from '@/lib/utils'; // Esta función debe ser una utilidad que verifique si una cadena es un UUID.
 
 // --- DEFINICIÓN DE TIPOS ACTUALIZADA ---
-type ScanType = 'ticket' | 'reward' | 'product';
+// Añadimos 'birthday-entry' y 'birthday-gift' al tipo ScanType
+type ScanType = 'ticket' | 'reward' | 'product' | 'birthday-entry' | 'birthday-gift';
 
 interface ScanResultData {
   message: string;
@@ -160,27 +162,56 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
       try {
         toast.loading('Verificando QR...');
         let response;
-        if (scanType === 'ticket') {
-          if (!eventId) { throw new Error("Se requiere un eventId para escanear tickets."); }
-          response = await api.get(`/tickets/${decodedText}`);
-          setScannedData(response.data);
-          toast.dismiss();
-          toast.success('Entrada encontrada.');
-        } else if (scanType === 'reward') {
-          response = await api.post(`/rewards/validate/${decodedText}`);
-          setResult({ type: 'success', data: response.data });
-          toast.dismiss();
-        } else if (scanType === 'product') { 
-          // CORRECCIÓN CLAVE: Se usa POST para el endpoint de validación
-          response = await api.post(`/store/purchase/validate/${decodedText}`);
-          setScannedData(response.data);
-          toast.dismiss();
-          toast.success('Producto encontrado.');
+        let qrData: any = { type: scanType, id: decodedText }; // Valor por defecto
+
+        try {
+          qrData = JSON.parse(decodedText);
+        } catch (e) {
+          // Si falla, el QR es una cadena simple (un UUID)
         }
+        
+        let type = qrData.type;
+        let id = qrData.id;
+
+        if (!isUuid(id)) {
+            throw new Error('Formato de QR inválido o corrupto.');
+        }
+
+        switch (type) {
+            case 'ticket':
+                if (!eventId) { throw new Error("Se requiere un eventId para escanear tickets."); }
+                response = await api.get(`/tickets/${id}`);
+                setScannedData(response.data);
+                break;
+            case 'reward':
+                response = await api.post(`/rewards/validate/${id}`);
+                setResult({ type: 'success', data: response.data });
+                break;
+            case 'product':
+                response = await api.post(`/store/purchase/validate/${id}`);
+                setScannedData(response.data);
+                break;
+            case 'BIRTHDAY_ENTRY':
+                response = await api.post(`/tickets/validate-birthday-entry/${id}`);
+                setScannedData(response.data);
+                break;
+            case 'BIRTHDAY_GIFT':
+                response = await api.post(`/rewards/validate-birthday-gift/${id}`);
+                setResult({ type: 'success', data: response.data });
+                break;
+            default:
+                throw new Error('Tipo de QR no reconocido.');
+        }
+        
+        toast.dismiss();
+        toast.success('QR verificado con éxito.');
+
       } catch (error: any) {
         toast.dismiss();
         setResult({ type: 'error', data: error.response?.data || { message: 'Error desconocido.' } });
         toast.error(error.response?.data?.message || 'Error al verificar el QR.');
+      } finally {
+        setIsPaused(false);
       }
     };
 
@@ -209,7 +240,7 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
     return <ScanResult result={result} onScanNext={resetScanner} />;
   }
   if (scannedData) {
-    if (scanType === 'ticket') {
+    if (scannedData.type === 'BIRTHDAY_ENTRY' || scanType === 'ticket') {
       return <RedeemInterface ticket={scannedData} onRedeemed={handleFinalRedeem} onCancel={resetScanner} />;
     }
     if (scanType === 'product') {
