@@ -84,7 +84,7 @@ export function MisPremiosTab({ user, rewards, userRewards, onRedeem }: { user: 
   return (
     <div className="space-y-8">
       {/* Se reemplaza el contador de puntos simple por el nuevo componente */}
-      <LoyaltyProgressBar user={user} />
+ 
       
       <div>
         <h3 className="text-2xl font-bold text-white mb-4">Tienda de Canje</h3>
