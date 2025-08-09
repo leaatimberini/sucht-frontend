@@ -3,20 +3,10 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 import axios from 'axios';
+import { ProductPurchase } from '@/types/product-purchase.types'; // ✅ Asegúrate de que esta importación sea la correcta.
 
-interface ProductPurchase {
-    id: string;
-    quantity: number;
-    redeemedAt: Date | null;
-    product: {
-        name: string;
-        price: number;
-    };
-    event: {
-        title: string;
-        startDate: Date;
-    };
-}
+// Removimos la definición local de la interfaz para evitar conflictos
+// interface ProductPurchase { ... }
 
 export default function MyProducts({ userId }: { userId: string }) {
     const [products, setProducts] = useState<ProductPurchase[]>([]);

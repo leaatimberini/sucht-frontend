@@ -9,7 +9,7 @@ export interface ProductPurchase {
     amountPaid: number;
     paymentId: string;
     redeemedAt: string | null;
-    createdAt: string; // ✅ Añadimos la propiedad 'createdAt' para corregir el error
+    createdAt: string; // <-- Esta es la propiedad que faltaba y causa el error.
     updatedAt: string;
     product: Product;
     event: {
