@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local'; // Changed to localFont
+import localFont from 'next/font/local';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { Header } from '@/components/header';
@@ -7,7 +7,6 @@ import { TrackingScripts } from '@/components/tracking-scripts';
 import { MercadoPagoProvider } from '@/components/mercado-pago-provider';
 import { AppInitializer } from "@/components/app-initializer";
 
-// Configuración de la fuente local Poppins
 const poppins = localFont({
   src: [
     {
