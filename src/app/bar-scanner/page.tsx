@@ -1,16 +1,17 @@
-// frontend/src/app/bar-scanner/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { AuthCheck } from "@/components/auth-check";
 import { UserRole } from '@/types/user.types';
 import { QrScanner } from '@/components/qr-scanner';
-import { RedeemedRewardsHistory } from '@/components/redeemed-rewards-history'; // <-- 1. Importar
+import { RedeemedRewardsHistory } from '@/components/redeemed-rewards-history';
+import { RedeemedProductsHistory } from '@/components/redeemed-products-history'; // NUEVO: Importar
 
-type BarScannerTab = 'scanner' | 'history';
+type BarScannerTab = 'scanner' | 'rewards-history' | 'products-history'; // NUEVO: Añadimos 'products-history'
 
 export default function BarScannerPage() {
   const [activeTab, setActiveTab] = useState<BarScannerTab>('scanner');
+  const [scannerMode, setScannerMode] = useState<'reward' | 'product'>('reward'); // NUEVO: Estado para el modo de escaneo
 
   return (
     <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.BARRA]}>
@@ -22,21 +23,35 @@ export default function BarScannerPage() {
           </p>
         </div>
 
-        {/* --- 2. AÑADIMOS LAS PESTAÑAS DE NAVEGACIÓN --- */}
         <div className="border-b border-zinc-800 mb-8">
           <nav className="flex justify-center space-x-4">
             <button onClick={() => setActiveTab('scanner')} className={`py-2 px-4 ${activeTab === 'scanner' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Escanear</button>
-            <button onClick={() => setActiveTab('history')} className={`py-2 px-4 ${activeTab === 'history' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Historial</button>
+            <button onClick={() => setActiveTab('rewards-history')} className={`py-2 px-4 ${activeTab === 'rewards-history' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Historial de Premios</button>
+            <button onClick={() => setActiveTab('products-history')} className={`py-2 px-4 ${activeTab === 'products-history' ? 'border-b-2 border-pink-500 text-white' : 'text-zinc-400'}`}>Historial de Productos</button> {/* NUEVO: Pestaña para historial de productos */}
           </nav>
         </div>
-
-        {/* --- 3. RENDERIZADO CONDICIONAL DEL CONTENIDO --- */}
+        
+        {/* --- RENDERIZADO CONDICIONAL DEL CONTENIDO --- */}
         {activeTab === 'scanner' && (
           <div className='max-w-md mx-auto'>
-              <QrScanner scanType="reward" />
+            {/* NUEVO: Controles para cambiar el modo del escáner */}
+            <div className="flex justify-center space-x-4 mb-4">
+              <button 
+                onClick={() => setScannerMode('reward')} 
+                className={`py-2 px-4 rounded ${scannerMode === 'reward' ? 'bg-pink-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}>
+                Modo Premio
+              </button>
+              <button 
+                onClick={() => setScannerMode('product')} 
+                className={`py-2 px-4 rounded ${scannerMode === 'product' ? 'bg-pink-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}>
+                Modo Producto
+              </button>
+            </div>
+            <QrScanner scanType={scannerMode} />
           </div>
         )}
-        {activeTab === 'history' && <RedeemedRewardsHistory />}
+        {activeTab === 'rewards-history' && <RedeemedRewardsHistory />}
+        {activeTab === 'products-history' && <RedeemedProductsHistory />} {/* NUEVO: Componente para historial de productos */}
 
       </div>
     </AuthCheck>
