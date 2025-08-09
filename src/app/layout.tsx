@@ -10,7 +10,6 @@ import { AppInitializer } from "@/components/app-initializer";
 const poppins = localFont({
   src: [
     {
-      // CORRECCIÓN: La ruta ahora usa el alias '@/app/' para resolver desde el directorio src/app
       path: '@/app/fonts/poppins/Poppins-Regular.woff2',
       weight: '400',
       style: 'normal',
