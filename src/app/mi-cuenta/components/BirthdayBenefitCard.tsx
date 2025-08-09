@@ -1,124 +1,136 @@
+// src/app/mi-cuenta/components/BirthdayBenefitCard.tsx
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import api from '@/lib/axios';
-import toast from 'react-hot-toast';
-import { Gift, Users, Loader, Ticket } from 'lucide-react';
-import { Event } from '@/types/event.types';
-import { QRCodeSVG } from 'qrcode.react';
+import { useEffect, useState } from "react";
+import api from "@/lib/axios";
+import { BirthdayBenefit } from "@/types/birthday.types";
+import { Loader2, PartyPopper, AlertTriangle } from "lucide-react";
+import toast from "react-hot-toast";
+import QRCode from "react-qr-code";
+import { format } from 'date-fns';
+// CORRECCIÓN: Eliminamos la importación de 'es' locale para simplificar
+// import { es } from 'date-fns/locale';
 
-// Tipos para la respuesta de los beneficios (según lo que devuelve tu backend)
-interface BirthdayTicket {
-  id: string;
-  tier: { name: string };
-}
-interface BirthdayGift {
-  id: string;
-}
+export function BirthdayBenefitCard() {
+  const [benefit, setBenefit] = useState<BirthdayBenefit | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-interface BirthdayBenefitCardProps {
-  events: Event[]; // ahora lo recibe como prop
-}
-
-export function BirthdayBenefitCard({ events }: BirthdayBenefitCardProps) {
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
-  const [guestCount, setGuestCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [groupTicket, setGroupTicket] = useState<BirthdayTicket | null>(null);
-  const [giftQr, setGiftQr] = useState<BirthdayGift | null>(null);
-
-  // Si el prop llega con eventos, preselecciono el primero para mejor UX
   useEffect(() => {
-    if (events && events.length > 0 && !selectedEventId) {
-      setSelectedEventId(events[0].id);
-    }
-  }, [events, selectedEventId]);
+    const fetchBenefit = async () => {
+      try {
+        const { data } = await api.get<BirthdayBenefit | ''>('/birthday/my-benefit');
+        if (data) {
+          setBenefit(data);
+        }
+      } catch (err) {
+        console.error("No se encontró beneficio existente, lo cual es normal.", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchBenefit();
+  }, []);
 
-  const handleClaimGroupEntry = async () => {
-    if (!selectedEventId) {
-      toast.error('Por favor, selecciona un evento para festejar.');
-      return;
-    }
+  const handleClaimBenefit = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.post('/birthday-benefits/claim-group-entry', {
-        eventId: selectedEventId,
-        guestCount: Number(guestCount),
-      });
-      setGroupTicket(response.data);
-      toast.success('¡Tu QR de ingreso grupal ha sido generado!');
-    } catch (error: any) {
-      console.error('Failed to claim group entry benefit', error);
-      toast.error(error?.response?.data?.message || 'No se pudo generar el beneficio.');
+      const { data } = await api.post<BirthdayBenefit>('/birthday/claim');
+      setBenefit(data);
+      toast.success('¡Beneficio reclamado con éxito!');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "No se pudo reclamar el beneficio.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClaimGift = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.post('/birthday-benefits/claim-champagne-gift');
-      setGiftQr(response.data);
-      toast.success('¡Tu QR de regalo ha sido generado!');
-    } catch (error: any) {
-      console.error('Failed to claim champagne gift', error);
-      toast.error(error?.response?.data?.message || 'No se pudo generar el regalo.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-zinc-900 border-2 border-amber-400/50 rounded-lg p-6 space-y-6 mb-8 shadow-lg shadow-amber-500/10">
-      <div className="text-center">
-        <Gift className="mx-auto h-12 w-12 text-amber-400" />
-        <h2 className="text-2xl font-bold text-white mt-2">¡Feliz Cumpleaños!</h2>
-        <p className="text-zinc-400">Celebra con nosotros. Tienes beneficios especiales disponibles esta semana.</p>
-      </div>
-
-      {/* Beneficio de Ingreso Grupal */}
-      <div className="bg-zinc-800 p-4 rounded-lg">
-        <h3 className="font-semibold text-white flex items-center gap-2"><Users size={18} /> Ingreso para tu grupo</h3>
-        {groupTicket ? (
-          <div className="flex flex-col items-center text-center mt-4">
-            <div className="bg-white p-2 rounded-lg"><QRCodeSVG value={groupTicket.id} size={128} /></div>
-            <p className="text-white font-bold mt-2">{groupTicket.tier?.name}</p>
-          </div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="event-selector" className="block text-sm font-medium text-zinc-300 mb-1">Selecciona el evento para festejar</label>
-              <select id="event-selector" value={selectedEventId} onChange={(e) => setSelectedEventId(e.target.value)} className="w-full bg-zinc-700 rounded-md p-2">
-                <option value="">Selecciona un evento...</option>
-                {events.map(event => (<option key={event.id} value={event.id}>{(event as any).title || (event as any).name}</option>))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="guest-count" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad de invitados (además de vos)</label>
-              <input type="number" id="guest-count" value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} min={0} className="w-full bg-zinc-700 rounded-md p-2" />
-            </div>
-            <button onClick={handleClaimGroupEntry} disabled={isLoading || !selectedEventId} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">
-              {isLoading ? <Loader className="animate-spin mx-auto" /> : 'Generar QR de Ingreso'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Beneficio de Regalo */}
-      <div className="bg-zinc-800 p-4 rounded-lg">
-        <h3 className="font-semibold text-white flex items-center gap-2"><Ticket size={18} /> Tu Regalo: Champagne</h3>
-        {giftQr ? (
-          <div className="flex flex-col items-center text-center mt-4">
-            <div className="bg-white p-2 rounded-lg"><QRCodeSVG value={giftQr.id} size={128} /></div>
-            <p className="text-white font-bold mt-2">Presenta este QR en la barra</p>
-          </div>
-        ) : (
-          <button onClick={handleClaimGift} disabled={isLoading} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-black font-bold py-2 rounded-lg disabled:opacity-50">
-            {isLoading ? <Loader className="animate-spin mx-auto" /> : 'Generar QR de Regalo'}
-          </button>
-        )}
-      </div>
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-gradient-to-br from-zinc-900 to-black border border-pink-500/30 rounded-lg p-6 shadow-lg text-white">
+      {children}
     </div>
+  );
+
+  if (isLoading) {
+    return (
+      <CardWrapper>
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="animate-spin text-pink-500" size={32} />
+        </div>
+      </CardWrapper>
+    );
+  }
+
+  // --- VISTA DEL BENEFICIO YA RECLAMADO ---
+  if (benefit) {
+    const qrData = JSON.stringify({ type: 'BIRTHDAY', id: benefit.id });
+    const eventDate = new Date(benefit.event.startDate);
+    const expirationDate = new Date(benefit.expiresAt);
+
+    return (
+      <CardWrapper>
+        <div className="flex items-center gap-4 mb-4">
+          <PartyPopper className="text-amber-400" size={40} />
+          <div>
+            <h2 className="text-2xl font-bold text-white">¡Tu Beneficio de Cumpleaños!</h2>
+            <p className="text-zinc-300">¡Felicidades! Usa estos QRs para el evento:</p>
+            <p className="font-bold text-amber-400">{benefit.event.title}</p>
+          </div>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-6 mt-6 items-center">
+            {/* QR de Ingreso */}
+            <div className="bg-white p-4 rounded-lg flex flex-col items-center text-center">
+                 <QRCode value={qrData} size={180} />
+                 <div className="mt-4 text-black">
+                    <p className="font-bold text-lg">QR de Ingreso y Regalo</p>
+                    <p className="text-sm text-zinc-700">Presenta este QR en la puerta para tu ingreso y el de tus <strong>{benefit.guestLimit} invitados</strong>.</p>
+                    <p className="text-sm text-zinc-700 mt-1">Luego, muéstralo en la barra para canjear tu regalo.</p>
+                    {/* CORRECCIÓN: Se eliminó el tercer argumento de format() */}
+                    <p className="text-xs font-semibold text-red-600 mt-2 uppercase">Válido hasta {format(expirationDate, "HH:mm'hs del' EEEE dd/MM")}</p>
+                 </div>
+            </div>
+
+            {/* Instrucciones */}
+            <div className="text-zinc-300 space-y-3">
+                <h3 className="text-xl font-semibold text-white">¿Cómo funciona?</h3>
+                <p><strong>1. Ingreso:</strong> Al llegar, presenta este QR al personal de seguridad. Ellos registrarán tu ingreso y el de todo tu grupo junto.</p>
+                <p><strong>2. Regalo:</strong> Una vez dentro, acércate a la barra y vuelve a mostrar el mismo QR para recibir tu champagne de regalo.</p>
+                 {/* CORRECCIÓN: Se eliminó el tercer argumento de format() */}
+                <p><strong>Importante:</strong> Todo el grupo debe ingresar junto antes de la hora de vencimiento. El beneficio es válido solo para el evento del <strong>{format(eventDate, "EEEE d 'de' MMMM")}</strong>.</p>
+            </div>
+        </div>
+      </CardWrapper>
+    );
+  }
+
+  // --- VISTA PARA RECLAMAR EL BENEFICIO ---
+  return (
+    <CardWrapper>
+      <div className="text-center">
+        <PartyPopper className="mx-auto text-amber-400 mb-4" size={48} />
+        <h2 className="text-2xl font-bold text-white">¡Es tu semana de cumpleaños!</h2>
+        <p className="text-zinc-300 mt-2 mb-4">Reclama tu beneficio especial para el próximo evento: entrada gratis para vos, tus invitados y un champagne de regalo.</p>
+        
+        {error && (
+            <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md mb-4 flex items-center gap-2">
+                <AlertTriangle size={20}/>
+                <p>{error}</p>
+            </div>
+        )}
+
+        <button
+          onClick={handleClaimBenefit}
+          disabled={isLoading}
+          className="bg-pink-600 hover:bg-pink-700 disabled:bg-pink-900/50 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300"
+        >
+          {isLoading ? <Loader2 className="animate-spin" /> : 'Reclamar mi Beneficio'}
+        </button>
+      </div>
+    </CardWrapper>
   );
 }

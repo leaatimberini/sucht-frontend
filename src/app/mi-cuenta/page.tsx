@@ -1,3 +1,5 @@
+// src/app/mi-cuenta/page.tsx
+
 'use client';
 
 import { AuthCheck } from "@/components/auth-check";
@@ -31,7 +33,6 @@ export default function MiCuentaPage() {
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [userRewards, setUserRewards] = useState<UserReward[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [config, setConfig] = useState<{ isRewardsStoreEnabled?: boolean }>({});
   const authUser = useAuthStore((state) => state.user);
@@ -40,20 +41,18 @@ export default function MiCuentaPage() {
     if (!authUser) return;
     setIsLoading(true);
     try {
-      const [ticketsRes, userRes, rewardsRes, userRewardsRes, configRes, eventsRes] = await Promise.all([
+      const [ticketsRes, userRes, rewardsRes, userRewardsRes, configRes] = await Promise.all([
         api.get('/tickets/my-tickets'),
         api.get('/users/profile/me'),
         api.get('/rewards'),
         api.get('/rewards/my-rewards'),
         api.get('/configuration'),
-        api.get('/events?filter=upcoming'),
       ]);
       setTickets(ticketsRes.data);
       setUserData(userRes.data);
       setRewards(rewardsRes.data.filter((r: Reward) => r.isActive));
       setUserRewards(userRewardsRes.data);
       setConfig(configRes.data);
-      setEvents(eventsRes.data);
     } catch (error) {
       console.error("Failed to fetch data", error);
       toast.error("No se pudieron cargar todos tus datos.");
@@ -74,7 +73,8 @@ export default function MiCuentaPage() {
         
         {userData?.isBirthdayWeek && (
           <div className="mb-8">
-            <BirthdayBenefitCard events={events} />
+            {/* CORRECCIÓN: Se eliminó la prop 'events' */}
+            <BirthdayBenefitCard />
           </div>
         )}
         
