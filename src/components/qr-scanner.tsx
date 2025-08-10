@@ -10,7 +10,7 @@ import { ProductPurchase } from '@/types/product-purchase.types';
 import { isUuid } from '@/lib/utils';
 
 // --- DEFINICIÓN DE TIPOS ACTUALIZADA ---
-type ScanType = 'ticket' | 'reward' | 'product' | 'birthday-entry' | 'birthday-gift';
+type ScanType = 'ticket' | 'reward' | 'product';
 
 interface ScanResultData {
   message: string;
@@ -63,11 +63,11 @@ function RedeemProductInterface({ productPurchase, onRedeemed, onCancel }: { pro
     setIsRedeeming(true);
     try {
       const response = await api.post(`/store/purchase/validate/${productPurchase.id}`);
-      onRedeemed({ type: 'success', data: { 
-          message: 'Producto canjeado con éxito.', 
-          userName: response.data.user.name, 
-          productName: response.data.product.name 
-        } 
+      onRedeemed({ type: 'success', data: {
+          message: 'Producto canjeado con éxito.',
+          userName: response.data.user.name,
+          productName: response.data.product.name
+        }
       });
     } catch (error: any) {
       onRedeemed({ type: 'error', data: error.response?.data || { message: 'Error desconocido.' } });
@@ -191,12 +191,10 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
                 setScannedData(response.data);
                 break;
             case 'BIRTHDAY_ENTRY':
-                // CORRECCIÓN: URL ajustada para coincidir con el BirthdayController
                 response = await api.post(`/birthday/validate-entry/${id}`);
                 setScannedData(response.data);
                 break;
             case 'BIRTHDAY_GIFT':
-                // CORRECCIÓN: URL ajustada para coincidir con el BirthdayController
                 response = await api.post(`/birthday/validate-gift/${id}`);
                 setResult({ type: 'success', data: response.data });
                 break;
