@@ -114,11 +114,7 @@ export default function MiCuentaPage() {
         {/* LÓGICA AGREGADA: Renderiza la barra de progreso si hay datos de usuario */}
         {userData && <LoyaltyProgressBar user={userData} />}
         
-        {userData?.isBirthdayWeek && (
-          <div className="mb-8">
-            <BirthdayBenefitCard />
-          </div>
-        )}
+        
         
         <UsernamePrompt />
         {userData && <NotificationPrompt isSubscribed={!!userData.isPushSubscribed} />}
