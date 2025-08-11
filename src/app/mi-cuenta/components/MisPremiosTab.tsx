@@ -1,3 +1,4 @@
+// src/app/mi-cuenta/components/MisPremiosTab.tsx
 'use client';
 
 import { User } from "@/types/user.types";

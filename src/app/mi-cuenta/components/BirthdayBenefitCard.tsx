@@ -1,3 +1,4 @@
+// src/app/mi-cuenta/components/BirthdayBenefitCard.tsx
 'use client';
 
 import { useEffect, useState } from "react";

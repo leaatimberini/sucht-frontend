@@ -1,3 +1,4 @@
+// src/app/mi-cuenta/components/MisProductosTab.tsx
 'use client';
 
 import QRCode from 'react-qr-code';

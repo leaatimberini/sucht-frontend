@@ -1,51 +1,53 @@
 // frontend/src/types/ticket.types.ts
 
-import { type Event } from './event.types';
-import { type User } from './user.types';
+import { Event } from "./event.types";
+import { User } from "./user.types";
 
-export enum ProductType {
-  TICKET = 'ticket',
-  VIP_TABLE = 'vip_table',
-  VOUCHER = 'voucher',
+// CORRECCIÓN: El estado es 'invalidated', no 'invalid'
+export enum TicketStatus {
+  VALID = 'valid',
+  USED = 'used',
+  PARTIALLY_USED = 'partially_used',
+  INVALIDATED = 'invalidated',
+  PARTIALLY_PAID = 'partially_paid',
+  REDEEMED = 'redeemed',
 }
 
-// CORRECCIÓN: Se añade el enum TicketStatus
-export enum TicketStatus {
-  VALID = 'valid',
-  USED = 'used',
-  PARTIALLY_USED = 'partially_used',
-  INVALID = 'invalid',
-  PARTIALLY_PAID = 'partially_paid',
-  REDEEMED = 'redeemed',
-  INVALIDATED = 'invalidated',
+export enum ProductType {
+  TICKET = 'ticket',
+  VIP_TABLE = 'vip_table',
+  VOUCHER = 'voucher',
 }
 
 export interface TicketTier {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  validUntil: string | null;
-  createdAt: string;
-  updatedAt: string;
-  isFree: boolean; // CORRECCIÓN: Añadimos la nueva propiedad 'isFree'
-  productType: ProductType;
-  allowPartialPayment: boolean;
-  partialPaymentPrice: number | null;
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  validUntil: string | null;
+  isFree: boolean;
+  productType: ProductType;
+  allowPartialPayment: boolean;
+  partialPaymentPrice: number | null;
+  isBirthdayDefault: boolean;
+  isBirthdayVipOffer: boolean;
+  consumptionCredit: number | null;
 }
 
 export interface Ticket {
-  id: string;
-  status: TicketStatus; // CORRECCIÓN: Se usa el enum TicketStatus
-  quantity: number;
-  redeemedCount: number;
-  amountPaid: number;
-  confirmedAt: string | null;
-  validatedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  event: Event;
-  tier: TicketTier;
-  user: User; 
-  promoter: User | null;
+  id: string;
+  event: Event;
+  tier: TicketTier;
+  user: User;
+  promoter: User | null;
+  status: TicketStatus;
+  origin: string | null;
+  quantity: number;
+  redeemedCount: number;
+  amountPaid: number;
+  paymentId: string | null;
+  confirmedAt: string | null;
+  validatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

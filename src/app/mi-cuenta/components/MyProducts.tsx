@@ -1,3 +1,4 @@
+// src/app/mi-cuenta/components/MyProducts.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
