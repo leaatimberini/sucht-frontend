@@ -1,217 +1,177 @@
-// src/app/mi-cuenta/components/BirthdayBenefitCard.tsx
 'use client';
 
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
-import { BirthdayBenefit } from "@/types/birthday.types";
-import { Loader2, PartyPopper, AlertTriangle, Edit2, Users } from "lucide-react";
+import { Ticket } from "@/types/ticket.types";
+import { UserReward } from "@/types/reward.types";
+import { Loader2, PartyPopper, AlertTriangle, Crown, Gift, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import QRCode from "react-qr-code";
-import { format } from 'date-fns';
+import { useAuthStore } from "@/stores/auth-store";
+import { useRouter } from 'next/navigation';
+import Link from "next/link";
 
+// --- COMPONENTE PRINCIPAL ---
 export function BirthdayBenefitCard() {
-  // Estado para el flujo en varios pasos: 'initial' -> 'form' -> 'claimed'
-  const [step, setStep] = useState<'initial' | 'form' | 'claimed'>('initial');
-
-  const [benefit, setBenefit] = useState<BirthdayBenefit | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<'loading' | 'choice' | 'classic_form' | 'claimed'>('loading');
+  const [offers, setOffers] = useState<any>({});
+  const [claimedBenefit, setClaimedBenefit] = useState<{ticket: Ticket, reward: UserReward} | null>(null);
   const [guestInput, setGuestInput] = useState<number>(5);
-  const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuthStore();
+  const router = useRouter();
 
-  // --- LÓGICA DE LA CARD ---
-
-  const fetchBenefit = async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await api.get<BirthdayBenefit | ''>('/birthday/my-benefit');
-      if (data) {
-        setBenefit(data);
-        setStep('claimed'); // Si ya tiene beneficio, vamos directo a mostrar los QRs
-      }
-    } catch (err) {
-      console.error("No se encontró beneficio existente.", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // --- LÓGICA ---
   useEffect(() => {
-    fetchBenefit();
+    const checkOffers = async () => {
+      setIsLoading(true);
+      try {
+        const { data } = await api.get('/birthday/offers');
+        setOffers(data);
+        if (data.claimedBenefit) {
+          setClaimedBenefit(data.claimedBenefit);
+          setStep('claimed');
+        } else if (data.isClassicOfferAvailable || data.isVipOfferAvailable) {
+          setStep('choice');
+        }
+      } catch (err) {
+        console.error("Error fetching birthday offers", err);
+        // No mostramos error si simplemente no hay ofertas
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkOffers();
   }, []);
 
-  const handleClaimBenefit = async () => {
-    if (guestInput < 0) {
-      toast.error("El número de invitados no puede ser negativo.");
-      return;
-    }
+  const handleSelectOption = async (choice: 'classic' | 'vip') => {
     setIsLoading(true);
     setError(null);
-    try {
-      const { data } = await api.post<BirthdayBenefit>('/birthday/claim', { guestLimit: guestInput });
-      setBenefit(data);
-      setStep('claimed'); // Avanzamos al paso final
-      toast.success('¡Beneficio reclamado con éxito!');
-    } catch (err: any) {
-      // Manejo de errores mejorado
-      let errorMessage = "No se pudo reclamar el beneficio.";
-      const errorData = err.response?.data?.message;
-      if (Array.isArray(errorData)) {
-        errorMessage = errorData.join('. ');
-      } else if (typeof errorData === 'string') {
-        errorMessage = errorData;
+    const payload: any = { choice };
+
+    if (choice === 'classic') {
+      payload.guestLimit = guestInput;
+      try {
+        const { data } = await api.post('/birthday/select-option', payload);
+        setClaimedBenefit(data);
+        setStep('claimed');
+        toast.success('¡Beneficio clásico reclamado!');
+      } catch (err: any) {
+        handleApiError(err);
       }
-
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+    } else if (choice === 'vip') {
+        if (!user?.whatsappNumber) {
+            toast.error("Por favor, añade tu WhatsApp en 'Editar Perfil' para reservar una mesa.", { duration: 4000 });
+            setIsLoading(false);
+            return;
+        }
+        try {
+            const { data } = await api.post('/birthday/select-option', payload);
+            if (data.type === 'paid' && data.preferenceId) {
+                // Redirigir a Mercado Pago
+                window.location.href = `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${data.preferenceId}`;
+            }
+        } catch(err: any) {
+            handleApiError(err);
+        }
     }
+    setIsLoading(false);
   };
-
-  const handleUpdateGuestLimit = async () => {
-    if (guestInput < 0) {
-      toast.error("El número de invitados no puede ser negativo.");
-      return;
-    }
-    setIsLoading(true);
-    try {
-      await api.patch('/birthday/my-benefit/guest-limit', { guestLimit: guestInput });
-      await fetchBenefit(); // Re-cargamos los datos para mostrar los cambios
-      toast.success("Cantidad de invitados actualizada.");
-      setIsEditing(false); // Cerramos el modo edición
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || "No se pudo actualizar.";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+  
+  const handleApiError = (err: any) => {
+    let errorMessage = "Ocurrió un error.";
+    const errorData = err.response?.data?.message;
+    if (Array.isArray(errorData)) errorMessage = errorData.join('. ');
+    else if (typeof errorData === 'string') errorMessage = errorData;
+    setError(errorMessage);
+    toast.error(errorMessage);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
-    // Si el valor no es un número (ej. campo vacío), lo tratamos como 0.
     setGuestInput(isNaN(value) ? 0 : value);
   };
 
-  // --- COMPONENTES DE UI Y RENDERIZADO ---
-
-  const CardWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="bg-gradient-to-br from-zinc-900 to-black border border-pink-500/30 rounded-lg p-6 shadow-lg text-white transition-all duration-500">
-      {children}
-    </div>
-  );
-
-  const QrDisplay = ({ title, description, qrData }: { title: string, description: string, qrData: string }) => (
-    <div className="bg-white p-4 rounded-lg flex flex-col items-center text-center shadow-md">
-      <QRCode value={qrData} size={180} className="mb-4" />
-      <div className="mt-2 text-black">
-        <p className="font-bold text-lg">{title}</p>
-        <p className="text-sm text-zinc-700">{description}</p>
-        {/* ¡ID OCULTO! */}
-      </div>
-    </div>
-  );
-
-  // --- Renderizado Inicial ---
+  // --- RENDERIZADO ---
   if (isLoading) {
-    return <CardWrapper><div className="flex justify-center items-center py-8"><Loader2 className="animate-spin text-pink-500" size={32} /></div></CardWrapper>;
+    return <div className="bg-zinc-900 rounded-lg p-6 flex justify-center items-center min-h-[200px]"><Loader2 className="animate-spin text-pink-500" /></div>;
   }
 
-  // --- VISTA 1: INICIAL ---
-  if (step === 'initial') {
+  if (step === 'choice') {
     return (
-      <CardWrapper>
-        <div className="text-center">
-          <PartyPopper className="mx-auto text-amber-400 mb-4" size={48} />
-          <h2 className="text-2xl font-bold text-white">¡Es tu semana de cumpleaños!</h2>
-          <p className="text-zinc-300 mt-2 mb-6">Obtén tu beneficio especial: entrada gratis para vos, tus invitados y un champagne de regalo.</p>
-          <button
-            onClick={() => setStep('form')} // <-- Solo cambia al siguiente paso
-            className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300"
-          >
-            Reclamar mi Beneficio
-          </button>
+      <div className="bg-gradient-to-br from-zinc-900 to-black border border-pink-500/30 rounded-lg p-6 text-white text-center">
+        <PartyPopper className="mx-auto text-amber-400 mb-4" size={48} />
+        <h2 className="text-2xl font-bold">¡Es tu semana de cumpleaños!</h2>
+        <p className="text-zinc-300 mt-2 mb-6">Elige uno de los siguientes beneficios exclusivos para celebrar:</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Opción Clásica */}
+          <div className="border border-zinc-700 p-4 rounded-lg flex flex-col text-left">
+            <div className='flex items-center gap-3 mb-2'>
+              <Gift size={24} className="text-pink-400"/>
+              <h3 className="font-bold text-lg">Beneficio Clásico</h3>
+            </div>
+            <p className="text-sm text-zinc-400 flex-grow my-2">Entrada GRATIS para vos y tus invitados + 1 Champagne de regalo.</p>
+            <button onClick={() => setStep('classic_form')} disabled={!offers.isClassicOfferAvailable} className="w-full mt-4 bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+              {offers.isClassicOfferAvailable ? 'Elegir' : 'No Disponible'}
+            </button>
+          </div>
+          {/* Opción VIP */}
+          <div className="border border-zinc-700 p-4 rounded-lg flex flex-col text-left">
+            <div className='flex items-center gap-3 mb-2'>
+              <Crown size={24} className="text-amber-400"/>
+              <h3 className="font-bold text-lg">Upgrade a Mesa VIP</h3>
+            </div>
+            <p className="text-sm text-zinc-400 flex-grow my-2">Pagá $150.000 y te damos $200.000 en consumo. Válido señando con $15.000.</p>
+            <button onClick={() => handleSelectOption('vip')} disabled={!offers.isVipOfferAvailable} className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-black font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+              {offers.isVipOfferAvailable ? 'Reservar VIP' : 'Agotado'}
+            </button>
+          </div>
         </div>
-      </CardWrapper>
+        {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+      </div>
     );
   }
-
-  // --- VISTA 2: FORMULARIO DE INVITADOS ---
-  if (step === 'form') {
+  
+  if (step === 'classic_form') {
       return (
-        <CardWrapper>
-        <div className="text-center">
-          <Users className="mx-auto text-pink-400 mb-4" size={48} />
-          <h2 className="text-2xl font-bold text-white">Lista de Invitados</h2>
-          <p className="text-zinc-300 mt-2 mb-4">¿Cuántos invitados quieres traer al evento? <br/>El ingreso es hasta las 3 AM y deben entrar todos juntos.</p>
-
-          <div className="my-6">
-              <label htmlFor="guest-input" className="block mb-2 font-semibold">Número de invitados:</label>
-              <input id="guest-input" type="number" value={guestInput} onChange={handleInputChange} className="bg-zinc-800 text-white p-2 rounded-md w-24 text-center" />
-              <p className="text-xs text-zinc-500 mt-2">(Podrás modificarlo 2 veces más tarde si es necesario)</p>
-          </div>
-
-          {error && (
-              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md mb-4 flex items-center gap-2">
-                  <AlertTriangle size={20}/> <p>{error}</p>
-              </div>
-          )}
-
-          <button onClick={handleClaimBenefit} disabled={isLoading} className="bg-green-600 hover:bg-green-700 disabled:bg-green-900/50 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
-            {isLoading ? <Loader2 className="animate-spin" /> : 'Confirmar y Generar QRs'}
-          </button>
+        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-white text-center">
+            <Users className="mx-auto text-pink-400 mb-4" size={48} />
+            <h2 className="text-2xl font-bold">Lista de Invitados</h2>
+            <p className="text-zinc-300 mt-2 mb-4">¿Cuántos invitados quieres traer? (Máximo 10)<br/>El ingreso es hasta las 3 AM y deben entrar todos juntos.</p>
+            <input id="guest-input" type="number" value={guestInput} onChange={handleInputChange} className="bg-zinc-800 text-white p-2 rounded-md w-24 text-center" />
+            <div className="mt-6 flex gap-4 justify-center">
+                <button onClick={() => setStep('choice')} className="bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg">Volver</button>
+                <button onClick={() => handleSelectOption('classic')} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Confirmar y Reclamar</button>
+            </div>
+            {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
         </div>
-      </CardWrapper>
       )
   }
 
-  // --- VISTA 3: BENEFICIO RECLAMADO (QRs) ---
-  if (step === 'claimed' && benefit) {
-    const entryQrData = JSON.stringify({ type: 'BIRTHDAY_ENTRY', id: benefit.entryQrId });
-    const giftQrData = JSON.stringify({ type: 'BIRTHDAY_GIFT', id: benefit.giftQrId });
-    const expirationDate = new Date(benefit.expiresAt);
-    return (
-        <CardWrapper>
-            <div className="flex items-center gap-4 mb-6">
-              <PartyPopper className="text-amber-400" size={40} />
-              <div>
-                <h2 className="text-2xl font-bold text-white">¡Tu Beneficio de Cumpleaños!</h2>
-                <p className="text-zinc-300">¡Felicidades! Usa estos QRs para el evento <strong>{benefit.event.title}</strong>.</p>
-              </div>
-            </div>
-
+  if (step === 'claimed' && claimedBenefit) {
+      return (
+        <div className="bg-gradient-to-br from-zinc-900 to-black border border-green-500/30 rounded-lg p-6 text-white">
+            <h2 className="text-2xl font-bold mb-4">¡Beneficio Reclamado!</h2>
+            <p className="text-zinc-300 mb-6">
+              Has elegido la opción clásica. Tu entrada y tu premio de regalo se han generado y añadido a tus secciones correspondientes.
+              También puedes acceder a ellos directamente desde aquí.
+            </p>
             <div className="grid md:grid-cols-2 gap-6">
-              <QrDisplay title="QR de Ingreso" description={`Para vos y tus ${benefit.guestLimit} invitados. Deben ingresar todos juntos.`} qrData={entryQrData} />
-              <QrDisplay title="QR de Regalo" description="Presenta este QR en la barra para canjear tu champagne." qrData={giftQrData} />
+                <Link href="/mi-cuenta/entradas" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
+                  <QRCode value={claimedBenefit.ticket.id} size={150} />
+                  <p className="font-bold text-black mt-4 text-lg">QR de Ingreso</p>
+                  <p className="text-sm text-zinc-600">Para vos y {claimedBenefit.ticket.quantity - 1} invitados</p>
+                </Link>
+                <Link href="/mi-cuenta/premios" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
+                  <QRCode value={claimedBenefit.reward.id} size={150} />
+                  <p className="font-bold text-black mt-4 text-lg">QR de Regalo</p>
+                  <p className="text-sm text-zinc-600">{claimedBenefit.reward.reward.name}</p>
+                </Link>
             </div>
-
-            <div className="text-center mt-6 p-3 bg-zinc-800/50 rounded-lg">
-                <p className="font-semibold text-red-400">¡Importante! El ingreso es válido hasta las {format(expirationDate, "HH:mm 'hs'.")}</p>
-            </div>
-
-            {isEditing ? (
-              <div className="mt-6 text-center">
-                <h4 className="font-semibold mb-2">Modificar número de invitados:</h4>
-                <input type="number" value={guestInput} onChange={handleInputChange} className="bg-zinc-800 text-white p-2 rounded-md w-24 text-center" />
-                <button onClick={handleUpdateGuestLimit} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md ml-3">
-                  {isLoading ? <Loader2 className="animate-spin" /> : 'Confirmar'}
-                </button>
-                <button onClick={() => setIsEditing(false)} className="text-zinc-400 ml-3">Cancelar</button>
-              </div>
-            ) : (
-              benefit.updatesRemaining > 0 && (
-                <div className="text-center mt-6">
-                  <button onClick={() => { setIsEditing(true); setGuestInput(benefit.guestLimit); }} className="text-pink-400 hover:text-pink-300 flex items-center gap-2 mx-auto">
-                    <Edit2 size={16} /> Modificar Invitados ({benefit.updatesRemaining} restantes)
-                  </button>
-                </div>
-              )
-            )}
-        </CardWrapper>
-    );
+        </div>
+      );
   }
 
-  // Fallback por si no hay beneficio y el estado no es 'initial'
-  return null;
+  return null; // No renderizar nada si no es la semana de cumpleaños o no hay ofertas disponibles
 }
