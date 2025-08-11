@@ -23,7 +23,6 @@ export function BirthdayBenefitCard() {
   const { user } = useAuthStore();
   const router = useRouter();
 
-  // --- LÓGICA ---
   useEffect(() => {
     const checkOffers = async () => {
       setIsLoading(true);
@@ -38,14 +37,12 @@ export function BirthdayBenefitCard() {
         }
       } catch (err) {
         console.error("Error fetching birthday offers", err);
-        // No mostramos error si simplemente no hay ofertas o no es la semana del cumpleaños
       } finally {
-        // Solo detenemos el spinner inicial si no hemos cambiado a otro paso
         if(step === 'loading') setIsLoading(false);
       }
     };
     checkOffers();
-  }, [step]); // Dependemos de 'step' para evitar bucles si hay errores
+  }, [step]);
 
   const handleSelectOption = async (choice: 'classic' | 'vip') => {
     setIsLoading(true);
@@ -57,7 +54,7 @@ export function BirthdayBenefitCard() {
       try {
         const { data } = await api.post('/birthday/select-option', payload);
         setClaimedBenefit(data);
-        setStep('claimed'); // Solo avanzamos si la petición es exitosa
+        setStep('claimed');
         toast.success('¡Beneficio clásico reclamado!');
       } catch (err: any) {
         handleApiError(err);
@@ -94,7 +91,6 @@ export function BirthdayBenefitCard() {
     setGuestInput(isNaN(value) ? 0 : value);
   };
 
-  // --- RENDERIZADO ---
   if (isLoading) {
     return <div className="bg-zinc-900 rounded-lg p-6 flex justify-center items-center min-h-[200px]"><Loader2 className="animate-spin text-pink-500" /></div>;
   }
@@ -157,20 +153,25 @@ export function BirthdayBenefitCard() {
               También puedes acceder a ellos directamente desde aquí.
             </p>
             <div className="grid md:grid-cols-2 gap-6">
-                <Link href="/mi-cuenta/entradas" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
-                  <QRCode value={claimedBenefit.ticket.id} size={150} />
-                  <p className="font-bold text-black mt-4 text-lg">QR de Ingreso</p>
-                  <p className="text-sm text-zinc-600">Para vos y {claimedBenefit.ticket.quantity - 1} invitados</p>
-                </Link>
-                <Link href="/mi-cuenta/premios" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
-                  <QRCode value={claimedBenefit.reward.id} size={150} />
-                  <p className="font-bold text-black mt-4 text-lg">QR de Regalo</p>
-                  <p className="text-sm text-zinc-600">{claimedBenefit.reward.reward.name}</p>
-                </Link>
+                {/* --- CORRECCIÓN: Se añade una verificación antes de renderizar cada QR --- */}
+                {claimedBenefit.ticket && (
+                  <Link href="/mi-cuenta/entradas" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
+                    <QRCode value={claimedBenefit.ticket.id} size={150} />
+                    <p className="font-bold text-black mt-4 text-lg">QR de Ingreso</p>
+                    <p className="text-sm text-zinc-600">Para vos y {claimedBenefit.ticket.quantity - 1} invitados</p>
+                  </Link>
+                )}
+                {claimedBenefit.reward && (
+                  <Link href="/mi-cuenta/premios" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
+                    <QRCode value={claimedBenefit.reward.id} size={150} />
+                    <p className="font-bold text-black mt-4 text-lg">QR de Regalo</p>
+                    <p className="text-sm text-zinc-600">{claimedBenefit.reward.reward.name}</p>
+                  </Link>
+                )}
             </div>
         </div>
       );
   }
 
-  return null; // No renderizar nada si no es la semana de cumpleaños o no hay ofertas disponibles
+  return null;
 }
