@@ -1,4 +1,3 @@
-// frontend/src/app/dashboard/rewards/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,21 +6,20 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { PlusCircle, Edit, Trash2, Loader, Gift, History } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader, Gift, History, Star } from 'lucide-react';
 import { format } from 'date-fns';
 
 // --- TIPOS DE DATOS ---
 interface Reward {
-  id: string;
-  name: string;
-  description: string | null;
-  pointsCost: number;
-  stock: number | null;
-  isActive: boolean;
-  redemptionLocation: 'door' | 'bar'; // Se añade para el formulario
+  id: string;
+  name: string;
+  description: string | null;
+  pointsCost: number;
+  stock: number | null;
+  isActive: boolean;
+  redemptionLocation: 'door' | 'bar';
 }
 
-// Se añade el tipo para el historial
 interface RedeemedReward {
   id: string;
   user: { name: string; email: string; };
@@ -30,94 +28,105 @@ interface RedeemedReward {
 }
 
 const rewardSchema = z.object({
-  name: z.string().min(3, 'El nombre es requerido'),
-  description: z.string().optional().nullable(),
-  pointsCost: z.coerce.number().min(1, 'El costo debe ser mayor a 0'),
-  stock: z.coerce.number().min(0).optional().nullable(),
-  isActive: z.boolean().default(true),
-  redemptionLocation: z.enum(['door', 'bar']).default('bar'), // Se añade al schema
+  name: z.string().min(3, 'El nombre es requerido'),
+  description: z.string().optional().nullable(),
+  pointsCost: z.coerce.number().min(1, 'El costo debe ser mayor a 0'),
+  stock: z.coerce.number().min(0).optional().nullable(),
+  isActive: z.boolean().default(true),
+  redemptionLocation: z.enum(['door', 'bar']).default('bar'),
 });
 type RewardFormInputs = z.infer<typeof rewardSchema>;
 
 export default function RewardsManagementPage() {
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [history, setHistory] = useState<RedeemedReward[]>([]); // <-- Estado para el historial
-  const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingReward, setEditingReward] = useState<Reward | null>(null);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [history, setHistory] = useState<RedeemedReward[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReward, setEditingReward] = useState<Reward | null>(null);
+  const [birthdayRewardId, setBirthdayRewardId] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(rewardSchema),
-  });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(rewardSchema),
+  });
 
-  // Se actualiza fetchData para que pida ambos datos
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [rewardsRes, historyRes] = await Promise.all([
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [rewardsRes, historyRes, configRes] = await Promise.all([
         api.get('/rewards'),
-        api.get('/rewards/history/redeemed')
+        api.get('/rewards/history/redeemed'),
+        api.get('/configuration')
       ]);
       setRewards(rewardsRes.data);
       setHistory(historyRes.data);
-    } catch (error) {
-      toast.error('No se pudieron cargar los datos de premios.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      setBirthdayRewardId(configRes.data.birthday_reward_id || null);
+    } catch (error) {
+      toast.error('No se pudieron cargar los datos de premios.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const openModalToCreate = () => {
-    setEditingReward(null);
-    // Se añade redemptionLocation al reset del formulario
-    reset({ name: '', description: null, pointsCost: 0, stock: null, isActive: true, redemptionLocation: 'bar' });
-    setIsModalOpen(true);
-  };
+  const handleSetBirthdayReward = async (rewardId: string) => {
+    try {
+      await api.patch('/configuration', { birthday_reward_id: rewardId });
+      toast.success('Premio de cumpleaños actualizado.');
+      fetchData(); // Recargamos los datos para que se actualice la estrella
+    } catch (error) {
+      toast.error('No se pudo actualizar el premio de cumpleaños.');
+    }
+  };
 
-  const openModalToEdit = (reward: Reward) => {
-    setEditingReward(reward);
-    reset(reward);
-    setIsModalOpen(true);
-  };
+  const openModalToCreate = () => {
+    setEditingReward(null);
+    reset({ name: '', description: null, pointsCost: 0, stock: null, isActive: true, redemptionLocation: 'bar' });
+    setIsModalOpen(true);
+  };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este premio?')) {
-      try {
-        await api.delete(`/rewards/${id}`);
-        toast.success('Premio eliminado.');
-        fetchData();
-      } catch (error) {
-        toast.error('Error al eliminar el premio.');
-      }
-    }
-  };
+  const openModalToEdit = (reward: Reward) => {
+    setEditingReward(reward);
+    reset(reward);
+    setIsModalOpen(true);
+  };
 
-  const onSubmit = async (data: RewardFormInputs) => {
-    try {
-      if (editingReward) {
-        await api.patch(`/rewards/${editingReward.id}`, data);
-        toast.success('Premio actualizado con éxito.');
-      } else {
-        await api.post('/rewards', data);
-        toast.success('Premio creado con éxito.');
-      }
-      setIsModalOpen(false);
-      fetchData();
-    } catch (error) {
-      toast.error('Ocurrió un error al guardar el premio.');
-    }
-  };
+  const handleDelete = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este premio?')) {
+      try {
+        await api.delete(`/rewards/${id}`);
+        toast.success('Premio eliminado.');
+        fetchData();
+      } catch (error) {
+        toast.error('Error al eliminar el premio.');
+      }
+    }
+  };
 
-  return (
+  const onSubmit = async (data: RewardFormInputs) => {
+    try {
+      if (editingReward) {
+        await api.patch(`/rewards/${editingReward.id}`, data);
+        toast.success('Premio actualizado con éxito.');
+      } else {
+        await api.post('/rewards', data);
+        toast.success('Premio creado con éxito.');
+      }
+      setIsModalOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error('Ocurrió un error al guardar el premio.');
+    }
+  };
+
+  return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       <div>
         <div className="flex justify-between items-center mb-6">
@@ -134,6 +143,7 @@ export default function RewardsManagementPage() {
           <table className="w-full text-left">
             <thead className="border-b border-zinc-700">
               <tr>
+                <th className="p-4 text-sm font-semibold text-white">Cumpleaños</th>
                 <th className="p-4 text-sm font-semibold text-white">Nombre</th>
                 <th className="p-4 text-sm font-semibold text-white">Costo (Puntos)</th>
                 <th className="p-4 text-sm font-semibold text-white">Stock</th>
@@ -143,29 +153,36 @@ export default function RewardsManagementPage() {
             </thead>
             <tbody>
               {isLoading && rewards.length === 0 ? (
-                <tr><td colSpan={5} className="text-center p-6 text-zinc-400">Cargando premios...</td></tr>
-              ) : rewards.map((reward) => (
-                <tr key={reward.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50">
-                  <td className="p-4 font-semibold text-zinc-200">{reward.name}</td>
-                  <td className="p-4 text-pink-400 font-bold">{reward.pointsCost}</td>
-                  <td className="p-4 text-zinc-300">{reward.stock ?? 'Ilimitado'}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${reward.isActive ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
-                      {reward.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="p-4 flex items-center gap-4">
-                    <button onClick={() => openModalToEdit(reward)} className="text-zinc-400 hover:text-white"><Edit size={18} /></button>
-                    <button onClick={() => handleDelete(reward.id)} className="text-red-500 hover:text-red-400"><Trash2 size={18} /></button>
-                  </td>
-                </tr>
-              ))}
+                <tr><td colSpan={6} className="text-center p-6 text-zinc-400">Cargando premios...</td></tr>
+              ) : rewards.map((reward) => {
+                const isBirthdayReward = reward.id === birthdayRewardId;
+                return (
+                  <tr key={reward.id} className={`border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 ${isBirthdayReward ? 'bg-amber-500/10' : ''}`}>
+                    <td className="p-4 text-center">
+                      <button onClick={() => handleSetBirthdayReward(reward.id)} title="Establecer como premio de cumpleaños">
+                        <Star size={18} className={`${isBirthdayReward ? 'text-amber-400 fill-amber-400' : 'text-zinc-500 hover:text-amber-400'}`} />
+                      </button>
+                    </td>
+                    <td className="p-4 font-semibold text-zinc-200">{reward.name}</td>
+                    <td className="p-4 text-pink-400 font-bold">{reward.pointsCost}</td>
+                    <td className="p-4 text-zinc-300">{reward.stock ?? 'Ilimitado'}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${reward.isActive ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
+                        {reward.isActive ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="p-4 flex items-center gap-4">
+                      <button onClick={() => openModalToEdit(reward)} className="text-zinc-400 hover:text-white"><Edit size={18} /></button>
+                      <button onClick={() => handleDelete(reward.id)} className="text-red-500 hover:text-red-400"><Trash2 size={18} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ===== NUEVA SECCIÓN: HISTORIAL DE CANJES ===== */}
       <div>
         <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-4">
           <History className="text-sky-400" />
@@ -246,5 +263,5 @@ export default function RewardsManagementPage() {
         </div>
       )}
     </div>
-  );
+  );
 }

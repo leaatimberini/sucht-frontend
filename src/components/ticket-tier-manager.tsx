@@ -1,4 +1,3 @@
-// frontend/src/components/ticket-tier-manager.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
@@ -6,14 +5,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/axios";
-// 1. IMPORTAMOS LOS TIPOS NECESARIOS
 import { TicketTier, ProductType } from "@/types/ticket.types";
 import toast from "react-hot-toast";
 import { Modal } from "./ui/modal";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { EditTicketTierForm } from "./edit-ticket-tier-form";
 
-// 2. ACTUALIZAMOS EL ESQUEMA DE VALIDACIÓN PARA INCLUIR TODOS LOS CAMPOS
+// 1. AÑADIMOS LOS NUEVOS CAMPOS AL ESQUEMA DE VALIDACIÓN
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   isFree: z.boolean().default(false),
@@ -23,6 +21,10 @@ const createTierSchema = z.object({
   productType: z.nativeEnum(ProductType).default(ProductType.TICKET),
   allowPartialPayment: z.boolean().default(false),
   partialPaymentPrice: z.coerce.number().min(0).optional().nullable(),
+  // --- Nuevos campos de cumpleaños ---
+  isBirthdayDefault: z.boolean().optional(),
+  isBirthdayVipOffer: z.boolean().optional(),
+  consumptionCredit: z.coerce.number().min(0).optional().nullable(),
 }).refine(data => {
   if (!data.isFree && (!data.price || data.price <= 0)) {
     return false;
@@ -55,18 +57,21 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     reset,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm({ // Especificamos el tipo aquí
+  } = useForm({
     resolver: zodResolver(createTierSchema),
+    // 2. AÑADIMOS VALORES POR DEFECTO PARA LOS NUEVOS CAMPOS
     defaultValues: {
         isFree: false,
         allowPartialPayment: false,
         productType: ProductType.TICKET,
+        isBirthdayDefault: false,
+        isBirthdayVipOffer: false,
     }
   });
 
-  // 3. OBSERVAMOS LOS NUEVOS VALORES DEL FORMULARIO
   const isFreeTicket = watch('isFree');
   const allowPartialPayment = watch('allowPartialPayment');
+  const productType = watch('productType');
 
   const fetchTiers = useCallback(async () => {
     try {
@@ -83,7 +88,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     }
   }, [eventId, fetchTiers]);
 
-  // 4. ACTUALIZAMOS EL PAYLOAD PARA ENVIAR TODOS LOS DATOS
+  // 3. ACTUALIZAMOS EL PAYLOAD PARA ENVIAR TODOS LOS DATOS NUEVOS
   const onSubmitCreate = async (data: CreateTierFormInputs) => {
     try {
       const payload = {
@@ -161,7 +166,6 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         )}
       </div>
 
-      {/* 5. ACTUALIZAMOS EL FORMULARIO DEL MODAL DE CREACIÓN */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -184,6 +188,26 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
             {errors.productType && <p className="text-xs text-red-500 mt-1">{errors.productType.message}</p>}
           </div>
           
+          {/* --- 4. AÑADIMOS LA NUEVA SECCIÓN DE CONFIGURACIÓN DE CUMPLEAÑOS --- */}
+          <div className="space-y-3 rounded-lg border border-pink-500/30 bg-pink-500/10 p-4">
+            <h4 className="font-semibold text-white">Configuración de Cumpleaños</h4>
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="isBirthdayDefault-create" {...register('isBirthdayDefault')} className="h-4 w-4 rounded accent-pink-600" />
+              <label htmlFor="isBirthdayDefault-create" className="text-sm font-medium text-zinc-300">Usar como entrada gratuita de cumpleaños</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="isBirthdayVipOffer-create" {...register('isBirthdayVipOffer')} className="h-4 w-4 rounded accent-amber-500" />
+              <label htmlFor="isBirthdayVipOffer-create" className="text-sm font-medium text-zinc-300">Usar como oferta VIP de cumpleaños</label>
+            </div>
+            {productType === ProductType.VIP_TABLE && (
+                <div className="animate-in fade-in pt-2">
+                  <label htmlFor="consumptionCredit-create" className="block text-sm font-medium text-zinc-300 mb-1">Crédito en Consumo ($)</label>
+                  <input {...register('consumptionCredit')} id="consumptionCredit-create" type="number" step="1" placeholder="200000" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
+                  <p className="text-xs text-zinc-500 mt-1">Define el valor en consumo que incluye esta mesa.</p>
+                </div>
+            )}
+          </div>
+
           <div className="flex items-center space-x-2">
             <input type="checkbox" id="isFree" {...register('isFree')} className="accent-pink-600" />
             <label htmlFor="isFree" className="text-sm font-medium text-zinc-300">Sin Cargo</label>

@@ -8,17 +8,21 @@ import api from '@/lib/axios';
 import { type TicketTier, ProductType } from '@/types/ticket.types';
 import { useEffect } from "react";
 
+// 1. AÑADIMOS LOS NUEVOS CAMPOS AL ESQUEMA DE VALIDACIÓN
 const editTicketTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
-  isFree: z.boolean(), // CORRECCIÓN: 'isFree' es una nueva propiedad
+  isFree: z.boolean(),
   price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional(),
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
   validUntil: z.string().optional(),
   productType: z.nativeEnum(ProductType),
   allowPartialPayment: z.boolean(),
   partialPaymentPrice: z.coerce.number().min(0).optional().nullable(),
+  // --- Nuevos campos de cumpleaños ---
+  isBirthdayDefault: z.boolean().optional(),
+  isBirthdayVipOffer: z.boolean().optional(),
+  consumptionCredit: z.coerce.number().min(0).optional().nullable(),
 }).refine(data => {
-  // CORRECCIÓN: Lógica para validar que el precio sea mayor a 0 si no es gratis
   if (!data.isFree && (!data.price || data.price <= 0)) {
     return false;
   }
@@ -51,6 +55,7 @@ export function EditTicketTierForm({
     resolver: zodResolver(editTicketTierSchema),
   });
 
+  // 2. INCLUIMOS LOS NUEVOS CAMPOS EN LOS VALORES POR DEFECTO DEL FORMULARIO
   useEffect(() => {
     reset({
       name: tier.name,
@@ -61,14 +66,19 @@ export function EditTicketTierForm({
       productType: tier.productType,
       allowPartialPayment: tier.allowPartialPayment,
       partialPaymentPrice: tier.partialPaymentPrice,
+      isBirthdayDefault: tier.isBirthdayDefault,
+      isBirthdayVipOffer: tier.isBirthdayVipOffer,
+      consumptionCredit: tier.consumptionCredit,
     });
   }, [tier, reset]);
 
   const allowPartialPayment = watch('allowPartialPayment');
   const isFreeTicket = watch('isFree');
+  const productType = watch('productType');
 
   const onSubmit = async (data: EditTicketTierFormInputs) => {
     try {
+      // 3. ASEGURAMOS QUE LOS NUEVOS CAMPOS SE ENVÍEN EN EL PAYLOAD
       const payload = {
         ...data,
         price: data.isFree ? 0 : data.price,
@@ -101,6 +111,26 @@ export function EditTicketTierForm({
         </select>
       </div>
       
+      {/* --- SECCIÓN DE CONFIGURACIÓN DE CUMPLEAÑOS --- */}
+      <div className="space-y-3 rounded-lg border border-pink-500/30 bg-pink-500/10 p-4">
+        <h4 className="font-semibold text-white">Configuración de Cumpleaños</h4>
+        <div className="flex items-center space-x-2">
+          <input type="checkbox" id="isBirthdayDefault" {...register('isBirthdayDefault')} className="h-4 w-4 rounded accent-pink-600" />
+          <label htmlFor="isBirthdayDefault" className="text-sm font-medium text-zinc-300">Usar como entrada gratuita de cumpleaños</label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <input type="checkbox" id="isBirthdayVipOffer" {...register('isBirthdayVipOffer')} className="h-4 w-4 rounded accent-amber-500" />
+          <label htmlFor="isBirthdayVipOffer" className="text-sm font-medium text-zinc-300">Usar como oferta VIP de cumpleaños</label>
+        </div>
+        {productType === ProductType.VIP_TABLE && (
+            <div className="animate-in fade-in pt-2">
+              <label htmlFor="consumptionCredit" className="block text-sm font-medium text-zinc-300 mb-1">Crédito en Consumo ($)</label>
+              <input {...register('consumptionCredit')} id="consumptionCredit" type="number" step="1" placeholder="200000" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
+              <p className="text-xs text-zinc-500 mt-1">Define el valor en consumo que incluye esta mesa.</p>
+            </div>
+        )}
+      </div>
+
       <div className="flex items-center space-x-2">
         <input type="checkbox" id="isFree" {...register('isFree')} className="accent-pink-600" />
         <label htmlFor="isFree" className="text-sm font-medium text-zinc-300">Entrada sin Cargo</label>
