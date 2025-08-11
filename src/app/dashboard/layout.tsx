@@ -17,7 +17,8 @@ import {
   Trophy,
   CreditCard,
   Gift,
-  ShoppingBasket
+  ShoppingBasket,
+  PartyPopper // <-- NUEVO ICONO
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -88,6 +89,13 @@ export default function DashboardLayout({
                 <Link href="/dashboard/rewards" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
                   <Gift className="h-4 w-4" />
                   <span>Premios</span>
+                </Link>
+              </li>
+              {/* --- NUEVO ENLACE AÑADIDO --- */}
+              <li>
+                <Link href="/dashboard/birthday" className="flex items-center space-x-2 text-zinc-300 hover:bg-zinc-700 px-3 py-2 rounded-md transition-colors">
+                  <PartyPopper className="h-4 w-4" />
+                  <span>Cumpleaños</span>
                 </Link>
               </li>
               <li>
