@@ -19,13 +19,13 @@ export function BirthdayBenefitCard() {
   const [claimedBenefit, setClaimedBenefit] = useState<{ticket: Ticket, reward: UserReward} | null>(null);
   const [guestInput, setGuestInput] = useState<number>(5);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // 1. Mantenemos el estado de carga inicial en true
   const { user } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     const checkOffers = async () => {
-      setIsLoading(true);
+      // No necesitamos poner setIsLoading(true) aquí porque ya empieza en true.
       try {
         const { data } = await api.get('/birthday/offers');
         setOffers(data);
@@ -34,15 +34,21 @@ export function BirthdayBenefitCard() {
           setStep('claimed');
         } else if (data.isClassicOfferAvailable || data.isVipOfferAvailable) {
           setStep('choice');
+        } else {
+          // Si no hay ofertas, podemos elegir no mostrar nada o un mensaje.
+          // Para no mostrar nada, simplemente no cambiamos el paso de 'loading'.
+          // Esto hará que el componente devuelva 'null' al final.
         }
       } catch (err) {
         console.error("Error fetching birthday offers", err);
       } finally {
-        if(step === 'loading') setIsLoading(false);
+        // 2. CORRECCIÓN CLAVE: Siempre quitamos el estado de carga al finalizar.
+        setIsLoading(false);
       }
     };
     checkOffers();
-  }, [step]);
+  // 3. CORRECCIÓN CLAVE: El array de dependencias debe estar vacío para que se ejecute solo una vez.
+  }, []);
 
   const handleSelectOption = async (choice: 'classic' | 'vip') => {
     setIsLoading(true);
@@ -91,6 +97,7 @@ export function BirthdayBenefitCard() {
     setGuestInput(isNaN(value) ? 0 : value);
   };
 
+  // --- RENDERIZADO ---
   if (isLoading) {
     return <div className="bg-zinc-900 rounded-lg p-6 flex justify-center items-center min-h-[200px]"><Loader2 className="animate-spin text-pink-500" /></div>;
   }
@@ -153,7 +160,6 @@ export function BirthdayBenefitCard() {
               También puedes acceder a ellos directamente desde aquí.
             </p>
             <div className="grid md:grid-cols-2 gap-6">
-                {/* --- CORRECCIÓN: Se añade una verificación antes de renderizar cada QR --- */}
                 {claimedBenefit.ticket && (
                   <Link href="/mi-cuenta/entradas" className="bg-white p-4 rounded-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
                     <QRCode value={claimedBenefit.ticket.id} size={150} />
@@ -173,5 +179,6 @@ export function BirthdayBenefitCard() {
       );
   }
 
+  // Si ninguna condición de renderizado se cumple (ej. no es la semana de cumpleaños), no muestra nada.
   return null;
 }
