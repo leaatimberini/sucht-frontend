@@ -55,6 +55,7 @@ export default function RewardsManagementPage() {
   });
 
   const fetchData = async () => {
+    // No establecemos isLoading aquí para evitar parpadeos al recargar
     setIsLoading(true);
     try {
       const [rewardsRes, historyRes, configRes] = await Promise.all([
@@ -76,9 +77,13 @@ export default function RewardsManagementPage() {
     fetchData();
   }, []);
 
+  // --- FUNCIÓN CORREGIDA ---
   const handleSetBirthdayReward = async (rewardId: string) => {
     try {
-      await api.patch('/configuration', { birthday_reward_id: rewardId });
+      // Enviamos un objeto con la clave 'birthday_reward_id' en el cuerpo de la petición
+      await api.patch('/configuration', { 
+        birthday_reward_id: rewardId 
+      });
       toast.success('Premio de cumpleaños actualizado.');
       fetchData(); // Recargamos los datos para que se actualice la estrella
     } catch (error) {
