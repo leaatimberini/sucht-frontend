@@ -2,16 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, type LucideIcon, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, Ticket, ShoppingBag, Gift, History, Edit, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 
+// 1. Creamos un mapa que asocia los nombres de los íconos con los componentes reales
+const iconMap: { [key: string]: LucideIcon } = {
+  Ticket,
+  ShoppingBag,
+  Gift,
+  History,
+  Edit,
+};
 
 interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  iconName: string; // Ahora recibimos un string
 }
 
 interface AccountNavProps {
@@ -33,6 +41,7 @@ export function AccountNav({ items }: AccountNavProps) {
     <>
       {items.map((item) => {
         const isActive = pathname === item.href;
+        const IconComponent = iconMap[item.iconName]; // 2. Buscamos el componente en nuestro mapa
         return (
           <Link
             key={item.href}
@@ -43,7 +52,8 @@ export function AccountNav({ items }: AccountNavProps) {
                 : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
             }`}
           >
-            <item.icon className="h-5 w-5" />
+            {/* 3. Renderizamos el componente encontrado */}
+            {IconComponent && <IconComponent className="h-5 w-5" />}
             <span>{item.label}</span>
           </Link>
         );
