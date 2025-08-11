@@ -10,6 +10,7 @@ import QRCode from "react-qr-code";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
+import { format } from "date-fns";
 
 // --- COMPONENTE PRINCIPAL ---
 export function BirthdayBenefitCard() {
@@ -37,13 +38,14 @@ export function BirthdayBenefitCard() {
         }
       } catch (err) {
         console.error("Error fetching birthday offers", err);
-        // No mostramos error si simplemente no hay ofertas
+        // No mostramos error si simplemente no hay ofertas o no es la semana del cumpleaños
       } finally {
-        setIsLoading(false);
+        // Solo detenemos el spinner inicial si no hemos cambiado a otro paso
+        if(step === 'loading') setIsLoading(false);
       }
     };
     checkOffers();
-  }, []);
+  }, [step]); // Dependemos de 'step' para evitar bucles si hay errores
 
   const handleSelectOption = async (choice: 'classic' | 'vip') => {
     setIsLoading(true);
@@ -55,7 +57,7 @@ export function BirthdayBenefitCard() {
       try {
         const { data } = await api.post('/birthday/select-option', payload);
         setClaimedBenefit(data);
-        setStep('claimed');
+        setStep('claimed'); // Solo avanzamos si la petición es exitosa
         toast.success('¡Beneficio clásico reclamado!');
       } catch (err: any) {
         handleApiError(err);
@@ -69,7 +71,6 @@ export function BirthdayBenefitCard() {
         try {
             const { data } = await api.post('/birthday/select-option', payload);
             if (data.type === 'paid' && data.preferenceId) {
-                // Redirigir a Mercado Pago
                 window.location.href = `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${data.preferenceId}`;
             }
         } catch(err: any) {
@@ -105,7 +106,6 @@ export function BirthdayBenefitCard() {
         <h2 className="text-2xl font-bold">¡Es tu semana de cumpleaños!</h2>
         <p className="text-zinc-300 mt-2 mb-6">Elige uno de los siguientes beneficios exclusivos para celebrar:</p>
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Opción Clásica */}
           <div className="border border-zinc-700 p-4 rounded-lg flex flex-col text-left">
             <div className='flex items-center gap-3 mb-2'>
               <Gift size={24} className="text-pink-400"/>
@@ -116,7 +116,6 @@ export function BirthdayBenefitCard() {
               {offers.isClassicOfferAvailable ? 'Elegir' : 'No Disponible'}
             </button>
           </div>
-          {/* Opción VIP */}
           <div className="border border-zinc-700 p-4 rounded-lg flex flex-col text-left">
             <div className='flex items-center gap-3 mb-2'>
               <Crown size={24} className="text-amber-400"/>
@@ -140,11 +139,11 @@ export function BirthdayBenefitCard() {
             <h2 className="text-2xl font-bold">Lista de Invitados</h2>
             <p className="text-zinc-300 mt-2 mb-4">¿Cuántos invitados quieres traer? (Máximo 10)<br/>El ingreso es hasta las 3 AM y deben entrar todos juntos.</p>
             <input id="guest-input" type="number" value={guestInput} onChange={handleInputChange} className="bg-zinc-800 text-white p-2 rounded-md w-24 text-center" />
+            {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
             <div className="mt-6 flex gap-4 justify-center">
                 <button onClick={() => setStep('choice')} className="bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg">Volver</button>
                 <button onClick={() => handleSelectOption('classic')} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Confirmar y Reclamar</button>
             </div>
-            {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
         </div>
       )
   }
