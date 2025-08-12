@@ -139,7 +139,7 @@ export default function OwnerInvitationsPage() {
             <h2 className="text-xl font-semibold text-white mb-4">2. Regalar Productos de Barra (Opcional)</h2>
             {isLoading ? <p className="text-zinc-400">Cargando productos...</p> : (
               <div className="space-y-3">
-                {giftableProducts.map(product => (
+                {giftableProducts.length > 0 ? giftableProducts.map(product => (
                   <div key={product.id} className="flex justify-between items-center bg-zinc-800/50 p-3 rounded-md">
                     <div>
                       <p className="font-medium text-zinc-200">{product.name}</p>
@@ -151,7 +151,7 @@ export default function OwnerInvitationsPage() {
                       <button type="button" onClick={() => handleGiftQuantityChange(product.id, 1)} className="p-1 rounded-full bg-zinc-700 hover:bg-zinc-600"><Plus size={16} /></button>
                     </div>
                   </div>
-                ))}
+                )) : <p className="text-zinc-500">No hay productos (vouchers) configurados para el próximo evento.</p>}
               </div>
             )}
           </div>
