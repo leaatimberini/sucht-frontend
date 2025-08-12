@@ -1,3 +1,4 @@
+// Dashboard Page - src/app/dashboard/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from "react";

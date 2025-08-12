@@ -16,11 +16,14 @@ interface EventSelectItem {
   title: string;
 }
 
+// 1. AÑADIMOS LA NUEVA PROPIEDAD OPCIONAL A LA INTERFAZ
 interface DashboardFiltersProps {
   onFilterChange: (filters: { eventId?: string, startDate?: string, endDate?: string }) => void;
+  initialEventId?: string | null;
 }
 
-export function DashboardFilters({ onFilterChange }: DashboardFiltersProps) {
+// 2. ACEPTAMOS LA NUEVA PROP EN EL COMPONENTE
+export function DashboardFilters({ onFilterChange, initialEventId }: DashboardFiltersProps) {
   const [events, setEvents] = useState<EventSelectItem[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
   const [date, setDate] = useState<DateRange | undefined>();
@@ -37,6 +40,14 @@ export function DashboardFilters({ onFilterChange }: DashboardFiltersProps) {
     fetchEvents();
   }, []);
   
+  // 3. NUEVO EFECTO PARA ESTABLECER EL VALOR INICIAL
+  // Este efecto se ejecuta cuando el initialEventId se carga en la página padre.
+  useEffect(() => {
+    if (initialEventId) {
+      setSelectedEvent(initialEventId);
+    }
+  }, [initialEventId]);
+
   const handleApplyFilters = () => {
     onFilterChange({
       eventId: selectedEvent || undefined,
@@ -76,7 +87,6 @@ export function DashboardFilters({ onFilterChange }: DashboardFiltersProps) {
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? (
               date.to ? (
-                // 👇 ESTA LÍNEA ESTÁ CORREGIDA PARA SOLUCIONAR EL ERROR
                 `${format(date.from, "dd/MM/yyyy")} - ${format(date.to, "dd/MM/yyyy")}`
               ) : (
                 format(date.from, "dd/MM/yyyy")

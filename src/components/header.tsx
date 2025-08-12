@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '@/stores/auth-store';
 import Link from 'next/link';
-import { LogIn, User, ChevronDown, LogOut, LayoutGrid, QrCode, BarChartHorizontal, GlassWater, ShoppingBasket, Bell } from 'lucide-react';
+import { LogIn, User, ChevronDown, LogOut, LayoutGrid, QrCode, BarChartHorizontal, GlassWater, ShoppingBasket, Bell, Send } from 'lucide-react';
 import { UserRole } from '@/types/user.types';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '@/stores/cart-store';
@@ -19,7 +19,6 @@ export function Header() {
 
   useEffect(() => {
     setHasMounted(true);
-    // Carga las notificaciones una vez que el componente se monta y el usuario existe
     if (user) {
       fetchNotifications();
     }
@@ -33,12 +32,12 @@ export function Header() {
 
   const toggleUserMenu = () => {
     setShowUserMenu(!showUserMenu);
-    if (showNotifications) setShowNotifications(false); // Cierra el otro popover
+    if (showNotifications) setShowNotifications(false);
   };
   
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
-    if (showUserMenu) setShowUserMenu(false); // Cierra el otro popover
+    if (showUserMenu) setShowUserMenu(false);
   };
   
   const handleLogout = () => {
@@ -58,7 +57,6 @@ export function Header() {
 
           {hasMounted && user ? (
             <>
-              {/* --- Botón de Notificaciones --- */}
               <div className="relative">
                 <button onClick={toggleNotifications} className="relative hover:text-white transition-colors">
                   <Bell className="h-6 w-6" />
@@ -80,7 +78,6 @@ export function Header() {
                  )}
                </Link>
 
-              {/* Menú de Usuario */}
               <div className="relative">
                 <button onClick={toggleUserMenu} className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 py-2 px-4 rounded-full transition-colors">
                   <User className="h-4 w-4" />
@@ -89,18 +86,32 @@ export function Header() {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-56 z-50 border border-zinc-700">
+                  <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-60 z-50 border border-zinc-700">
                     <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
                       <LayoutGrid size={16}/> Mi Panel
                     </Link>
                     <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
                       <ShoppingBasket size={16}/> Tienda
                     </Link>
-                    {(isAdmin || isOwner) && (
+
+                    {/* --- LÓGICA DE ROLES ACTUALIZADA --- */}
+                    {isAdmin && (
                       <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
-                        <LayoutGrid size={16} /> Panel de Control
+                        <LayoutGrid size={16} /> Panel Admin
                       </Link>
                     )}
+
+                    {isOwner && !isAdmin && (
+                        <>
+                         <Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
+                            <LayoutGrid size={16} /> Panel Dueño
+                         </Link>
+                         <Link href="/dashboard/owner/invitations" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
+                            <Send size={16} /> Invitaciones
+                         </Link>
+                        </>
+                    )}
+                    
                     {isRrpp && (
                       <Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
                           <BarChartHorizontal size={16} /> Panel RRPP
