@@ -7,9 +7,9 @@ import { Ticket } from "@/types/ticket.types";
 import { User } from "@/types/user.types";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import { ShieldCheck, Ticket as TicketIcon } from "lucide-react"; 
+import { ShieldCheck } from "lucide-react"; 
 import { BirthdayBenefitCard } from "./components/BirthdayBenefitCard";
-import { QRCodeSVG } from "qrcode.react";
+import { SpecialTicketDisplay } from "./components/special-ticket-display";
 
 // --- TIPOS Y COMPONENTES INTERNOS ---
 
@@ -54,33 +54,6 @@ function LoyaltyProgressBar({ user }: { user: UserProfile }) {
   );
 }
 
-function UpcomingTicketPreview({ tickets }: { tickets: Ticket[] }) {
-  // Encontrar el próximo ticket válido
-  const upcomingTicket = tickets
-    .filter(t => new Date(t.event.startDate) >= new Date() && (t.status === 'valid' || t.status === 'partially_used'))
-    .sort((a, b) => new Date(a.event.startDate).getTime() - new Date(b.event.startDate).getTime())[0];
-
-  if (!upcomingTicket) {
-    return null; // No mostrar nada si no hay tickets próximos
-  }
-
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 md:p-6 mb-8">
-       <h3 className="text-md md:text-lg font-semibold text-white flex items-center gap-2 mb-4">
-          <TicketIcon className="text-pink-500" />
-          Tu Próxima Entrada
-       </h3>
-       <div className="bg-white p-4 rounded-lg flex flex-col items-center text-center max-w-xs mx-auto">
-          <QRCodeSVG value={upcomingTicket.id} size={180} />
-          <h4 className="text-xl font-bold text-black mt-4">{upcomingTicket.event.title}</h4>
-          <p className="text-pink-600 font-semibold">{upcomingTicket.tier.name} (x{upcomingTicket.quantity})</p>
-          <p className="text-zinc-600 text-sm mt-1">{new Date(upcomingTicket.event.startDate).toLocaleDateString('es-AR', { dateStyle: 'full' })}</p>
-       </div>
-    </div>
-  )
-}
-
-
 // --- COMPONENTE PRINCIPAL DE LA PÁGINA ---
 
 export default function MiCuentaPage() {
@@ -93,7 +66,6 @@ export default function MiCuentaPage() {
     if (!authUser) return;
     setIsLoading(true);
     try {
-      // Solo pedimos los datos necesarios para esta página principal
       const [ticketsRes, userRes] = await Promise.all([
         api.get('/tickets/my-tickets'),
         api.get('/users/profile/me'),
@@ -111,8 +83,12 @@ export default function MiCuentaPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Lógica para separar las entradas especiales de las normales
+  const specialTickets = tickets.filter(
+    t => (t.origin === 'OWNER_INVITATION' || t.tier.productType === 'vip_table') && (t.status === 'valid' || t.status === 'partially_used')
+  );
   
-  // El contenido real se renderiza dentro del MiCuentaLayout
   return (
     <AuthCheck>
       {isLoading ? (
@@ -126,13 +102,20 @@ export default function MiCuentaPage() {
 
           <LoyaltyProgressBar user={userData} />
 
+          {/* Renderizamos la nueva sección de Invitaciones Especiales */}
+          {specialTickets.length > 0 && (
+            <div className="space-y-6 mb-8">
+              {specialTickets.map(ticket => (
+                <SpecialTicketDisplay key={ticket.id} ticket={ticket} />
+              ))}
+            </div>
+          )}
+
           {userData.isBirthdayWeek && (
             <div className="mb-8">
               <BirthdayBenefitCard />
             </div>
           )}
-          
-          <UpcomingTicketPreview tickets={tickets} />
           
         </>
       ) : (
