@@ -6,10 +6,12 @@ import { Ticket } from '@/types/ticket.types';
 import { AuthCheck } from '@/components/auth-check';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Crown } from 'lucide-react';
 
-// --- COMPONENTE DE LA TARJETA DE TICKET ---
+// --- COMPONENTE DE LA TARJETA DE TICKET (ACTUALIZADO) ---
 function TicketCard({ ticket, onConfirm }: { ticket: Ticket; onConfirm: () => void }) {
+  const isSpecialInvitation = ticket.origin === 'OWNER_INVITATION';
+
   const handleConfirm = async (ticketId: string) => {
     try {
       await api.post(`/tickets/${ticketId}/confirm-attendance`);
@@ -30,12 +32,32 @@ function TicketCard({ ticket, onConfirm }: { ticket: Ticket; onConfirm: () => vo
   };
 
   return (
-    <div key={ticket.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center text-center">
-      <div className="bg-white p-4 rounded-lg">
+    // Aplicamos el borde dorado si es una invitación especial
+    <div key={ticket.id} className={`bg-zinc-900 border ${isSpecialInvitation ? 'border-amber-400 shadow-lg shadow-amber-500/10' : 'border-zinc-800'} rounded-2xl p-6 flex flex-col items-center text-center`}>
+      
+      {/* Añadimos el texto especial si es una invitación */}
+      {isSpecialInvitation && ticket.promoter && (
+        <div className="text-center mb-4 w-full border-b border-amber-400/20 pb-4">
+          <p className="text-amber-400 font-bold text-sm">Invitación Especial de {ticket.promoter.name}</p>
+          {ticket.specialInstructions && (
+             <p className="text-white font-semibold text-lg mt-1">{ticket.specialInstructions}</p>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white p-4 rounded-lg mt-4">
         <QRCodeSVG value={ticket.id} size={160} />
       </div>
       <h2 className="text-2xl font-bold text-white mt-6">{ticket.event.title}</h2>
       <p className="text-pink-500 font-semibold">{ticket.tier.name} (x{ticket.quantity})</p>
+      
+      {/* Añadimos el indicador de Acceso VIP si corresponde */}
+      {ticket.isVipAccess && (
+        <p className="flex items-center gap-2 mt-2 text-sm font-bold text-amber-400">
+          <Crown size={16} /> ACCESO VIP
+        </p>
+      )}
+
       <p className="text-zinc-400 text-sm mt-2">{new Date(ticket.event.startDate).toLocaleString('es-AR', { dateStyle: 'full', timeStyle: 'short' })} hs.</p>
       {ticket.tier.validUntil && (<p className="text-xs text-yellow-400 mt-1">Válido hasta: {new Date(ticket.tier.validUntil).toLocaleString('es-AR', {dateStyle: 'short', timeStyle: 'short'})} hs.</p>)}
       
@@ -63,8 +85,15 @@ export default function MisEntradasPage() {
     setIsLoading(true);
     try {
       const response = await api.get('/tickets/my-tickets');
-      // Filtramos aquí para mostrar solo las entradas que aún son relevantes
-      const validTickets = response.data.filter((t: Ticket) => t.status === 'valid' || t.status === 'partially_used');
+      // Ordenamos para que las invitaciones especiales (del Dueño o de Cumpleaños) aparezcan primero
+      const sortedTickets = response.data.sort((a: Ticket, b: Ticket) => {
+        const isASpecial = a.origin === 'OWNER_INVITATION' || a.origin === 'BIRTHDAY';
+        const isBSpecial = b.origin === 'OWNER_INVITATION' || b.origin === 'BIRTHDAY';
+        if (isASpecial && !isBSpecial) return -1;
+        if (!isASpecial && isBSpecial) return 1;
+        return 0;
+      });
+      const validTickets = sortedTickets.filter((t: Ticket) => t.status === 'valid' || t.status === 'partially_used');
       setTickets(validTickets);
     } catch (error) {
       toast.error('No se pudieron cargar tus entradas.');

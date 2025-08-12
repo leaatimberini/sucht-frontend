@@ -1,9 +1,6 @@
-// frontend/src/types/ticket.types.ts
-
 import { Event } from "./event.types";
 import { User } from "./user.types";
 
-// CORRECCIÓN: El estado es 'invalidated', no 'invalid'
 export enum TicketStatus {
   VALID = 'valid',
   USED = 'used',
@@ -50,4 +47,7 @@ export interface Ticket {
   validatedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  // --- CAMPOS AÑADIDOS ---
+  isVipAccess: boolean;
+  specialInstructions: string | null;
 }
