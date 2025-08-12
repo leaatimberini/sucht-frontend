@@ -8,10 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { AuthCheck } from '@/components/auth-check';
 import { UserRole } from '@/types/user.types';
-import { TicketTier } from '@/types/ticket.types';
 import { Loader2, Send, Gift, Crown, Plus, Minus } from 'lucide-react';
+import { Product } from '@/types/product.types'; // 1. IMPORTAMOS EL TIPO CORRECTO
 
-// --- Esquema de validación para el formulario ---
 const invitationSchema = z.object({
   email: z.string().email({ message: 'Debe ser un correo electrónico válido.' }),
   guestCount: z.coerce.number().int().min(0, 'No puede ser negativo.').max(10, 'El máximo es 10.'),
@@ -20,9 +19,8 @@ const invitationSchema = z.object({
 
 type InvitationFormInputs = z.infer<typeof invitationSchema>;
 
-// --- Componente principal de la página ---
 export default function OwnerInvitationsPage() {
-  const [giftableProducts, setGiftableProducts] = useState<TicketTier[]>([]);
+  const [giftableProducts, setGiftableProducts] = useState<Product[]>([]); // 2. USAMOS EL TIPO Product
   const [selectedGifts, setSelectedGifts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,11 +38,11 @@ export default function OwnerInvitationsPage() {
     },
   });
 
-  // Cargar los productos que se pueden regalar al montar el componente
   useEffect(() => {
     const fetchGiftableProducts = async () => {
       try {
-        const response = await api.get('/ticket-tiers/giftable-products');
+        // 3. LLAMAMOS AL ENDPOINT CORRECTO DE PRODUCTOS
+        const response = await api.get('/store/products/giftable');
         setGiftableProducts(response.data);
       } catch (error) {
         toast.error('No se pudieron cargar los productos para regalar.');
@@ -55,25 +53,24 @@ export default function OwnerInvitationsPage() {
     fetchGiftableProducts();
   }, []);
 
-  // Manejadores para la cantidad de regalos
-  const handleGiftQuantityChange = (tierId: string, delta: number) => {
+  const handleGiftQuantityChange = (productId: string, delta: number) => { // 4. Cambiado a productId
     setSelectedGifts(prev => {
-      const currentQuantity = prev[tierId] || 0;
+      const currentQuantity = prev[productId] || 0;
       const newQuantity = Math.max(0, currentQuantity + delta);
       const newGifts = { ...prev };
       if (newQuantity === 0) {
-        delete newGifts[tierId];
+        delete newGifts[productId];
       } else {
-        newGifts[tierId] = newQuantity;
+        newGifts[productId] = newQuantity;
       }
       return newGifts;
     });
   };
 
-  // Lógica de envío del formulario
   const onSubmit = async (data: InvitationFormInputs) => {
-    const giftedProductsPayload = Object.entries(selectedGifts).map(([tierId, quantity]) => ({
-      tierId,
+    // 5. ENVIAMOS productId EN LUGAR DE tierId
+    const giftedProductsPayload = Object.entries(selectedGifts).map(([productId, quantity]) => ({
+      productId,
       quantity,
     }));
 
@@ -101,7 +98,6 @@ export default function OwnerInvitationsPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* SECCIÓN DATOS DEL INVITADO */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-white mb-4">1. Datos del Invitado</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -134,7 +130,6 @@ export default function OwnerInvitationsPage() {
             </div>
           </div>
 
-          {/* SECCIÓN REGALAR PRODUCTOS */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-white mb-4">2. Regalar Productos de Barra (Opcional)</h2>
             {isLoading ? <p className="text-zinc-400">Cargando productos...</p> : (
@@ -151,7 +146,10 @@ export default function OwnerInvitationsPage() {
                       <button type="button" onClick={() => handleGiftQuantityChange(product.id, 1)} className="p-1 rounded-full bg-zinc-700 hover:bg-zinc-600"><Plus size={16} /></button>
                     </div>
                   </div>
-                )) : <p className="text-zinc-500">No hay productos (vouchers) configurados para el próximo evento.</p>}
+                )) : (
+                  // MENSAJE MEJORADO
+                  <p className="text-center text-zinc-500 py-4">No hay productos configurados en la tienda para regalar.</p>
+                )}
               </div>
             )}
           </div>
