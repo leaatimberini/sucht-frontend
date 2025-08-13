@@ -20,7 +20,8 @@ import {
   ShoppingBasket,
   PartyPopper,
   Send,
-  Package // Icono para el historial de productos
+  Package,
+  Ticket // Icono para Sorteo
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePathname } from "next/navigation";
@@ -28,7 +29,7 @@ import { usePathname } from "next/navigation";
 // Componente para un item del menú, para no repetir código
 const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = pathname.startsWith(href); // Usamos startsWith para sub-rutas
   
   return (
     <li>
@@ -47,7 +48,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Obtenemos el usuario del store para mostrar/ocultar enlaces dinámicamente
   const { user } = useAuthStore();
   const isAdmin = user?.roles.includes(UserRole.ADMIN);
   const isOwner = user?.roles.includes(UserRole.OWNER);
@@ -63,37 +63,41 @@ export default function DashboardLayout({
           
           <nav className="flex-1">
             <ul className="space-y-2">
-              {/* --- VISTA PARA EL OWNER --- */}
+              {/* --- VISTA COMPLETA PARA EL ADMIN --- */}
+              {isAdmin && (
+                <>
+                  <NavLink href="/dashboard" icon={LayoutGrid}>Métricas</NavLink>
+                  <NavLink href="/dashboard/sales" icon={CreditCard}>Ventas (Tickets)</NavLink>
+                  <NavLink href="/dashboard/product-sales" icon={Package}>Ventas (Productos)</NavLink>
+                  <NavLink href="/dashboard/events" icon={Calendar}>Eventos</NavLink>
+                  <NavLink href="/dashboard/staff" icon={Users}>Staff</NavLink>
+                  <NavLink href="/dashboard/clients" icon={UserSquare}>Clientes</NavLink>
+                  <NavLink href="/dashboard/rrpp-stats" icon={BarChartHorizontal}>Rendimiento RRPP</NavLink>
+                  <NavLink href="/dashboard/birthday" icon={PartyPopper}>Gestión Cumpleaños</NavLink>
+                  <NavLink href="/dashboard/raffle" icon={Ticket}>Sorteo Semanal</NavLink>
+                  <NavLink href="/dashboard/no-shows" icon={UserX}>Ausencias</NavLink>
+                  <NavLink href="/dashboard/loyalty" icon={Trophy}>Fidelización</NavLink>
+                  <NavLink href="/dashboard/rewards" icon={Gift}>Premios</NavLink>
+                  <NavLink href="/dashboard/products" icon={ShoppingBasket}>Productos</NavLink>
+                  
+                  {/* El Admin también es Dueño, así que ve el panel de invitaciones */}
+                  <NavLink href="/dashboard/owner/invitations" icon={Send}>Invitaciones (Dueño)</NavLink>
+
+                  <li className="border-t border-zinc-700 pt-2 mt-2">
+                    <NavLink href="/verifier" icon={QrCode}>Verificar Acceso</NavLink>
+                  </li>
+                  <li><NavLink href="/dashboard/notifications" icon={Bell}>Notificaciones</NavLink></li>
+                  <li><NavLink href="/dashboard/settings" icon={Settings}>Configuración</NavLink></li>
+                </>
+              )}
+
+              {/* --- VISTA PARA EL OWNER (QUE NO ES ADMIN) --- */}
               {isOwner && !isAdmin && (
                 <>
                   <NavLink href="/dashboard/owner" icon={LayoutGrid}>Métricas en Vivo</NavLink>
                   <NavLink href="/dashboard/owner/invitations" icon={Send}>Invitaciones</NavLink>
                   <NavLink href="/dashboard/rrpp-stats" icon={BarChartHorizontal}>Rendimiento RRPP</NavLink>
                   <NavLink href="/dashboard/settings" icon={Settings}>Configuración</NavLink>
-                </>
-              )}
-
-              {/* --- VISTA COMPLETA PARA EL ADMIN --- */}
-              {isAdmin && (
-                <>
-                  <NavLink href="/dashboard" icon={LayoutGrid}>Métricas</NavLink>
-                  <NavLink href="/dashboard/sales" icon={CreditCard}>Ventas (Tickets)</NavLink>
-                  <NavLink href="/dashboard/events" icon={Calendar}>Eventos</NavLink>
-                  <NavLink href="/dashboard/staff" icon={Users}>Staff</NavLink>
-                  <NavLink href="/dashboard/clients" icon={UserSquare}>Clientes</NavLink>
-                  <NavLink href="/dashboard/rrpp-stats" icon={BarChartHorizontal}>Rendimiento RRPP</NavLink>
-                  <NavLink href="/dashboard/birthday" icon={PartyPopper}>Gestión Cumpleaños</NavLink>
-                  <NavLink href="/dashboard/no-shows" icon={UserX}>Ausencias</NavLink>
-                  <NavLink href="/dashboard/loyalty" icon={Trophy}>Fidelización</NavLink>
-                  <NavLink href="/dashboard/rewards" icon={Gift}>Premios</NavLink>
-                  <NavLink href="/dashboard/products" icon={ShoppingBasket}>Productos</NavLink>
-                  {/* --- NUEVO ENLACE AÑADIDO --- */}
-                  <NavLink href="/dashboard/product-sales" icon={Package}>Historial Productos</NavLink>
-                  <li className="border-t border-zinc-700 pt-2 mt-2">
-                    <NavLink href="/verifier" icon={QrCode}>Verificar Acceso</NavLink>
-                  </li>
-                  <li><NavLink href="/dashboard/notifications" icon={Bell}>Notificaciones</NavLink></li>
-                  <li><NavLink href="/dashboard/settings" icon={Settings}>Configuración</NavLink></li>
                 </>
               )}
             </ul>
