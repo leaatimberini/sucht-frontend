@@ -8,6 +8,7 @@ import { TicketTier } from "@/types/ticket.types";
 import { ShareButton } from "@/components/share-button";
 import { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
+import { RaffleCountdown } from "@/components/RaffleCountdown";
 
 export default function EventoDetailPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<Event | null>(null);
@@ -49,7 +50,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg-col-span-2">
+        <div className="lg:col-span-2">
           {event.flyerImageUrl && (
             <Image
               src={event.flyerImageUrl}
@@ -59,6 +60,10 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
               className="w-full rounded-lg object-cover"
             />
           )}
+
+          {/* --- COMPONENTE DEL SORTEO AÑADIDO --- */}
+          {!isEventFinished && <RaffleCountdown eventId={event.id} />}
+
           <div className="mt-8">
             <h1 className="text-4xl font-bold text-white">{event.title}</h1>
             <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
@@ -84,7 +89,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
             </div>
           </div>
         </div>
-        <div className="lg-col-span-1">
+        <div className="lg:col-span-1">
           {isEventFinished ? (
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 text-center">
               <h3 className="text-xl font-semibold text-white">Evento Finalizado</h3>
