@@ -19,7 +19,8 @@ import {
   Gift,
   ShoppingBasket,
   PartyPopper,
-  Send // <-- Icono para Invitaciones
+  Send,
+  Package // Icono para el historial de productos
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePathname } from "next/navigation";
@@ -76,7 +77,7 @@ export default function DashboardLayout({
               {isAdmin && (
                 <>
                   <NavLink href="/dashboard" icon={LayoutGrid}>Métricas</NavLink>
-                  <NavLink href="/dashboard/sales" icon={CreditCard}>Ventas</NavLink>
+                  <NavLink href="/dashboard/sales" icon={CreditCard}>Ventas (Tickets)</NavLink>
                   <NavLink href="/dashboard/events" icon={Calendar}>Eventos</NavLink>
                   <NavLink href="/dashboard/staff" icon={Users}>Staff</NavLink>
                   <NavLink href="/dashboard/clients" icon={UserSquare}>Clientes</NavLink>
@@ -86,6 +87,8 @@ export default function DashboardLayout({
                   <NavLink href="/dashboard/loyalty" icon={Trophy}>Fidelización</NavLink>
                   <NavLink href="/dashboard/rewards" icon={Gift}>Premios</NavLink>
                   <NavLink href="/dashboard/products" icon={ShoppingBasket}>Productos</NavLink>
+                  {/* --- NUEVO ENLACE AÑADIDO --- */}
+                  <NavLink href="/dashboard/product-sales" icon={Package}>Historial Productos</NavLink>
                   <li className="border-t border-zinc-700 pt-2 mt-2">
                     <NavLink href="/verifier" icon={QrCode}>Verificar Acceso</NavLink>
                   </li>

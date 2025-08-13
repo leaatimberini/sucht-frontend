@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { PlusCircle, Edit, Trash2, Loader, ShoppingBasket, Gift } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader, ShoppingBasket, Gift, History, Check, X, Loader2 } from 'lucide-react';
 import { Event } from '@/types/event.types';
+import { AuthCheck } from '@/components/auth-check';
+import { UserRole } from '@/types/user.types';
+import { format } from 'date-fns';
 
 // --- TIPOS DE DATOS ---
 interface Product {
@@ -18,6 +21,18 @@ interface Product {
   originalPrice: number | null;
   stock: number | null;
   isActive: boolean;
+}
+
+interface ProductPurchaseHistory {
+    id: string;
+    user: { name: string; email: string };
+    product: { name: string };
+    event: { title: string };
+    quantity: number;
+    amountPaid: number;
+    origin: string;
+    redeemedAt: string | null;
+    createdAt: string;
 }
 
 const productSchema = z.object({
@@ -37,11 +52,13 @@ const giftSchema = z.object({
 });
 type GiftFormInputs = z.infer<typeof giftSchema>;
 
-
-// --- SUB-COMPONENTE: MODAL PARA REGALAR PRODUCTOS ---
+// --- SUB-COMPONENTE: MODAL PARA REGALAR PRODUCTOS (CORREGIDO) ---
 function GiftProductModal({ product, onClose }: { product: Product, onClose: () => void }) {
     const [events, setEvents] = useState<Event[]>([]);
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<GiftFormInputs>();
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+        resolver: zodResolver(giftSchema),
+        defaultValues: { quantity: 1 }
+    });
 
     useEffect(() => {
         api.get('/events').then(res => setEvents(res.data));
@@ -74,7 +91,7 @@ function GiftProductModal({ product, onClose }: { product: Product, onClose: () 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300">Cantidad</label>
-                    <input id="quantity" type="number" defaultValue={1} {...register('quantity')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                    <input id="quantity" type="number" {...register('quantity')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
                     {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
                 </div>
                 <div>
@@ -94,6 +111,76 @@ function GiftProductModal({ product, onClose }: { product: Product, onClose: () 
               </div>
             </form>
           </div>
+        </div>
+    );
+}
+
+// --- SUB-COMPONENTE: HISTORIAL DE COMPRAS ---
+function PurchaseHistory() {
+    const [history, setHistory] = useState<ProductPurchaseHistory[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const response = await api.get('/store/purchase/history');
+                setHistory(response.data);
+            } catch (error) {
+                toast.error('No se pudo cargar el historial de compras.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchHistory();
+    }, []);
+
+    return (
+        <div className="mt-10">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+                <History className="text-sky-400" />
+                Historial de Compras de Productos
+            </h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="border-b border-zinc-700">
+                        <tr>
+                            <th className="p-4 text-sm font-semibold text-white">Fecha</th>
+                            <th className="p-4 text-sm font-semibold text-white">Cliente</th>
+                            <th className="p-4 text-sm font-semibold text-white">Producto</th>
+                            <th className="p-4 text-sm font-semibold text-white">Evento</th>
+                            <th className="p-4 text-sm font-semibold text-white">Origen</th>
+                            <th className="p-4 text-sm font-semibold text-white text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {isLoading ? (
+                            <tr><td colSpan={6} className="text-center p-6 text-zinc-400"><Loader2 className="animate-spin mx-auto" /></td></tr>
+                        ) : history.map((purchase) => (
+                            <tr key={purchase.id} className="border-b border-zinc-800 last:border-b-0">
+                                <td className="p-4 text-zinc-400 text-sm">{format(new Date(purchase.createdAt), 'dd/MM/yy HH:mm')}hs</td>
+                                <td className="p-4"><p className="font-semibold text-zinc-200">{purchase.user.name}</p><p className="text-sm text-zinc-500">{purchase.user.email}</p></td>
+                                <td className="p-4 font-semibold text-white">{purchase.product.name} (x{purchase.quantity})</td>
+                                <td className="p-4 text-zinc-300">{purchase.event.title}</td>
+                                <td className="p-4"><span className={`px-2 py-0.5 text-xs rounded-full ${
+                                    purchase.origin === 'PURCHASE' ? 'bg-blue-500/20 text-blue-400' : 
+                                    purchase.origin === 'OWNER_GIFT' ? 'bg-amber-500/20 text-amber-400' :
+                                    'bg-purple-500/20 text-purple-400'
+                                }`}>{purchase.origin}</span></td>
+                                <td className="p-4 text-center">
+                                    {purchase.redeemedAt ? (
+                                        <span className="flex items-center justify-center gap-2 text-green-400"><Check size={16} /> Canjeado</span>
+                                    ) : (
+                                        <span className="flex items-center justify-center gap-2 text-zinc-400"><X size={16} /> Pendiente</span>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                        {history.length === 0 && !isLoading && (
+                            <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No hay compras de productos registradas.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
@@ -172,106 +259,111 @@ export default function ProductsManagementPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <ShoppingBasket className="text-pink-400" />
-          Gestión de Productos (Tienda)
-        </h1>
-        <button
-          onClick={openModalToCreate}
-          className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"
-        >
-          <PlusCircle size={20} />
-          Crear Producto
-        </button>
-      </div>
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="border-b border-zinc-700">
-            <tr>
-              <th className="p-4 text-sm font-semibold text-white">Nombre</th>
-              <th className="p-4 text-sm font-semibold text-white">Precio (Desc.)</th>
-              <th className="p-4 text-sm font-semibold text-white">Precio Orig.</th>
-              <th className="p-4 text-sm font-semibold text-white">Stock</th>
-              <th className="p-4 text-sm font-semibold text-white">Estado</th>
-              <th className="p-4 text-sm font-semibold text-white">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={6} className="text-center p-6 text-zinc-400">Cargando productos...</td></tr>
-            ) : products.map((product) => (
-              <tr key={product.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50">
-                <td className="p-4 font-semibold text-zinc-200">{product.name}</td>
-                <td className="p-4 text-green-400 font-bold">${product.price}</td>
-                <td className="p-4 text-zinc-400 line-through">${product.originalPrice ?? '-'}</td>
-                <td className="p-4 text-zinc-300">{product.stock ?? 'Ilimitado'}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${product.isActive ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
-                    {product.isActive ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                <td className="p-4 flex items-center gap-4">
-                  <button onClick={() => setGiftingProduct(product)} className="text-green-400 hover:text-green-300" title="Regalar Producto"><Gift size={18} /></button>
-                  <button onClick={() => openModalToEdit(product)} className="text-zinc-400 hover:text-white" title="Editar"><Edit size={18} /></button>
-                  <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-400" title="Eliminar"><Trash2 size={18} /></button>
-                </td>
-              </tr>
-            ))}
-             {products.length === 0 && !isLoading && (
-               <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No hay productos creados. ¡Añade el primero!</td></tr>
-             )}
-          </tbody>
-        </table>
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 w-full max-w-lg">
-            <h2 className="text-2xl font-bold text-white mb-6">{editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto'}</h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-zinc-300">Nombre del Producto</label>
-                <input id="name" {...register('name')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-zinc-300">Precio (con Descuento)</label>
-                  <input id="price" type="number" step="0.01" {...register('price')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
-                  {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-                </div>
-                <div>
-                  <label htmlFor="originalPrice" className="block text-sm font-medium text-zinc-300">Precio Original (de Carta)</label>
-                  <input id="originalPrice" type="number" step="0.01" {...register('originalPrice')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="stock" className="block text-sm font-medium text-zinc-300">Stock (dejar vacío para ilimitado)</label>
-                <input id="stock" type="number" {...register('stock')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
-              </div>
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-zinc-300">Descripción</label>
-                <textarea id="description" {...register('description')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" rows={3}></textarea>
-              </div>
-              <div className="flex items-center gap-2">
-                <input id="isActive" type="checkbox" {...register('isActive')} className="accent-pink-600" />
-                <label htmlFor="isActive" className="text-sm text-zinc-300">Producto Activo en la Tienda</label>
-              </div>
-              <div className="flex justify-end gap-4 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                <button type="submit" disabled={isSubmitting} className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">
-                  {isSubmitting ? <Loader className="animate-spin" /> : 'Guardar Producto'}
-                </button>
-              </div>
-            </form>
-          </div>
+    <AuthCheck allowedRoles={[UserRole.ADMIN]}>
+        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <ShoppingBasket className="text-pink-400" />
+            Gestión de Productos (Tienda)
+            </h1>
+            <button
+            onClick={openModalToCreate}
+            className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"
+            >
+            <PlusCircle size={20} />
+            Crear Producto
+            </button>
         </div>
-      )}
-      
-      {giftingProduct && <GiftProductModal product={giftingProduct} onClose={() => setGiftingProduct(null)} />}
-    </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
+            <table className="w-full text-left">
+            <thead className="border-b border-zinc-700">
+                <tr>
+                <th className="p-4 text-sm font-semibold text-white">Nombre</th>
+                <th className="p-4 text-sm font-semibold text-white">Precio (Desc.)</th>
+                <th className="p-4 text-sm font-semibold text-white">Precio Orig.</th>
+                <th className="p-4 text-sm font-semibold text-white">Stock</th>
+                <th className="p-4 text-sm font-semibold text-white">Estado</th>
+                <th className="p-4 text-sm font-semibold text-white">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {isLoading ? (
+                <tr><td colSpan={6} className="text-center p-6 text-zinc-400">Cargando productos...</td></tr>
+                ) : products.map((product) => (
+                <tr key={product.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50">
+                    <td className="p-4 font-semibold text-zinc-200">{product.name}</td>
+                    <td className="p-4 text-green-400 font-bold">${product.price}</td>
+                    <td className="p-4 text-zinc-400 line-through">${product.originalPrice ?? '-'}</td>
+                    <td className="p-4 text-zinc-300">{product.stock ?? 'Ilimitado'}</td>
+                    <td className="p-4">
+                    <span className={`px-2 py-1 text-xs rounded-full ${product.isActive ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
+                        {product.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                    </td>
+                    <td className="p-4 flex items-center gap-4">
+                    <button onClick={() => setGiftingProduct(product)} className="text-green-400 hover:text-green-300" title="Regalar Producto"><Gift size={18} /></button>
+                    <button onClick={() => openModalToEdit(product)} className="text-zinc-400 hover:text-white" title="Editar"><Edit size={18} /></button>
+                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-400" title="Eliminar"><Trash2 size={18} /></button>
+                    </td>
+                </tr>
+                ))}
+                {products.length === 0 && !isLoading && (
+                <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No hay productos creados. ¡Añade el primero!</td></tr>
+                )}
+            </tbody>
+            </table>
+        </div>
+
+        {isModalOpen && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 w-full max-w-lg">
+                <h2 className="text-2xl font-bold text-white mb-6">{editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto'}</h2>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-zinc-300">Nombre del Producto</label>
+                    <input id="name" {...register('name')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                </div>
+                <div className='grid grid-cols-2 gap-4'>
+                    <div>
+                    <label htmlFor="price" className="block text-sm font-medium text-zinc-300">Precio (con Descuento)</label>
+                    <input id="price" type="number" step="0.01" {...register('price')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                    {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+                    </div>
+                    <div>
+                    <label htmlFor="originalPrice" className="block text-sm font-medium text-zinc-300">Precio Original (de Carta)</label>
+                    <input id="originalPrice" type="number" step="0.01" {...register('originalPrice')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="stock" className="block text-sm font-medium text-zinc-300">Stock (dejar vacío para ilimitado)</label>
+                    <input id="stock" type="number" {...register('stock')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                </div>
+                <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-zinc-300">Descripción</label>
+                    <textarea id="description" {...register('description')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" rows={3}></textarea>
+                </div>
+                <div className="flex items-center gap-2">
+                    <input id="isActive" type="checkbox" {...register('isActive')} className="accent-pink-600" />
+                    <label htmlFor="isActive" className="text-sm text-zinc-300">Producto Activo en la Tienda</label>
+                </div>
+                <div className="flex justify-end gap-4 pt-4">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                    <button type="submit" disabled={isSubmitting} className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">
+                    {isSubmitting ? <Loader className="animate-spin" /> : 'Guardar Producto'}
+                    </button>
+                </div>
+                </form>
+            </div>
+            </div>
+        )}
+        
+        {giftingProduct && <GiftProductModal product={giftingProduct} onClose={() => setGiftingProduct(null)} />}
+        
+        {/* Renderizamos el nuevo componente de historial */}
+        <PurchaseHistory />
+        </div>
+    </AuthCheck>
   );
 }
