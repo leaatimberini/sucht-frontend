@@ -3,20 +3,33 @@
 import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/axios";
 import { SummaryMetrics, EventPerformance } from "@/types/dashboard.types";
-import { Ticket, Users, Calendar } from "lucide-react";
+import { Ticket, Users, Calendar, Crown, CheckCircle, XCircle } from "lucide-react";
 import { DashboardFilters } from "@/components/dashboard-filters";
 import { AuthCheck } from "@/components/auth-check";
 import { UserRole } from "@/types/user.types";
 import toast from 'react-hot-toast';
 
-// Interfaz para el estado de los filtros
+// --- DEFINICIÓN DE TIPOS ---
 interface Filters {
   eventId?: string;
   startDate?: string;
   endDate?: string;
 }
 
-// Reutilizamos el componente StatCard del dashboard principal
+interface InvitationHistoryItem {
+    invitedUser: { name: string, email: string };
+    event: { title: string };
+    ticket: {
+        quantity: number;
+        redeemedCount: number;
+        isVipAccess: boolean;
+        status: string;
+    };
+    gifts: Record<string, number>;
+}
+
+// --- SUB-COMPONENTES DE LA PÁGINA ---
+
 function StatCard({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) {
   return (
     <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
@@ -29,37 +42,102 @@ function StatCard({ title, value, icon: Icon }: { title: string, value: string |
   );
 }
 
-// Componente principal de la página del Dashboard del Dueño
+function InvitationHistory({ history }: { history: InvitationHistoryItem[] }) {
+    if (history.length === 0) {
+        return (
+            <div className="text-center py-10 bg-zinc-900 border border-zinc-800 rounded-lg">
+                <p className="text-zinc-500">Aún no has enviado ninguna invitación especial.</p>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="border-b border-zinc-700">
+              <tr>
+                <th className="p-4 text-sm font-semibold text-white">Invitado</th>
+                <th className="p-4 text-sm font-semibold text-white">Evento</th>
+                <th className="p-4 text-sm font-semibold text-white text-center">Personas</th>
+                <th className="p-4 text-sm font-semibold text-white text-center">Ingresaron</th>
+                <th className="p-4 text-sm font-semibold text-white">Regalos</th>
+                <th className="p-4 text-sm font-semibold text-white text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((item, index) => (
+                <tr key={index} className="border-b border-zinc-800 last:border-b-0">
+                  <td className="p-4"><p className="font-semibold text-zinc-200">{item.invitedUser.name}</p><p className="text-sm text-zinc-500">{item.invitedUser.email}</p></td>
+                  <td className="p-4 text-zinc-300">{item.event.title}</td>
+                  <td className="p-4 text-center font-bold text-white">{item.ticket.quantity} {item.ticket.isVipAccess && <Crown className="inline ml-1 text-amber-400" size={16}/>}</td>
+                  <td className="p-4 text-center text-zinc-300">{item.ticket.redeemedCount}</td>
+                  <td className="p-4 text-zinc-400 text-xs">
+                    {Object.entries(item.gifts).length > 0 
+                      ? Object.entries(item.gifts).map(([name, qty]) => <p key={name}>{`(x${qty}) ${name}`}</p>)
+                      : 'N/A'
+                    }
+                  </td>
+                  <td className="p-4 text-center">
+                    {item.ticket.redeemedCount > 0 ? (
+                        <span className="flex items-center justify-center gap-2 text-green-400"><CheckCircle size={16} /> Ingresó</span>
+                    ) : (
+                        <span className="flex items-center justify-center gap-2 text-zinc-400"><XCircle size={16} /> Pendiente</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+    );
+}
+
+// --- COMPONENTE PRINCIPAL DE LA PÁGINA ---
 export default function OwnerDashboardPage() {
   const [summary, setSummary] = useState<SummaryMetrics | null>(null);
   const [performance, setPerformance] = useState<EventPerformance[]>([]);
+  const [invitationHistory, setInvitationHistory] = useState<InvitationHistoryItem[]>([]);
   const [filters, setFilters] = useState<Filters>({});
   const [isLoading, setIsLoading] = useState(true);
   const [nextEventId, setNextEventId] = useState<string | null>(null);
 
-  // 1. Buscamos el ID del próximo evento al cargar la página
   useEffect(() => {
-    const fetchNextEvent = async () => {
+    const fetchInitialData = async () => {
+        setIsLoading(true);
         try {
-            // NOTA: Este endpoint GET /events/next necesita ser creado en el backend.
-            const response = await api.get('/events/next');
-            if (response.data) {
-                setNextEventId(response.data.id);
-                setFilters({ eventId: response.data.id }); // Establecemos el filtro por defecto
+            const [nextEventRes, historyRes] = await Promise.all([
+                api.get('/events/next'),
+                api.get('/owner/invitations/my-history')
+            ]);
+
+            setInvitationHistory(historyRes.data);
+            
+            if (nextEventRes.data) {
+                setNextEventId(nextEventRes.data.id);
+                setFilters({ eventId: nextEventRes.data.id });
             } else {
-                // Si no hay próximo evento, cargamos las métricas generales por defecto
                 setFilters({});
+                setIsLoading(false); // Si no hay evento, detenemos la carga aquí
             }
         } catch (error) {
-            console.error("No se pudo encontrar el próximo evento, cargando métricas generales.", error)
-            setFilters({}); // Carga métricas generales si el endpoint falla
+            toast.error("No se pudieron cargar los datos del panel.");
+            console.error("Failed to fetch initial data", error);
+            setFilters({});
+            setIsLoading(false);
         }
     };
-    fetchNextEvent();
+    fetchInitialData();
   }, []);
 
-  // 2. La función de carga de datos ahora depende de los filtros
   const fetchData = useCallback(async (currentFilters: Filters) => {
+    // Si no hay filtros, no hacemos nada con las métricas
+    if (!currentFilters.eventId && !currentFilters.startDate) {
+        setSummary(null);
+        setPerformance([]);
+        setIsLoading(false);
+        return;
+    }
+
     setIsLoading(true);
     const params = new URLSearchParams();
     if (currentFilters.eventId) params.append('eventId', currentFilters.eventId);
@@ -76,29 +154,29 @@ export default function OwnerDashboardPage() {
       setPerformance(performanceRes.data);
     } catch (error) {
       toast.error("No se pudieron cargar las métricas.");
-      console.error("Failed to fetch dashboard data", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Evita la carga inicial vacía hasta que tengamos un filtro (del próximo evento o vacío)
-    if (Object.keys(filters).length > 0 || nextEventId === null) {
+    if (filters) {
         fetchData(filters);
     }
-  }, [fetchData, filters, nextEventId]);
+  }, [fetchData, filters]);
 
   return (
     <AuthCheck allowedRoles={[UserRole.OWNER, UserRole.ADMIN]}>
       <div className="space-y-8">
-        <h1 className="text-3xl font-bold text-white">Métricas en Vivo</h1>
-        
+        <div>
+            <h1 className="text-3xl font-bold text-white">Panel de Dueño</h1>
+            <p className="text-zinc-400 mt-1">Métricas en vivo e historial de invitaciones especiales.</p>
+        </div>
         <DashboardFilters onFilterChange={setFilters} initialEventId={nextEventId} />
         
         {isLoading ? (
-           <p className="text-zinc-400">Cargando métricas...</p>
-        ) : summary && (
+           <p className="text-zinc-400 text-center">Cargando métricas...</p>
+        ) : summary ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <StatCard title="Entradas Generadas" value={summary.totalTicketsGenerated} icon={Ticket} />
@@ -133,7 +211,7 @@ export default function OwnerDashboardPage() {
                     ))}
                     {performance.length === 0 && !isLoading && (
                         <tr>
-                            <td colSpan={4} className="p-4 text-center text-zinc-500">No hay datos de eventos para los filtros seleccionados.</td>
+                            <td colSpan={4} className="p-4 text-center text-zinc-500">No hay datos de rendimiento para los filtros seleccionados.</td>
                         </tr>
                     )}
                   </tbody>
@@ -141,7 +219,12 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
           </>
-        )}
+        ) : null}
+
+        <div className="mt-10">
+            <h2 className="text-2xl font-bold text-white mb-4">Historial de Invitaciones Enviadas</h2>
+            <InvitationHistory history={invitationHistory} />
+        </div>
       </div>
     </AuthCheck>
   );
