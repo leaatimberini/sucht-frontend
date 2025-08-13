@@ -1,4 +1,3 @@
-// frontend/src/app/dashboard/products/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { PlusCircle, Edit, Trash2, Loader, ShoppingBasket } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader, ShoppingBasket, Gift } from 'lucide-react';
+import { Event } from '@/types/event.types';
 
 // --- TIPOS DE DATOS ---
 interface Product {
@@ -30,11 +30,81 @@ const productSchema = z.object({
 });
 type ProductFormInputs = z.infer<typeof productSchema>;
 
+const giftSchema = z.object({
+    email: z.string().email('Debe ser un email válido.'),
+    eventId: z.string().min(1, 'Debes seleccionar un evento.'),
+    quantity: z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1.'),
+});
+type GiftFormInputs = z.infer<typeof giftSchema>;
+
+
+// --- SUB-COMPONENTE: MODAL PARA REGALAR PRODUCTOS ---
+function GiftProductModal({ product, onClose }: { product: Product, onClose: () => void }) {
+    const [events, setEvents] = useState<Event[]>([]);
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<GiftFormInputs>();
+
+    useEffect(() => {
+        api.get('/events').then(res => setEvents(res.data));
+    }, []);
+
+    const onSubmit = async (data: GiftFormInputs) => {
+        try {
+            await api.post('/store/products/gift', {
+                ...data,
+                productId: product.id
+            });
+            toast.success(`¡${product.name} (x${data.quantity}) enviado a ${data.email}!`);
+            onClose();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Error al enviar el regalo.');
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 w-full max-w-lg">
+            <h2 className="text-2xl font-bold text-white mb-2">Regalar Producto</h2>
+            <p className="text-zinc-400 mb-6">Estás regalando: <span className="font-semibold text-pink-400">{product.name}</span></p>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-zinc-300">Email del Cliente</label>
+                <input id="email" {...register('email')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="quantity" className="block text-sm font-medium text-zinc-300">Cantidad</label>
+                    <input id="quantity" type="number" defaultValue={1} {...register('quantity')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md" />
+                    {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
+                </div>
+                <div>
+                    <label htmlFor="eventId" className="block text-sm font-medium text-zinc-300">Para el Evento</label>
+                    <select id="eventId" {...register('eventId')} className="mt-1 w-full bg-zinc-800 p-2 rounded-md">
+                        <option value="">Selecciona un evento</option>
+                        {events.map(event => <option key={event.id} value={event.id}>{event.title}</option>)}
+                    </select>
+                    {errors.eventId && <p className="text-red-500 text-xs mt-1">{errors.eventId.message}</p>}
+                </div>
+              </div>
+              <div className="flex justify-end gap-4 pt-4">
+                <button type="button" onClick={onClose} className="bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                <button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">
+                  {isSubmitting ? <Loader className="animate-spin" /> : 'Enviar Regalo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+    );
+}
+
+
 export default function ProductsManagementPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [giftingProduct, setGiftingProduct] = useState<Product | null>(null);
 
   const {
     register,
@@ -117,7 +187,6 @@ export default function ProductsManagementPage() {
         </button>
       </div>
 
-      {/* Tabla de Productos */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
         <table className="w-full text-left">
           <thead className="border-b border-zinc-700">
@@ -145,19 +214,19 @@ export default function ProductsManagementPage() {
                   </span>
                 </td>
                 <td className="p-4 flex items-center gap-4">
-                  <button onClick={() => openModalToEdit(product)} className="text-zinc-400 hover:text-white"><Edit size={18} /></button>
-                  <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-400"><Trash2 size={18} /></button>
+                  <button onClick={() => setGiftingProduct(product)} className="text-green-400 hover:text-green-300" title="Regalar Producto"><Gift size={18} /></button>
+                  <button onClick={() => openModalToEdit(product)} className="text-zinc-400 hover:text-white" title="Editar"><Edit size={18} /></button>
+                  <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-400" title="Eliminar"><Trash2 size={18} /></button>
                 </td>
               </tr>
             ))}
              {products.length === 0 && !isLoading && (
-                <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No hay productos creados. ¡Añade el primero!</td></tr>
-              )}
+               <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No hay productos creados. ¡Añade el primero!</td></tr>
+             )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal para Crear/Editar Productos */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 w-full max-w-lg">
@@ -201,6 +270,8 @@ export default function ProductsManagementPage() {
           </div>
         </div>
       )}
+      
+      {giftingProduct && <GiftProductModal product={giftingProduct} onClose={() => setGiftingProduct(null)} />}
     </div>
   );
 }
