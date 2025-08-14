@@ -6,16 +6,11 @@ import toast from 'react-hot-toast';
 import { BellRing, BellOff, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
-// Función para convertir la clave VAPID de base64url a un Uint8Array
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
-
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
@@ -27,32 +22,36 @@ export function SubscriptionManager() {
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
+  const [isSupported, setIsSupported] = useState(false); // Nuevo estado de soporte
   const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
-  // Función para comprobar el estado actual de la suscripción
+  // 1. Verificamos el soporte del navegador al cargar el componente
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+      setIsSupported(true);
+      setPermissionStatus(Notification.permission);
+    } else {
+        console.log("Push notifications are not supported by this browser.");
+    }
+  }, []);
+
   const checkSubscription = useCallback(async () => {
-    if ('serviceWorker' in navigator && user) {
+    if (isSupported && user) {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
-      if (!!subscription !== user.isPushSubscribed) {
-          // Si hay discrepancia, actualizamos el estado del backend (esto puede pasar si el usuario limpia cookies)
-          api.get('/users/profile/me'); // Llama para sincronizar el estado
-      }
     }
-  }, [user]);
+  }, [user, isSupported]);
 
   useEffect(() => {
-    setPermissionStatus(Notification.permission);
     checkSubscription();
   }, [checkSubscription]);
 
-  // Mostrar el banner solo si el permiso es 'default' y el usuario no lo ha cerrado
   useEffect(() => {
-    if (permissionStatus === 'default' && !sessionStorage.getItem('subscriptionBannerDismissed')) {
+    if (isSupported && permissionStatus === 'default' && !sessionStorage.getItem('subscriptionBannerDismissed')) {
       setIsBannerVisible(true);
     }
-  }, [permissionStatus]);
+  }, [permissionStatus, isSupported]);
 
   const handleSubscribe = async () => {
     if (!VAPID_PUBLIC_KEY) {
@@ -75,12 +74,15 @@ export function SubscriptionManager() {
         toast.success('¡Suscripción a notificaciones activada!');
         setIsSubscribed(true);
         setIsBannerVisible(false);
+        setPermissionStatus('granted');
     } catch (error) {
         console.error("Error al suscribirse:", error);
-        toast.error('No se pudo activar la suscripción.');
         if(Notification.permission === 'denied') {
+            toast.error('Has bloqueado las notificaciones.');
             setPermissionStatus('denied');
             setIsBannerVisible(false);
+        } else {
+            toast.error('No se pudo activar la suscripción.');
         }
     }
   };
@@ -90,7 +92,8 @@ export function SubscriptionManager() {
     setIsBannerVisible(false);
   };
   
-  if (!user || !isBannerVisible) return null;
+  // 2. Si el navegador no es compatible, no renderizamos nada
+  if (!isSupported || !user || !isBannerVisible) return null;
 
   if (permissionStatus === 'default') {
     return (

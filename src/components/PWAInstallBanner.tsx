@@ -9,44 +9,44 @@ export function PWAInstallBanner() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevenir que el mini-infobar del navegador aparezca
       e.preventDefault();
-      // Guardar el evento para poder dispararlo más tarde
       setInstallPrompt(e);
-      
-      // Si el usuario no ha descartado el banner antes, lo mostramos
       if (!localStorage.getItem('pwaInstallDismissed')) {
         setIsVisible(true);
       }
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    // --- CORRECCIÓN CLAVE ---
+    // Verificamos si el navegador soporta el evento ANTES de añadir el listener.
+    // Esto previene errores en navegadores no compatibles como Safari en iOS.
+    const isSupported = 'onbeforeinstallprompt' in window;
+    if (isSupported) {
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    } else {
+        console.log("PWA install prompt not supported by this browser.");
+    }
 
-    // Limpieza del evento al desmontar el componente
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      // Nos aseguramos de solo intentar remover el listener si fue añadido.
+      if (isSupported) {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      }
     };
   }, []);
 
   const handleInstallClick = async () => {
     if (!installPrompt) return;
-
-    // Mostrar el diálogo de instalación del navegador
     installPrompt.prompt();
-
-    // Esperar a que el usuario responda
     const { outcome } = await installPrompt.userChoice;
     if (outcome === 'accepted') {
-      console.log('El usuario aceptó instalar la PWA');
+      console.log('User accepted the PWA installation');
     } else {
-      console.log('El usuario canceló la instalación de la PWA');
+      console.log('User dismissed the PWA installation');
     }
-    // Ocultamos el banner después del intento
     setIsVisible(false);
   };
 
   const handleDismiss = () => {
-    // Guardamos la preferencia del usuario para no volver a mostrar el banner
     localStorage.setItem('pwaInstallDismissed', 'true');
     setIsVisible(false);
   };
@@ -76,18 +76,10 @@ export function PWAInstallBanner() {
        </div>
        <style jsx>{`
         @keyframes fade-in-down {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in-down {
-            animation: fade-in-down 0.5s ease-out forwards;
-        }
+        .animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
        `}</style>
     </div>
   );
