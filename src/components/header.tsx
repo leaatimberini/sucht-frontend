@@ -1,4 +1,3 @@
-// src/components/header.tsx
 'use client';
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -67,7 +66,8 @@ export function Header() {
                     </span>
                   )}
                 </button>
-                {showNotifications && <NotificationPopover />}
+                {/* --- CORRECCIÓN: Pasamos la función onClose --- */}
+                {showNotifications && <NotificationPopover onClose={() => setShowNotifications(false)} />}
               </div>
 
               <Link href="/cart" className="relative hover:text-white transition-colors">
@@ -95,13 +95,11 @@ export function Header() {
                       <ShoppingBasket size={16}/> Tienda
                     </Link>
 
-                    {/* --- LÓGICA DE ROLES ACTUALIZADA --- */}
                     {isAdmin && (
                       <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
                         <LayoutGrid size={16} /> Panel Admin
                       </Link>
                     )}
-
                     {isOwner && !isAdmin && (
                         <>
                          <Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
