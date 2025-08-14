@@ -1,3 +1,4 @@
+// src/components/header.tsx
 'use client';
 
 import { useAuthStore } from '@/stores/auth-store';
