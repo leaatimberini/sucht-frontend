@@ -83,7 +83,7 @@ export default function HomePage() {
               <FaInstagram />
             </Link>
             <Link
-              href="https://wa.me/5491152738137"
+              href="https://wa.me/5491166755207"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp SUCHT"
@@ -101,7 +101,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="underline hover:text-pink-600"
             >
-              LET
+              LEAA
             </Link>
           </p>
         </div>
