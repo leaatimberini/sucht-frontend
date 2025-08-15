@@ -9,7 +9,6 @@ export function PWAInstallBanner() {
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
-    // Detectamos si es un dispositivo iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIos(isIOSDevice);
 
@@ -21,11 +20,14 @@ export function PWAInstallBanner() {
       }
     };
 
-    // Si no es iOS, buscamos el evento de instalación
     if (!isIOSDevice) {
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        const isSupported = 'onbeforeinstallprompt' in window;
+        if (isSupported) {
+            window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        } else {
+            console.log("PWA install prompt not supported by this browser.");
+        }
     } else {
-        // En iOS, mostramos el banner si no está instalado y no fue descartado
         const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
         if (!isInStandaloneMode && !localStorage.getItem('pwaInstallDismissed')) {
             setIsVisible(true);
@@ -33,7 +35,7 @@ export function PWAInstallBanner() {
     }
 
     return () => {
-      if (!isIOSDevice) {
+      if ('onbeforeinstallprompt' in window) {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       }
     };
@@ -62,7 +64,8 @@ export function PWAInstallBanner() {
                 <Download size={24}/>
                 <div>
                     <p className="font-semibold text-sm">¡Lleva a SUCHT contigo!</p>
-                    {isIos && <p className="text-xs">Toca el ícono <Share size={12} className="inline-block mx-1"/> y luego "Agregar a la pantalla de inicio".</p>}
+                    {/* --- LÍNEA CORREGIDA --- */}
+                    {isIos && <p className="text-xs">Toca el ícono <Share size={12} className="inline-block mx-1"/> y luego &quot;Agregar a la pantalla de inicio&quot;.</p>}
                 </div>
             </div>
             <div className="flex items-center gap-2">
