@@ -1,13 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, X } from 'lucide-react';
+import { Download, X, Share } from 'lucide-react';
 
 export function PWAInstallBanner() {
   const [installPrompt, setInstallPrompt] = useState<any | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
+    // Detectamos si es un dispositivo iOS
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIos(isIOSDevice);
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e);
@@ -16,19 +21,19 @@ export function PWAInstallBanner() {
       }
     };
 
-    // --- CORRECCIÓN CLAVE ---
-    // Verificamos si el navegador soporta el evento ANTES de añadir el listener.
-    // Esto previene errores en navegadores no compatibles como Safari en iOS.
-    const isSupported = 'onbeforeinstallprompt' in window;
-    if (isSupported) {
+    // Si no es iOS, buscamos el evento de instalación
+    if (!isIOSDevice) {
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     } else {
-        console.log("PWA install prompt not supported by this browser.");
+        // En iOS, mostramos el banner si no está instalado y no fue descartado
+        const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+        if (!isInStandaloneMode && !localStorage.getItem('pwaInstallDismissed')) {
+            setIsVisible(true);
+        }
     }
 
     return () => {
-      // Nos aseguramos de solo intentar remover el listener si fue añadido.
-      if (isSupported) {
+      if (!isIOSDevice) {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       }
     };
@@ -38,11 +43,6 @@ export function PWAInstallBanner() {
     if (!installPrompt) return;
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('User accepted the PWA installation');
-    } else {
-      console.log('User dismissed the PWA installation');
-    }
     setIsVisible(false);
   };
 
@@ -60,15 +60,20 @@ export function PWAInstallBanner() {
        <div className="bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-lg flex items-center justify-between w-full max-w-2xl p-3 animate-fade-in-down">
             <div className="flex items-center gap-3">
                 <Download size={24}/>
-                <p className="font-semibold text-sm">¡Lleva a SUCHT contigo! Instala la App.</p>
+                <div>
+                    <p className="font-semibold text-sm">¡Lleva a SUCHT contigo!</p>
+                    {isIos && <p className="text-xs">Toca el ícono <Share size={12} className="inline-block mx-1"/> y luego "Agregar a la pantalla de inicio".</p>}
+                </div>
             </div>
             <div className="flex items-center gap-2">
-                <button 
-                    onClick={handleInstallClick} 
-                    className="bg-white text-pink-600 font-bold text-xs px-4 py-1.5 rounded-md hover:bg-zinc-200 transition-colors"
-                >
-                    Instalar
-                </button>
+                {!isIos && (
+                  <button 
+                      onClick={handleInstallClick} 
+                      className="bg-white text-pink-600 font-bold text-xs px-4 py-1.5 rounded-md hover:bg-zinc-200 transition-colors"
+                  >
+                      Instalar
+                  </button>
+                )}
                 <button onClick={handleDismiss} className="p-1.5 rounded-md hover:bg-white/20 transition-colors">
                     <X size={18} />
                 </button>
