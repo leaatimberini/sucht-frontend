@@ -53,11 +53,32 @@ export default function OwnerInvitationsPage() {
   const includeEntry = useWatch({ control, name: 'includeEntry' });
 
   useEffect(() => {
-    const fetchGiftableProducts = async () => { /* ... */ };
+    const fetchGiftableProducts = async () => {
+      try {
+        const response = await api.get('/store/products/giftable');
+        setGiftableProducts(response.data);
+      } catch (error) {
+        toast.error('No se pudieron cargar los productos para regalar.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
     fetchGiftableProducts();
   }, []);
 
-  const handleGiftQuantityChange = (productId: string, delta: number) => { /* ... */ };
+  const handleGiftQuantityChange = (productId: string, delta: number) => {
+    setSelectedGifts(prev => {
+      const currentQuantity = prev[productId] || 0;
+      const newQuantity = Math.max(0, currentQuantity + delta);
+      const newGifts = { ...prev };
+      if (newQuantity === 0) {
+        delete newGifts[productId];
+      } else {
+        newGifts[productId] = newQuantity;
+      }
+      return newGifts;
+    });
+  };
 
   const onSubmit = async (data: InvitationFormInputs) => {
     const giftedProductsPayload = Object.entries(selectedGifts).map(([productId, quantity]) => ({
@@ -110,7 +131,7 @@ export default function OwnerInvitationsPage() {
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white">2. Entrada de Cortesía</h2>
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2"><Ticket size={20} /> Entrada de Cortesía</h2>
                 <Controller
                     name="includeEntry"
                     control={control}
@@ -152,8 +173,26 @@ export default function OwnerInvitationsPage() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">3. Regalar Productos de Barra</h2>
-            {/* ... (lógica de regalos sin cambios) ... */}
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><Gift size={20} /> Regalar Productos de Barra</h2>
+            {isLoading ? <p className="text-zinc-400">Cargando productos...</p> : (
+              <div className="space-y-3">
+                {giftableProducts.length > 0 ? giftableProducts.map(product => (
+                  <div key={product.id} className="flex justify-between items-center bg-zinc-800/50 p-3 rounded-md">
+                    <div>
+                      <p className="font-medium text-zinc-200">{product.name}</p>
+                      <p className="text-xs text-zinc-500">${product.price}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => handleGiftQuantityChange(product.id, -1)} className="p-1 rounded-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50" disabled={(selectedGifts[product.id] || 0) === 0}><Minus size={16} /></button>
+                      <span className="font-bold text-lg w-8 text-center">{selectedGifts[product.id] || 0}</span>
+                      <button type="button" onClick={() => handleGiftQuantityChange(product.id, 1)} className="p-1 rounded-full bg-zinc-700 hover:bg-zinc-600"><Plus size={16} /></button>
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-center text-zinc-500 py-4">No hay productos configurados en la tienda para regalar.</p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="pt-4">
