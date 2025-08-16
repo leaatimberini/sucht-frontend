@@ -50,7 +50,7 @@ export function RaffleCountdown({ eventId }: { eventId: string }) {
       <div className="text-center">
         <Trophy className="mx-auto text-amber-400 mb-2" size={32} />
         <h3 className="text-xl font-bold text-white">¡Sorteo Semanal!</h3>
-        <p className="text-zinc-300 mt-2">Adquiere tu entrada antes de las 20:00hs del día del evento y participa automáticamente por:</p>
+        <p className="text-zinc-300 mt-2">Adquiere tu entrada antes de las 17:00hs del día del evento y participa automáticamente por:</p>
         <p className="text-amber-400 font-bold text-lg my-3">{status.prizeName}</p>
         <div className="flex justify-center gap-4 text-white">
             <div><span className="text-2xl font-bold">{String(days).padStart(2, '0')}</span><span className="text-xs block">DÍAS</span></div>
