@@ -1,3 +1,4 @@
+// src/components/event-list.tsx
 'use client';
 
 import { type Event } from '@/types/event.types';
