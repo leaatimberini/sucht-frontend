@@ -1,135 +1,119 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
-import { type Ticket } from '@/types/ticket.types';
-import { DashboardFilters } from '@/components/dashboard-filters';
-import { AlertCircle, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { formatInTimeZone } from 'date-fns-tz'; // 👈 Se usa solo formatInTimeZone
+import { Ticket } from '@/types/ticket.types';
+import { Event } from '@/types/event.types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 
-interface Filters {
-  eventId?: string;
-  startDate?: string;
-  endDate?: string;
+// --- SUB-COMPONENTE PARA LOS FILTROS ---
+function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => void }) {
+    const [events, setEvents] = useState<Event[]>([]);
+
+    useEffect(() => {
+        api.get('/events').then(response => setEvents(response.data));
+    }, []);
+
+    const handleFilterSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const filters = {
+            eventId: formData.get('eventId'),
+            startDate: formData.get('startDate'),
+            endDate: formData.get('endDate'),
+        };
+        onFilterChange(filters);
+    };
+
+    return (
+        <form onSubmit={handleFilterSubmit} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-4">
+            <select name="eventId" className="w-full sm:w-[200px] bg-zinc-800 border-zinc-700 p-2 rounded-md">
+                <option value="">Todos los eventos</option>
+                {events.map(event => <option key={event.id} value={event.id}>{event.title}</option>)}
+            </select>
+            <input type="date" name="startDate" className="w-full sm:w-auto bg-zinc-800 border-zinc-700 p-2 rounded-md" />
+            <input type="date" name="endDate" className="w-full sm:w-auto bg-zinc-800 border-zinc-700 p-2 rounded-md" />
+            <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg">Aplicar Filtros</button>
+        </form>
+    );
 }
 
+
+// --- COMPONENTE PRINCIPAL DE LA PÁGINA ---
 export default function SalesHistoryPage() {
-  const [history, setHistory] = useState<Ticket[]>([]);
-  const [filters, setFilters] = useState<Filters>({});
-  const [isLoading, setIsLoading] = useState(true);
+    const [history, setHistory] = useState<Ticket[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-  const fetchHistory = useCallback(async (currentFilters: Filters) => {
-    setIsLoading(true);
-    try {
-      const response = await api.get<Ticket[]>('/tickets/history/all', {
-        params: currentFilters,
-      });
-      setHistory(response.data);
-    } catch (error) {
-      console.error("Failed to fetch sales history", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    const fetchData = useCallback(async (filters: any = {}) => {
+        setIsLoading(true);
+        const params = new URLSearchParams();
+        if (filters.eventId) params.append('eventId', filters.eventId);
+        if (filters.startDate) params.append('startDate', filters.startDate);
+        if (filters.endDate) params.append('endDate', filters.endDate);
 
-  const handleDeleteTicket = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
-      try {
-        await api.delete(`/tickets/${id}`);
-        toast.success('Ticket eliminado con éxito.');
-        fetchHistory(filters); // Volvemos a cargar los datos
-      } catch (error) {
-        toast.error('Error al eliminar el ticket.');
-        console.error(error);
-      }
-    }
-  };
+        try {
+            const response = await api.get(`/dashboard/full-history?${params.toString()}`);
+            setHistory(response.data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-  useEffect(() => {
-    fetchHistory(filters);
-  }, [fetchHistory, filters]);
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-  // Función para formatear la fecha a la zona horaria local de Buenos Aires
-  const formatDateTimeToBuenosAires = (dateString: string) => {
-    if (!dateString) return '';
-    // Usamos formatInTimeZone para convertir y formatear en un solo paso
-    return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
-  };
+    return (
+        <div className="p-4 sm:p-6 lg:p-8">
+            <h1 className="text-3xl font-bold text-white mb-6">Historial de Ventas y Emisiones</h1>
+            
+            <SalesFilters onFilterChange={fetchData} />
 
-  return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white">Historial de Ventas y Emisiones</h1>
-        <p className="text-zinc-400 mt-1">
-          Un registro de todos los tickets y productos generados en la plataforma.
-        </p>
-      </div>
-
-      <DashboardFilters onFilterChange={setFilters} />
-
-      {isLoading ? (
-        <p className="text-zinc-400">Cargando historial...</p>
-      ) : history.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center bg-zinc-900 border border-zinc-800 rounded-lg p-12">
-          <AlertCircle className="h-12 w-12 text-zinc-600 mb-4" />
-          <h3 className="text-xl font-semibold text-white">Sin Resultados</h3>
-          <p className="text-zinc-500 mt-1">No se encontraron ventas para los filtros seleccionados.</p>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="border-b border-zinc-700">
+                        <tr>
+                            <th className="p-4 text-sm font-semibold text-white">Fecha</th>
+                            <th className="p-4 text-sm font-semibold text-white">Cliente</th>
+                            <th className="p-4 text-sm font-semibold text-white">Producto</th>
+                            <th className="p-4 text-sm font-semibold text-white">Pagado</th>
+                            <th className="p-4 text-sm font-semibold text-white">Estado</th>
+                            <th className="p-4 text-sm font-semibold text-white">RRPP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {isLoading ? (
+                            <tr><td colSpan={6} className="text-center p-6"><Loader2 className="animate-spin mx-auto"/></td></tr>
+                        ) : history.map(ticket => (
+                            <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0">
+                                <td className="p-4 text-zinc-400 text-sm">
+                                    {/* --- LÍNEA CORREGIDA --- */}
+                                    {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm')} hs
+                                </td>
+                                <td className="p-4">
+                                    <p className="font-semibold text-zinc-200">{ticket.user.name}</p>
+                                    <p className="text-sm text-zinc-500">{ticket.user.email}</p>
+                                </td>
+                                <td className="p-4">
+                                    <p className="font-semibold text-white">{ticket.tier.name} (x{ticket.quantity})</p>
+                                    <p className="text-sm text-zinc-400">{ticket.event.title}</p>
+                                </td>
+                                <td className="p-4 font-bold text-green-400">${Number(ticket.amountPaid).toFixed(2)}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${ticket.status === 'valid' ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
+                                        {ticket.status}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-zinc-300">{ticket.promoter ? `@${ticket.promoter.username}` : 'N/A'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
-      ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="border-b border-zinc-700">
-              <tr>
-                <th className="p-4 text-sm font-semibold text-white">Fecha</th>
-                <th className="p-4 text-sm font-semibold text-white">Cliente</th>
-                <th className="p-4 text-sm font-semibold text-white">Producto</th>
-                <th className="p-4 text-sm font-semibold text-white">Pagado</th>
-                <th className="p-4 text-sm font-semibold text-white">Estado</th>
-                <th className="p-4 text-sm font-semibold text-white">RRPP</th>
-                <th className="p-4 text-sm font-semibold text-white">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((ticket) => (
-                <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 transition-colors">
-                  <td className="p-4 text-zinc-400 text-sm">
-                    {formatDateTimeToBuenosAires(ticket.createdAt)} hs
-                  </td>
-                  <td className="p-4">
-                    <p className="font-semibold text-zinc-200">{ticket.user.name}</p>
-                    <p className="text-sm text-zinc-500">{ticket.user.email}</p>
-                  </td>
-                  <td className="p-4">
-                    <p className="font-semibold text-zinc-200">{ticket.tier.name} (x{ticket.quantity})</p>
-                    <p className="text-sm text-zinc-500">{ticket.event.title}</p>
-                  </td>
-                  <td className="p-4 font-semibold text-green-400">
-                    ${Number(ticket.amountPaid).toFixed(2)}
-                  </td>
-                  <td className="p-4 text-sm capitalize">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      ticket.status === 'partially_paid' ? 'bg-yellow-500/20 text-yellow-400' :
-                      ticket.status === 'valid' ? 'bg-green-500/20 text-green-400' :
-                      'bg-zinc-500/20 text-zinc-400'
-                    }`}>
-                      {ticket.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="p-4 text-zinc-300">
-                    {ticket.promoter ? `@${ticket.promoter.username}` : 'N/A'}
-                  </td>
-                  <td className="p-4">
-                    <button onClick={() => handleDeleteTicket(ticket.id)} className="text-red-500 hover:text-red-400">
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+    );
 }
