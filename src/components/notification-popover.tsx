@@ -18,8 +18,8 @@ function NotificationDetailView({ notification, onClose }: { notification: Notif
         try {
             await api.delete(`/notifications/${notification.id}`);
             toast.success('Notificación eliminada.');
-            fetchNotifications(); // Recargamos la lista
-            onClose(); // Cerramos el detalle
+            fetchNotifications();
+            onClose();
         } catch (error) {
             toast.error('No se pudo eliminar la notificación.');
         }
@@ -29,7 +29,6 @@ function NotificationDetailView({ notification, onClose }: { notification: Notif
         try {
             await api.post(`/notifications/${notification.id}/feedback`, { feedback });
             toast.success('¡Gracias por tu feedback!');
-            // Opcional: podrías querer actualizar el estado local para reflejar el voto al instante
         } catch (error) {
             toast.error('No se pudo enviar el feedback.');
         }
@@ -73,7 +72,6 @@ export function NotificationPopover({ onClose }: { onClose: () => void }) {
     }
   }, [unreadCount, notifications, markAsRead]);
 
-  // Si hay una notificación seleccionada, mostramos solo la vista de detalle.
   if (selectedNotification) {
     return (
         <div className="fixed inset-0 sm:absolute top-0 sm:top-16 right-0 bg-zinc-900 shadow-lg sm:rounded-lg text-white w-full sm:w-80 sm:max-w-sm z-50 border border-zinc-700 h-full sm:h-auto sm:max-h-[500px] flex flex-col">
@@ -88,12 +86,10 @@ export function NotificationPopover({ onClose }: { onClose: () => void }) {
     )
   }
   
-  // Vista de la lista principal
   return (
     <div className="fixed inset-0 sm:absolute top-0 sm:top-16 right-0 bg-zinc-900 shadow-lg sm:rounded-lg text-white w-full sm:w-80 sm:max-w-sm z-50 border border-zinc-700 h-full sm:h-auto sm:max-h-[500px] flex flex-col">
       <div className="p-4 border-b border-zinc-700 flex-shrink-0 flex justify-between items-center">
         <h3 className="font-semibold">Notificaciones</h3>
-        {/* --- BOTÓN DE CERRAR AÑADIDO (visible en móvil) --- */}
         <button onClick={onClose} className="sm:hidden text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
             <X size={20}/>
         </button>
