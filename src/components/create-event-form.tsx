@@ -1,4 +1,3 @@
-// src/components/create-event-form.tsx
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -14,39 +13,18 @@ const createEventSchema = z.object({
   title: z.string().min(3, { message: 'El título es requerido.' }),
   description: z.string().optional(),
   location: z.string().min(3, { message: 'La ubicación es requerida.' }),
-  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+  startDate: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
     message: 'Fecha de inicio inválida.',
   }),
-  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+  endDate: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
     message: 'Fecha de fin inválida.',
   }),
   flyerImage: z.any().optional(),
+  // --- NUEVO CAMPO ---
+  publishAt: z.string().optional(),
 });
 
-const createTicketTierSchema = z.object({
-  name: z.string().min(3, { message: 'El nombre es requerido.' }),
-  isFree: z.boolean().default(false),
-  price: z.coerce.number().min(0, { message: 'El precio no puede ser negativo.' }).optional(),
-  quantity: z.coerce.number().int().min(1, { message: 'La cantidad debe ser al menos 1.' }),
-  validUntil: z.string().optional(),
-  productType: z.nativeEnum(ProductType),
-  allowPartialPayment: z.boolean(),
-  partialPaymentPrice: z.coerce.number().min(0).optional().nullable(),
-}).refine(
-  (data) => {
-    if (!data.isFree && (!data.price || data.price <= 0)) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'El precio es requerido y debe ser mayor a cero para entradas de pago.',
-    path: ['price'],
-  }
-);
-
 type CreateEventFormInputs = z.infer<typeof createEventSchema>;
-type CreateTicketTierFormInputs = z.infer<typeof createTicketTierSchema>;
 
 export function CreateEventForm({
   onClose,
@@ -78,19 +56,18 @@ export function CreateEventForm({
     formData.append('title', data.title);
     formData.append('location', data.location);
 
-    // 👈 CONVERSIÓN DE FECHA: Convertimos la hora local a UTC antes de enviar
-    const startDateLocal = new Date(data.startDate);
-    const endDateLocal = new Date(data.endDate);
-    
-    // Con `toISOString()` enviamos la fecha en formato UTC, que es lo ideal para el backend
-    formData.append('startDate', startDateLocal.toISOString()); 
-    formData.append('endDate', endDateLocal.toISOString());
+    formData.append('startDate', new Date(data.startDate).toISOString()); 
+    formData.append('endDate', new Date(data.endDate).toISOString());
 
     if (data.description) {
       formData.append('description', data.description);
     }
     if (data.flyerImage && data.flyerImage[0]) {
       formData.append('flyerImage', data.flyerImage[0]);
+    }
+    // --- LÓGICA DEL NUEVO CAMPO ---
+    if (data.publishAt) {
+        formData.append('publishAt', new Date(data.publishAt).toISOString());
     }
 
     try {
@@ -167,6 +144,19 @@ export function CreateEventForm({
           />
           {errors.endDate && <p className="text-xs text-red-500 mt-1">{errors.endDate.message}</p>}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="publishAt" className="block text-sm font-medium text-zinc-300 mb-1">
+          Fecha de Publicación (Opcional)
+        </label>
+        <input
+            id="publishAt"
+            type="datetime-local"
+            {...register('publishAt')}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
+        />
+        <p className="text-xs text-zinc-500 mt-1">Si se deja vacío, el evento se publicará inmediatamente.</p>
       </div>
 
       <div>

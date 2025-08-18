@@ -9,6 +9,8 @@ export interface Event {
   confirmationSentAt: string | null; // <-- Campo añadido
   createdAt: string;
   updatedAt: string;
+  isPublished: boolean;
+  publishAt: string | null;
 }
 
 // Esta interfaz fue movida y actualizada en ticket.types.ts
