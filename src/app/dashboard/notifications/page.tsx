@@ -25,7 +25,7 @@ interface AppConfig {
     notifications_raffle_enabled?: boolean;
 }
 
-// --- SUB-COMPONENTE: INTERRUPTOR DE CONFIGURACIÓN ---
+// --- SUB-COMPONENTE: INTERRUPTOR DE CONFIGURACIÓN (CORREGIDO) ---
 function AutomationToggle({ label, configKey, initialValue, onToggle }: { label: string; configKey: string; initialValue: boolean; onToggle: (key: string, value: boolean) => void }) {
     const [isEnabled, setIsEnabled] = useState(initialValue);
     const [isSaving, setIsSaving] = useState(false);
@@ -35,12 +35,21 @@ function AutomationToggle({ label, configKey, initialValue, onToggle }: { label:
         setIsEnabled(newValue);
         setIsSaving(true);
         try {
-            await api.patch('/configuration', { [configKey]: newValue });
+            // --- CORRECCIÓN CLAVE ---
+            // Creamos un FormData para asegurar el formato correcto de la petición
+            const formData = new FormData();
+            formData.append(configKey, String(newValue));
+            
+            await api.patch('/configuration', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            // --- FIN DE LA CORRECCIÓN ---
+
             toast.success(`'${label}' ${newValue ? 'activada' : 'desactivada'}.`);
             onToggle(configKey, newValue);
         } catch {
             toast.error('No se pudo guardar el cambio.');
-            setIsEnabled(!newValue); // Revertimos el cambio visual si falla
+            setIsEnabled(!newValue);
         } finally {
             setIsSaving(false);
         }
@@ -71,7 +80,7 @@ export default function NotificationsPage() {
         setIsLoading(true);
         try {
             const [historyRes, configRes] = await Promise.all([
-                api.get('/notifications/history'), // Asumimos que este endpoint existe
+                api.get('/notifications/history'),
                 api.get('/configuration')
             ]);
             setHistory(historyRes.data);
@@ -102,7 +111,6 @@ export default function NotificationsPage() {
                     <p className="text-zinc-400">Controla las notificaciones automáticas, envía mensajes masivos y mide su impacto.</p>
                 </div>
 
-                {/* SECCIÓN DE AUTOMATIZACIONES */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
                     <h2 className="text-xl font-semibold text-white mb-4">Notificaciones Automáticas</h2>
                     {isLoading ? <Loader2 className="animate-spin"/> : (
@@ -114,14 +122,12 @@ export default function NotificationsPage() {
                     )}
                 </div>
 
-                {/* SECCIÓN DE ENVÍO MANUAL */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
                     <h2 className="text-xl font-semibold text-white mb-2">Envío Manual Masivo</h2>
                     <p className="text-zinc-400 mb-4">Envía un mensaje a todos los usuarios que hayan activado las notificaciones.</p>
                     <NotificationSender />
                 </div>
                 
-                {/* SECCIÓN DE HISTORIAL Y MÉTRICAS */}
                 <div className="mt-10">
                     <h2 className="text-2xl font-bold text-white mb-4">Historial y Métricas de Feedback</h2>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
