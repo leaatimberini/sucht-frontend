@@ -57,6 +57,7 @@ export function Header() {
 
           {hasMounted && user ? (
             <>
+              {/* --- CONTENEDOR CORREGIDO --- */}
               <div className="relative">
                 <button onClick={toggleNotifications} className="relative hover:text-white transition-colors">
                   <Bell className="h-6 w-6" />
@@ -66,7 +67,6 @@ export function Header() {
                     </span>
                   )}
                 </button>
-                {/* --- CORRECCIÓN: Pasamos la función onClose --- */}
                 {showNotifications && <NotificationPopover onClose={() => setShowNotifications(false)} />}
               </div>
 

@@ -13,7 +13,8 @@ function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => vo
     const [events, setEvents] = useState<Event[]>([]);
 
     useEffect(() => {
-        api.get('/events').then(response => setEvents(response.data));
+        // En la versión para administradores, pedimos todos los eventos
+        api.get('/events/all-for-admin').then(response => setEvents(response.data));
     }, []);
 
     const handleFilterSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -82,7 +83,7 @@ export default function SalesHistoryPage() {
                             <th className="p-4 text-sm font-semibold text-white">Producto</th>
                             <th className="p-4 text-sm font-semibold text-white">Pagado</th>
                             <th className="p-4 text-sm font-semibold text-white">Estado</th>
-                            <th className="p-4 text-sm font-semibold text-white">RRPP</th>
+                            <th className="p-4 text-sm font-semibold text-white">Origen / RRPP</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,9 +109,12 @@ export default function SalesHistoryPage() {
                                         {ticket.status}
                                     </span>
                                 </td>
-                                <td className="p-4 text-zinc-300">{ticket.promoter ? `@${ticket.promoter.username}` : 'N/A'}</td>
+                                <td className="p-4 text-zinc-300">{ticket.promoter ? `@${ticket.promoter.username}` : (ticket.origin || 'N/A')}</td>
                             </tr>
                         ))}
+                         {history.length === 0 && !isLoading && (
+                            <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No se encontraron resultados para los filtros seleccionados.</td></tr>
+                         )}
                     </tbody>
                 </table>
             </div>
