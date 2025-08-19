@@ -7,7 +7,7 @@ import { UserRole } from '@/types/user.types';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '@/stores/cart-store';
 import { useNotificationStore } from '@/stores/notification-store';
-import { NotificationPopover } from './notification-popover';
+import { NotificationsModal } from './NotificationsModal'; // 1. Cambiamos la importación
 
 export function Header() {
   const { user, logout } = useAuthStore();
@@ -40,64 +40,72 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-black/50 backdrop-blur-lg">
-      <div className="container mx-auto px-4 h-20 flex justify-between items-center">
-        <Link href="/" className="text-3xl font-bold text-white">SUCHT</Link>
-        <nav className="relative flex items-center space-x-4 md:space-x-6 text-sm font-medium text-zinc-300">
-          <Link href="/eventos" className="hover:text-white transition-colors">Eventos</Link>
-          {hasMounted && user && (
-            <>
-              <div className="relative">
-                <button onClick={toggleNotifications} className="relative hover:text-white transition-colors">
-                  <Bell className="h-6 w-6" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-                {showNotifications && <NotificationPopover onClose={() => setShowNotifications(false)} />}
-              </div>
-              <Link href="/cart" className="relative hover:text-white transition-colors">
-                 <ShoppingBasket className="h-6 w-6" />
-                 {totalItemsInCart > 0 && (
-                   <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                     {totalItemsInCart}
-                   </span>
-                 )}
-               </Link>
-              <div className="relative">
-                <button onClick={toggleUserMenu} className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 py-2 px-4 rounded-full transition-colors">
-                  <User className="h-4 w-4" />
-                  <span>Mi cuenta</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
-                </button>
-                {showUserMenu && (
-                  <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-60 z-50 border border-zinc-700">
-                    <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16}/> Mi Panel</Link>
-                    <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><ShoppingBasket size={16}/> Tienda</Link>
-                    {(user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.OWNER)) && (
-                        <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
-                            <LayoutGrid size={16} /> Panel de Control
-                        </Link>
+    <>
+      <header className="fixed top-0 left-0 right-0 z-40 bg-black/50 backdrop-blur-lg">
+        <div className="container mx-auto px-4 h-20 flex justify-between items-center">
+          <Link href="/" className="text-3xl font-bold text-white">SUCHT</Link>
+          <nav className="relative flex items-center space-x-4 md:space-x-6 text-sm font-medium text-zinc-300">
+            <Link href="/eventos" className="hover:text-white transition-colors">Eventos</Link>
+            {hasMounted && user && (
+              <>
+                <div className="relative">
+                  <button onClick={toggleNotifications} className="relative hover:text-white transition-colors">
+                    <Bell className="h-6 w-6" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                        {unreadCount}
+                      </span>
                     )}
-                    {user.roles.includes(UserRole.RRPP) && (<Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><BarChartHorizontal size={16} /> Panel RRPP</Link>)}
-                    {user.roles.includes(UserRole.VERIFIER) && (<Link href="/verifier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><QrCode size={16} /> Verificar Entradas</Link>)}
-                    {user.roles.includes(UserRole.BARRA) && (<Link href="/bar-scanner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><GlassWater size={16} /> Validar Premios</Link>)}
-                    <button onClick={handleLogout} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-red-600/80 transition-colors border-t border-zinc-700"><LogOut size={16} />Cerrar sesión</button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-          {!hasMounted && !user && (
-            <Link href="/login" className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-full transition-colors">
-              <LogIn className="h-4 w-4" />
-              <span>Ingresar</span>
-            </Link>
-          )}
-        </nav>
-      </div>
-    </header>
+                  </button>
+                  {/* El popover ya no se renderiza aquí */}
+                </div>
+                <Link href="/cart" className="relative hover:text-white transition-colors">
+                   <ShoppingBasket className="h-6 w-6" />
+                   {totalItemsInCart > 0 && (
+                     <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                       {totalItemsInCart}
+                     </span>
+                   )}
+                 </Link>
+                <div className="relative">
+                  <button onClick={toggleUserMenu} className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 py-2 px-4 rounded-full transition-colors">
+                    <User className="h-4 w-4" />
+                    <span>Mi cuenta</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showUserMenu && (
+                    <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-60 z-50 border border-zinc-700">
+                      <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16}/> Mi Panel</Link>
+                      <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><ShoppingBasket size={16}/> Tienda</Link>
+                      {(user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.OWNER)) && (
+                          <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
+                              <LayoutGrid size={16} /> Panel de Control
+                          </Link>
+                      )}
+                      {user.roles.includes(UserRole.RRPP) && (<Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><BarChartHorizontal size={16} /> Panel RRPP</Link>)}
+                      {user.roles.includes(UserRole.VERIFIER) && (<Link href="/verifier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><QrCode size={16} /> Verificar Entradas</Link>)}
+                      {user.roles.includes(UserRole.BARRA) && (<Link href="/bar-scanner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><GlassWater size={16} /> Validar Premios</Link>)}
+                      <button onClick={handleLogout} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-red-600/80 transition-colors border-t border-zinc-700"><LogOut size={16} />Cerrar sesión</button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            {!hasMounted && !user && (
+              <Link href="/login" className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-full transition-colors">
+                <LogIn className="h-4 w-4" />
+                <span>Ingresar</span>
+              </Link>
+            )}
+          </nav>
+        </div>
+      </header>
+      
+      {/* 2. Renderizamos el modal fuera del header, controlado por el estado */}
+      <NotificationsModal 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
+    </>
   );
 }
