@@ -5,31 +5,16 @@ import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
 import { 
-  Calendar, 
-  LayoutGrid, 
-  Users, 
-  QrCode, 
-  UserSquare, 
-  BarChartHorizontal, 
-  Settings, 
-  Bell,
-  UserX,
-  Trophy,
-  CreditCard,
-  Gift,
-  ShoppingBasket,
-  PartyPopper,
-  Send,
-  Package,
-  Ticket // Icono para Sorteo
+  Calendar, LayoutGrid, Users, QrCode, UserSquare, BarChartHorizontal, 
+  Settings, Bell, UserX, Trophy, CreditCard, Gift, ShoppingBasket, 
+  PartyPopper, Send, Package, Ticket, Briefcase // Icono para Organizador
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePathname } from "next/navigation";
 
-// Componente para un item del menú, para no repetir código
 const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
   const pathname = usePathname();
-  const isActive = pathname.startsWith(href); // Usamos startsWith para sub-rutas
+  const isActive = pathname.startsWith(href);
   
   return (
     <li>
@@ -43,27 +28,30 @@ const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.Ele
   );
 };
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode; }) {
   const { user } = useAuthStore();
   const isAdmin = user?.roles.includes(UserRole.ADMIN);
   const isOwner = user?.roles.includes(UserRole.OWNER);
+  const isOrganizer = user?.roles.includes(UserRole.ORGANIZER);
+
+  const getPanelTitle = () => {
+      if(isAdmin) return 'Panel de Administrador';
+      if(isOwner) return 'Panel de Dueño';
+      if(isOrganizer) return 'Panel de Organizador';
+      return 'Panel de Control';
+  }
 
   return (
-    <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER]}> 
+    <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.ORGANIZER]}> 
       <div className="flex min-h-screen">
         <aside className="w-64 bg-zinc-900 p-4 border-r border-zinc-800 flex flex-col">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-white">SUCHT</h1>
-            <p className="text-sm text-pink-500">{isAdmin ? 'Panel de Administrador' : 'Panel de Dueño'}</p>
+            <p className="text-sm text-pink-500">{getPanelTitle()}</p>
           </div>
           
           <nav className="flex-1">
             <ul className="space-y-2">
-              {/* --- VISTA COMPLETA PARA EL ADMIN --- */}
               {isAdmin && (
                 <>
                   <NavLink href="/dashboard" icon={LayoutGrid}>Métricas</NavLink>
@@ -79,10 +67,7 @@ export default function DashboardLayout({
                   <NavLink href="/dashboard/loyalty" icon={Trophy}>Fidelización</NavLink>
                   <NavLink href="/dashboard/rewards" icon={Gift}>Premios</NavLink>
                   <NavLink href="/dashboard/products" icon={ShoppingBasket}>Productos</NavLink>
-                  
-                  {/* El Admin también es Dueño, así que ve el panel de invitaciones */}
                   <NavLink href="/dashboard/owner/invitations" icon={Send}>Invitaciones (Dueño)</NavLink>
-
                   <li className="border-t border-zinc-700 pt-2 mt-2">
                     <NavLink href="/verifier" icon={QrCode}>Verificar Acceso</NavLink>
                   </li>
@@ -91,13 +76,20 @@ export default function DashboardLayout({
                 </>
               )}
 
-              {/* --- VISTA PARA EL OWNER (QUE NO ES ADMIN) --- */}
               {isOwner && !isAdmin && (
                 <>
                   <NavLink href="/dashboard/owner" icon={LayoutGrid}>Métricas en Vivo</NavLink>
                   <NavLink href="/dashboard/owner/invitations" icon={Send}>Invitaciones</NavLink>
                   <NavLink href="/dashboard/rrpp-stats" icon={BarChartHorizontal}>Rendimiento RRPP</NavLink>
                   <NavLink href="/dashboard/settings" icon={Settings}>Configuración</NavLink>
+                </>
+              )}
+
+              {isOrganizer && !isAdmin && !isOwner && (
+                <>
+                  <NavLink href="/dashboard/organizer" icon={Briefcase}>Principal</NavLink>
+                  <NavLink href="/dashboard/organizer/invitations" icon={Send}>Invitaciones</NavLink>
+                  <NavLink href="/dashboard/birthday" icon={PartyPopper}>Gestión Cumpleaños</NavLink>
                 </>
               )}
             </ul>

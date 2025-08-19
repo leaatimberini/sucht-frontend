@@ -2,12 +2,12 @@
 
 import { useAuthStore } from '@/stores/auth-store';
 import Link from 'next/link';
-import { LogIn, User, ChevronDown, LogOut, LayoutGrid, QrCode, BarChartHorizontal, GlassWater, ShoppingBasket, Bell, Send } from 'lucide-react';
+import { LogIn, User, ChevronDown, LogOut, LayoutGrid, QrCode, BarChartHorizontal, GlassWater, ShoppingBasket, Bell, Send, Briefcase } from 'lucide-react';
 import { UserRole } from '@/types/user.types';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '@/stores/cart-store';
 import { useNotificationStore } from '@/stores/notification-store';
-import { NotificationsModal } from './NotificationsModal'; // 1. Cambiamos la importación
+import { NotificationsModal } from './NotificationsModal';
 
 export function Header() {
   const { user, logout } = useAuthStore();
@@ -23,6 +23,13 @@ export function Header() {
       fetchNotifications();
     }
   }, [user, fetchNotifications]);
+
+  const isAdmin = user?.roles.includes(UserRole.ADMIN);
+  const isOwner = user?.roles.includes(UserRole.OWNER);
+  const isRrpp = user?.roles.includes(UserRole.RRPP);
+  const isVerifier = user?.roles.includes(UserRole.VERIFIER);
+  const isBarra = user?.roles.includes(UserRole.BARRA);
+  const isOrganizer = user?.roles.includes(UserRole.ORGANIZER);
 
   const toggleUserMenu = () => {
     setShowUserMenu(!showUserMenu);
@@ -57,7 +64,6 @@ export function Header() {
                       </span>
                     )}
                   </button>
-                  {/* El popover ya no se renderiza aquí */}
                 </div>
                 <Link href="/cart" className="relative hover:text-white transition-colors">
                    <ShoppingBasket className="h-6 w-6" />
@@ -77,14 +83,21 @@ export function Header() {
                     <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-60 z-50 border border-zinc-700">
                       <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16}/> Mi Panel</Link>
                       <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><ShoppingBasket size={16}/> Tienda</Link>
-                      {(user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.OWNER)) && (
-                          <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800">
-                              <LayoutGrid size={16} /> Panel de Control
-                          </Link>
+                      
+                      {isAdmin && (
+                          <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Admin</Link>
                       )}
-                      {user.roles.includes(UserRole.RRPP) && (<Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><BarChartHorizontal size={16} /> Panel RRPP</Link>)}
-                      {user.roles.includes(UserRole.VERIFIER) && (<Link href="/verifier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><QrCode size={16} /> Verificar Entradas</Link>)}
-                      {user.roles.includes(UserRole.BARRA) && (<Link href="/bar-scanner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><GlassWater size={16} /> Validar Premios</Link>)}
+                      {isOwner && !isAdmin && (
+                          <Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Dueño</Link>
+                      )}
+                      {isOrganizer && !isAdmin && !isOwner && (
+                          <Link href="/dashboard/organizer" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><Briefcase size={16} /> Panel Organizador</Link>
+                      )}
+                      
+                      {isRrpp && (<Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><BarChartHorizontal size={16} /> Panel RRPP</Link>)}
+                      {(isVerifier || isAdmin) && (<Link href="/verifier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><QrCode size={16} /> Verificar Entradas</Link>)}
+                      {(isBarra || isAdmin) && (<Link href="/bar-scanner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><GlassWater size={16} /> Validar Premios</Link>)}
+                      
                       <button onClick={handleLogout} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-red-600/80 transition-colors border-t border-zinc-700"><LogOut size={16} />Cerrar sesión</button>
                     </div>
                   )}
@@ -101,7 +114,6 @@ export function Header() {
         </div>
       </header>
       
-      {/* 2. Renderizamos el modal fuera del header, controlado por el estado */}
       <NotificationsModal 
         isOpen={showNotifications} 
         onClose={() => setShowNotifications(false)} 
