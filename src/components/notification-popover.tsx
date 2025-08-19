@@ -1,4 +1,3 @@
-// src/components/notification-popover.tsx
 'use client';
 
 import { useNotificationStore } from "@/stores/notification-store";
@@ -68,75 +67,60 @@ export function NotificationPopover({ onClose }: { onClose: () => void }) {
     }
   }, [unreadCount, notifications, markAsRead]);
 
-  // Clases CSS que controlan el comportamiento adaptable
-  const popoverClasses = `
-    fixed inset-0 z-50 flex flex-col bg-zinc-900
-    sm:absolute sm:inset-auto sm:top-14 sm:right-0 sm:w-80 sm:max-w-sm sm:h-auto sm:max-h-[500px] 
-    sm:rounded-lg sm:border sm:border-zinc-700 sm:shadow-lg
-  `;
+  const popoverClasses = "fixed inset-0 bg-zinc-900 z-50 flex flex-col sm:absolute sm:inset-auto sm:top-14 sm:right-0 sm:w-80 sm:max-w-sm sm:h-auto sm:max-h-[500px] sm:rounded-lg sm:border sm:border-zinc-700 sm:shadow-lg";
 
   if (selectedNotification) {
     return (
-      <>
-        {/* Overlay solo en mobile */}
-        <div className="fixed inset-0 bg-black/60 z-40 sm:hidden" onClick={onClose}></div>
-
         <div className={popoverClasses}>
             <div className="p-3 border-b border-zinc-700 flex-shrink-0 flex items-center gap-2">
                 <button onClick={() => setSelectedNotification(null)} className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
                     <ArrowLeft size={20}/>
                 </button>
                 <h3 className="font-semibold text-white">Detalle</h3>
-                <button onClick={onClose} className="ml-auto text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
+                <button onClick={onClose} className="sm:hidden text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800 ml-auto">
                     <X size={20}/>
                 </button>
             </div>
             <NotificationDetailView notification={selectedNotification} onClose={() => setSelectedNotification(null)} />
         </div>
-      </>
     )
   }
   
   return (
-    <>
-      {/* Overlay solo en mobile */}
-      <div className="fixed inset-0 bg-black/60 z-40 sm:hidden" onClick={onClose}></div>
-
-      <div className={popoverClasses}>
-        <div className="p-4 border-b border-zinc-700 flex-shrink-0 flex justify-between items-center">
-          <h3 className="font-semibold text-white">Notificaciones</h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
-              <X size={20}/>
-          </button>
-        </div>
-        <div className="flex-grow overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8 h-full"><Loader2 className="animate-spin text-pink-500"/></div>
-          ) : notifications.length === 0 ? (
-            <div className="text-center p-8 text-zinc-500 flex flex-col items-center justify-center h-full">
-              <BellRing size={32} className="mx-auto mb-2"/>
-              <p>No tienes notificaciones.</p>
-            </div>
-          ) : (
-            <ul>
-              {notifications.map(n => (
-                <li key={n.id} onClick={() => setSelectedNotification(n)} className={`border-b border-zinc-800 p-4 cursor-pointer hover:bg-zinc-800 ${!n.isRead ? 'bg-pink-500/5' : ''}`}>
-                  <div className="flex items-start gap-3">
-                    {!n.isRead && <div className="w-2.5 h-2.5 rounded-full bg-pink-500 mt-1.5 flex-shrink-0"></div>}
-                    <div className="flex-grow">
-                      <p className={`font-semibold ${!n.isRead ? 'text-white' : 'text-zinc-300'}`}>{n.title}</p>
-                      <p className="text-sm text-zinc-400 line-clamp-2">{n.body}</p>
-                      <p className="text-xs text-zinc-500 mt-2">
-                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+    <div className={popoverClasses}>
+      <div className="p-4 border-b border-zinc-700 flex-shrink-0 flex justify-between items-center">
+        <h3 className="font-semibold">Notificaciones</h3>
+        <button onClick={onClose} className="sm:hidden text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
+            <X size={20}/>
+        </button>
       </div>
-    </>
+      <div className="flex-grow overflow-y-auto">
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8 h-full"><Loader2 className="animate-spin text-pink-500"/></div>
+        ) : notifications.length === 0 ? (
+          <div className="text-center p-8 text-zinc-500 flex flex-col items-center justify-center h-full">
+            <BellRing size={32} className="mx-auto mb-2"/>
+            <p>No tienes notificaciones.</p>
+          </div>
+        ) : (
+          <ul>
+            {notifications.map(n => (
+              <li key={n.id} onClick={() => setSelectedNotification(n)} className={`border-b border-zinc-800 p-4 cursor-pointer hover:bg-zinc-800 ${!n.isRead ? 'bg-pink-500/5' : ''}`}>
+                <div className="flex items-start gap-3">
+                  {!n.isRead && <div className="w-2.5 h-2.5 rounded-full bg-pink-500 mt-1.5 flex-shrink-0"></div>}
+                  <div className="flex-grow">
+                    <p className={`font-semibold ${!n.isRead ? 'text-white' : 'text-zinc-300'}`}>{n.title}</p>
+                    <p className="text-sm text-zinc-400 line-clamp-2">{n.body}</p>
+                    <p className="text-xs text-zinc-500 mt-2">
+                      {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
