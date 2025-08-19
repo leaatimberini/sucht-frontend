@@ -1,3 +1,4 @@
+// src/components/notification-popover.tsx
 'use client';
 
 import { useNotificationStore } from "@/stores/notification-store";
@@ -9,7 +10,6 @@ import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { Notification } from "@/types/notification.types";
 
-// --- SUB-COMPONENTE: VISTA DE DETALLE ---
 function NotificationDetailView({ notification, onClose }: { notification: Notification, onClose: () => void }) {
     const { fetchNotifications } = useNotificationStore();
 
@@ -18,8 +18,8 @@ function NotificationDetailView({ notification, onClose }: { notification: Notif
         try {
             await api.delete(`/notifications/${notification.id}`);
             toast.success('Notificación eliminada.');
-            fetchNotifications(); // Recargamos la lista
-            onClose(); // Cerramos el detalle
+            fetchNotifications();
+            onClose();
         } catch (error) {
             toast.error('No se pudo eliminar la notificación.');
         }
@@ -29,7 +29,6 @@ function NotificationDetailView({ notification, onClose }: { notification: Notif
         try {
             await api.post(`/notifications/${notification.id}/feedback`, { feedback });
             toast.success('¡Gracias por tu feedback!');
-            // Opcional: podrías querer actualizar el estado local para reflejar el voto al instante
         } catch (error) {
             toast.error('No se pudo enviar el feedback.');
         }
@@ -48,8 +47,8 @@ function NotificationDetailView({ notification, onClose }: { notification: Notif
             </div>
             <div className="mt-auto pt-4 border-t border-zinc-700 flex justify-between items-center flex-shrink-0">
                 <div className="flex gap-2">
-                    <button onClick={() => handleFeedback('like')} className="p-2 rounded-full hover:bg-green-500/20 text-zinc-400 hover:text-green-400 transition-colors"><ThumbsUp size={20}/></button>
-                    <button onClick={() => handleFeedback('dislike')} className="p-2 rounded-full hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"><ThumbsDown size={20}/></button>
+                    <button onClick={() => handleFeedback('like')} className="p-2 rounded-full hover:bg-green-500/20 text-zinc-400 hover:text-green-400"><ThumbsUp size={20}/></button>
+                    <button onClick={() => handleFeedback('dislike')} className="p-2 rounded-full hover:bg-red-500/20 text-zinc-400 hover:text-red-400"><ThumbsDown size={20}/></button>
                 </div>
                 <button onClick={handleDelete} className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 font-semibold"><Trash2 size={16}/> Eliminar</button>
             </div>
@@ -57,79 +56,87 @@ function NotificationDetailView({ notification, onClose }: { notification: Notif
     )
 }
 
-
-// --- COMPONENTE PRINCIPAL ---
 export function NotificationPopover({ onClose }: { onClose: () => void }) {
-  const { notifications, isLoading, markAsRead, unreadCount, fetchNotifications } = useNotificationStore();
+  const { notifications, isLoading, markAsRead, unreadCount } = useNotificationStore();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
     if (unreadCount > 0) {
       const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
-      const timer = setTimeout(() => {
-        markAsRead(unreadIds);
-      }, 2000);
+      const timer = setTimeout(() => { markAsRead(unreadIds); }, 2000);
       return () => clearTimeout(timer);
     }
   }, [unreadCount, notifications, markAsRead]);
 
-  // Clases CSS para controlar el comportamiento en móvil (fixed) y escritorio (absolute)
-  const popoverClasses = "fixed inset-0 bg-zinc-900 z-50 flex flex-col sm:absolute sm:inset-auto sm:top-14 sm:right-0 sm:w-80 sm:max-w-sm sm:h-auto sm:max-h-[500px] sm:rounded-lg sm:border sm:border-zinc-700 sm:shadow-lg";
+  // Clases CSS que controlan el comportamiento adaptable
+  const popoverClasses = `
+    fixed inset-0 z-50 flex flex-col bg-zinc-900
+    sm:absolute sm:inset-auto sm:top-14 sm:right-0 sm:w-80 sm:max-w-sm sm:h-auto sm:max-h-[500px] 
+    sm:rounded-lg sm:border sm:border-zinc-700 sm:shadow-lg
+  `;
 
   if (selectedNotification) {
     return (
+      <>
+        {/* Overlay solo en mobile */}
+        <div className="fixed inset-0 bg-black/60 z-40 sm:hidden" onClick={onClose}></div>
+
         <div className={popoverClasses}>
             <div className="p-3 border-b border-zinc-700 flex-shrink-0 flex items-center gap-2">
                 <button onClick={() => setSelectedNotification(null)} className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
                     <ArrowLeft size={20}/>
                 </button>
                 <h3 className="font-semibold text-white">Detalle</h3>
-                <button onClick={onClose} className="sm:hidden text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800 ml-auto">
+                <button onClick={onClose} className="ml-auto text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
                     <X size={20}/>
                 </button>
             </div>
             <NotificationDetailView notification={selectedNotification} onClose={() => setSelectedNotification(null)} />
         </div>
+      </>
     )
   }
   
   return (
-    <div className={popoverClasses}>
-      <div className="p-4 border-b border-zinc-700 flex-shrink-0 flex justify-between items-center">
-        <h3 className="font-semibold">Notificaciones</h3>
-        <button onClick={onClose} className="sm:hidden text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
-            <X size={20}/>
-        </button>
-      </div>
-      <div className="flex-grow overflow-y-auto">
-        {isLoading ? (
-          <div className="flex justify-center items-center p-8 h-full">
-             <Loader2 className="animate-spin text-pink-500"/>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="text-center p-8 text-zinc-500 flex flex-col items-center justify-center h-full">
-            <BellRing size={32} className="mx-auto mb-2"/>
-            <p>No tienes notificaciones.</p>
-          </div>
-        ) : (
-          <ul>
-            {notifications.map(n => (
-              <li key={n.id} onClick={() => setSelectedNotification(n)} className={`border-b border-zinc-800 p-4 cursor-pointer hover:bg-zinc-800 ${!n.isRead ? 'bg-pink-500/5' : ''}`}>
-                <div className="flex items-start gap-3">
-                  {!n.isRead && <div className="w-2.5 h-2.5 rounded-full bg-pink-500 mt-1.5 flex-shrink-0"></div>}
-                  <div className="flex-grow">
-                    <p className={`font-semibold ${!n.isRead ? 'text-white' : 'text-zinc-300'}`}>{n.title}</p>
-                    <p className="text-sm text-zinc-400 line-clamp-2">{n.body}</p>
-                    <p className="text-xs text-zinc-500 mt-2">
-                      {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
-                    </p>
+    <>
+      {/* Overlay solo en mobile */}
+      <div className="fixed inset-0 bg-black/60 z-40 sm:hidden" onClick={onClose}></div>
+
+      <div className={popoverClasses}>
+        <div className="p-4 border-b border-zinc-700 flex-shrink-0 flex justify-between items-center">
+          <h3 className="font-semibold text-white">Notificaciones</h3>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
+              <X size={20}/>
+          </button>
+        </div>
+        <div className="flex-grow overflow-y-auto">
+          {isLoading ? (
+            <div className="flex justify-center items-center p-8 h-full"><Loader2 className="animate-spin text-pink-500"/></div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center p-8 text-zinc-500 flex flex-col items-center justify-center h-full">
+              <BellRing size={32} className="mx-auto mb-2"/>
+              <p>No tienes notificaciones.</p>
+            </div>
+          ) : (
+            <ul>
+              {notifications.map(n => (
+                <li key={n.id} onClick={() => setSelectedNotification(n)} className={`border-b border-zinc-800 p-4 cursor-pointer hover:bg-zinc-800 ${!n.isRead ? 'bg-pink-500/5' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    {!n.isRead && <div className="w-2.5 h-2.5 rounded-full bg-pink-500 mt-1.5 flex-shrink-0"></div>}
+                    <div className="flex-grow">
+                      <p className={`font-semibold ${!n.isRead ? 'text-white' : 'text-zinc-300'}`}>{n.title}</p>
+                      <p className="text-sm text-zinc-400 line-clamp-2">{n.body}</p>
+                      <p className="text-xs text-zinc-500 mt-2">
+                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
