@@ -14,7 +14,7 @@ export function StaffManager({ onStaffChange, viewAs = 'ADMIN' }: { onStaffChang
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
   const [notFound, setNotFound] = useState(false);
 
-  // ===== CORRECCIÓN: Se añade el rol 'BARRA' a la lista de roles disponibles =====
+  // ===== CORRECCIÓN: Se añade el rol 'BARRA' a la lista de roles disponibles =====
   const availableRoles = viewAs === 'OWNER'
     ? [UserRole.RRPP, UserRole.VERIFIER, UserRole.BARRA]
     : [UserRole.RRPP, UserRole.VERIFIER, UserRole.ADMIN, UserRole.BARRA];
