@@ -1,3 +1,4 @@
+// src/types/ticket.types.ts
 import { Event } from "./event.types";
 import { User } from "./user.types";
 

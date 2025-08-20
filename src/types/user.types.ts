@@ -1,3 +1,4 @@
+// src/types/user.types.ts
 export enum UserRole {
   OWNER = 'owner',
   ADMIN = 'admin',

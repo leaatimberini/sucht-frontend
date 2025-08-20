@@ -1,3 +1,4 @@
+// src/types/product-purchase.types.ts
 import { Product } from "./product.types";
 import { User } from "./user.types"; // Añadir esta importación
 

@@ -1,3 +1,4 @@
+// src/types/dashboard.types.ts
 import { Ticket } from "./ticket.types";
 
 export interface SummaryMetrics {
