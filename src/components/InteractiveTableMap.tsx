@@ -1,3 +1,4 @@
+// src/components/InteractiveTableMap.tsx
 'use client';
 
 import { useState, useEffect } from 'react';

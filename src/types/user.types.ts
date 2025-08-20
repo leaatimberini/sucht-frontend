@@ -18,7 +18,7 @@ export interface User {
   profileImageUrl: string | null;
   instagramHandle: string | null;
   whatsappNumber: string | null;
-  dateOfBirth: Date | string | null; // Aceptamos string por los formularios
+  dateOfBirth: Date | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 
@@ -28,7 +28,6 @@ export interface User {
   rrppCommissionRate: number | null;
   
   // --- PROPIEDAD AÑADIDA ---
-  // Esta propiedad nos la envía la API en el endpoint /profile/me
   isPushSubscribed?: boolean;
 
   // Objeto opcional con la información de nivel
