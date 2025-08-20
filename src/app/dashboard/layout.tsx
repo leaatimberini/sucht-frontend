@@ -7,7 +7,7 @@ import Link from "next/link";
 import { 
   Calendar, LayoutGrid, Users, QrCode, UserSquare, BarChartHorizontal, 
   Settings, Bell, UserX, Trophy, CreditCard, Gift, ShoppingBasket, 
-  PartyPopper, Send, Package, Ticket, Briefcase // Icono para Organizador
+  PartyPopper, Send, Package, Ticket, Briefcase, Armchair // Icono para Mesas
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePathname } from "next/navigation";
@@ -58,6 +58,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <NavLink href="/dashboard/sales" icon={CreditCard}>Ventas (Tickets)</NavLink>
                   <NavLink href="/dashboard/product-sales" icon={Package}>Ventas (Productos)</NavLink>
                   <NavLink href="/dashboard/events" icon={Calendar}>Eventos</NavLink>
+                  {/* --- NUEVO ENLACE AÑADIDO --- */}
+                  <NavLink href="/dashboard/tables" icon={Armchair}>Gestión de Mesas</NavLink>
                   <NavLink href="/dashboard/staff" icon={Users}>Staff</NavLink>
                   <NavLink href="/dashboard/clients" icon={UserSquare}>Clientes</NavLink>
                   <NavLink href="/dashboard/rrpp-stats" icon={BarChartHorizontal}>Rendimiento RRPP</NavLink>

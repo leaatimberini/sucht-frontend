@@ -1,4 +1,3 @@
-// src/app/eventos/[id]/page.tsx
 'use client';
 
 import api from "@/lib/axios";
@@ -10,6 +9,7 @@ import { ShareButton } from "@/components/share-button";
 import { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
 import { RaffleCountdown } from "@/components/RaffleCountdown";
+import { InteractiveTableMap } from "@/components/InteractiveTableMap";
 
 export default function EventoDetailPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<Event | null>(null);
@@ -62,7 +62,6 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
             />
           )}
 
-          {/* --- COMPONENTE DEL SORTEO AÑADIDO --- */}
           {!isEventFinished && <RaffleCountdown eventId={event.id} />}
 
           <div className="mt-8">
@@ -70,6 +69,10 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
             <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
             <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
             <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
+            
+            {/* --- MAPA INTERACTIVO AÑADIDO --- */}
+            {!isEventFinished && <InteractiveTableMap eventId={event.id} />}
+            
             <div className="mt-8 space-y-4">
               <h2 className="text-2xl font-bold text-white">Entradas</h2>
               {tiers?.map(tier => (
