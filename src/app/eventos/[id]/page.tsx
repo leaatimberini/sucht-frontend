@@ -71,8 +71,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
             <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
             <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
             
-            {/* --- MAPA INTERACTIVO AÑADIDO --- */}
-            {!isEventFinished && <InteractiveTableMap eventId={event.id} />}
+           
             
             <div className="mt-8 space-y-4">
               <h2 className="text-2xl font-bold text-white">Entradas</h2>
