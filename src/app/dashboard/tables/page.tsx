@@ -171,7 +171,7 @@ export default function ManageTablesPage() {
                                         <td className="p-4"><p className="font-semibold text-white">{res.table.tableNumber}</p><p className="text-sm text-zinc-400">{res.table.category.name}</p></td>
                                         <td className="p-4"><p className="font-semibold text-zinc-200">{res.clientName}</p><p className="text-sm text-zinc-500">{res.clientEmail}</p></td>
                                         <td className="p-4">
-                                            <p className="font-semibold text-green-400">${res.amountPaid.toFixed(2)} / ${res.totalPrice.toFixed(2)}</p>
+                                            <p className="font-semibold text-green-400">${Number(res.amountPaid || 0).toFixed(2)} / ${Number(res.totalPrice || 0).toFixed(2)}</p>
                                             <p className="text-sm text-zinc-400 capitalize">{res.paymentType}</p>
                                         </td>
                                         <td className="p-4 text-center font-bold text-white">{res.guestCount}</td>
