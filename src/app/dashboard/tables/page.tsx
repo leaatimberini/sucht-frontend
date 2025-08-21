@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic'; // 1. Usamos la importación estándar de dynamic
+import { useState, useEffect, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { Armchair, PlusCircle, Loader2, X, UserPlus } from 'lucide-react';
@@ -13,7 +13,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Table, TableCategory, TableReservation } from '@/types/table.types';
 
-// 2. Cargamos el componente del mapa de forma dinámica y deshabilitamos el SSR
 const TableMapEditor = dynamic(() => 
     import('@/components/TableMapEditor').then(mod => mod.TableMapEditor), 
     { 
@@ -22,6 +21,7 @@ const TableMapEditor = dynamic(() =>
     }
 );
 
+// --- SCHEMAS DE VALIDACIÓN ---
 const categorySchema = z.object({ name: z.string().min(3, 'El nombre es requerido.') });
 const tableSchema = z.object({ tableNumber: z.string().min(1, 'El número es requerido.'), categoryId: z.string().min(1, 'La categoría es requerida.') });
 const manualReservationSchema = z.object({
@@ -99,7 +99,7 @@ export default function ManageTablesPage() {
 
     useEffect(() => {
         fetchEventData(selectedEventId);
-    }, [selectedEventId, fetchEventData]);
+    }, [selectedEventId]);
 
     const onCategorySubmit = async (data: CategoryFormInputs) => {
         try {
@@ -156,14 +156,13 @@ export default function ManageTablesPage() {
     };
 
     return (
-        <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.ORGANIZER]}>
+        <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER]}>
             <div className="space-y-8">
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Armchair className="text-pink-400"/> Gestión de Mesas</h1>
-
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
                     <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6">
                         <div className="w-full sm:w-auto">
-                            <label htmlFor="event-select" className="text-sm font-medium text-zinc-400">Mostrando mesas para el evento:</label>
+                            <label htmlFor="event-select" className="text-sm font-medium text-zinc-400">Seleccionar Evento:</label>
                             <select id="event-select" value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full mt-1 bg-zinc-800 rounded-md p-2">
                                 {events.map(event => <option key={event.id} value={event.id}>{event.title}</option>)}
                             </select>
@@ -173,8 +172,7 @@ export default function ManageTablesPage() {
                             <button onClick={() => setIsTableModalOpen(true)} disabled={!selectedEventId} className="flex-1 bg-pink-600 hover:bg-pink-700 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"><PlusCircle size={18}/> Nueva Mesa</button>
                         </div>
                     </div>
-
-                    <TableMapEditor tables={tables} setTables={setTables} onTableClick={setSelectedTable} />
+                    {selectedEventId && <TableMapEditor eventId={selectedEventId} onTableSelect={setSelectedTable} />}
                 </div>
                 
                 <div className="mt-10">
@@ -214,48 +212,6 @@ export default function ManageTablesPage() {
                 </div>
 
                 {/* --- MODALES --- */}
-                {isCategoryModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                        <form onSubmit={categoryForm.handleSubmit(onCategorySubmit)} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 w-full max-w-sm space-y-4">
-                            <h3 className="text-xl font-bold text-white">Crear Nueva Categoría</h3>
-                            <div>
-                                <label htmlFor="cat-name" className="block text-sm font-medium text-zinc-300">Nombre</label>
-                                <input id="cat-name" {...categoryForm.register('name')} className="mt-1 w-full bg-zinc-800 rounded-md p-2" placeholder="Ej: VIP Cabina"/>
-                                {categoryForm.formState.errors.name && <p className="text-red-500 text-xs mt-1">{categoryForm.formState.errors.name.message}</p>}
-                            </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="bg-zinc-700 hover:bg-zinc-600 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                                <button type="submit" disabled={categoryForm.formState.isSubmitting} className="bg-pink-600 hover:bg-pink-700 font-bold py-2 px-4 rounded-lg">Guardar</button>
-                            </div>
-                        </form>
-                    </div>
-                )}
-                {isTableModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                        <form onSubmit={tableForm.handleSubmit(onTableSubmit)} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 w-full max-w-sm space-y-4">
-                            <h3 className="text-xl font-bold text-white">Añadir Nueva Mesa</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="table-num" className="block text-sm font-medium text-zinc-300">Número</label>
-                                    <input id="table-num" {...tableForm.register('tableNumber')} className="mt-1 w-full bg-zinc-800 rounded-md p-2" placeholder="Ej: 07"/>
-                                    {tableForm.formState.errors.tableNumber && <p className="text-red-500 text-xs mt-1">{tableForm.formState.errors.tableNumber.message}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="table-cat" className="block text-sm font-medium text-zinc-300">Categoría</label>
-                                    <select id="table-cat" {...tableForm.register('categoryId')} className="mt-1 w-full bg-zinc-800 rounded-md p-2">
-                                        <option value="">Seleccionar...</option>
-                                        {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                                    </select>
-                                    {tableForm.formState.errors.categoryId && <p className="text-red-500 text-xs mt-1">{tableForm.formState.errors.categoryId.message}</p>}
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setIsTableModalOpen(false)} className="bg-zinc-700 hover:bg-zinc-600 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                                <button type="submit" disabled={tableForm.formState.isSubmitting} className="bg-pink-600 hover:bg-pink-700 font-bold py-2 px-4 rounded-lg">Guardar</button>
-                            </div>
-                        </form>
-                    </div>
-                )}
                 {selectedTable && (
                     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 w-full max-w-sm space-y-4">
@@ -310,7 +266,7 @@ export default function ManageTablesPage() {
                                 {reservationForm.formState.errors.amountPaid && <p className="text-red-500 text-xs mt-1">{reservationForm.formState.errors.amountPaid.message}</p>}
                             </div>
                              <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => {setIsReservationModalOpen(false); setSelectedTable(null);}} className="bg-zinc-700 hover:bg-zinc-600 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                                <button type="button" onClick={() => setIsReservationModalOpen(false)} className="bg-zinc-700 hover:bg-zinc-600 font-bold py-2 px-4 rounded-lg">Cancelar</button>
                                 <button type="submit" disabled={reservationForm.formState.isSubmitting} className="bg-pink-600 hover:bg-pink-700 font-bold py-2 px-4 rounded-lg">Confirmar Reserva</button>
                             </div>
                          </form>

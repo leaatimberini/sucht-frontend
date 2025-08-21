@@ -1,19 +1,16 @@
 'use client';
 
-import { useRef } from 'react';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { useRef, useCallback, useState, useEffect } from 'react';
+import { DndProvider, useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Image from 'next/image';
-import { Save } from 'lucide-react';
+import { Loader2, Save, UserPlus } from 'lucide-react';
 import type { Table } from '@/types/table.types';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
-import type { DropTargetMonitor } from 'react-dnd';
 
-// --- TIPOS ---
 interface DragItem { id: string; }
 
-// --- SUB-COMPONENTE DRAGGABLETABLE ---
 const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void; }) => {
     const ref = useRef<HTMLButtonElement>(null);
     const [{ isDragging }, drag] = useDrag(() => ({
@@ -50,17 +47,35 @@ const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void;
     );
 };
 
-// --- COMPONENTE PRINCIPAL DEL EDITOR DE MAPA ---
-export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Table[]; setTables: React.Dispatch<React.SetStateAction<Table[]>>; onTableClick: (table: Table) => void; }) {
+export function TableMapEditor({ eventId, onTableSelect }: { eventId: string; onTableSelect: (table: Table) => void; }) {
+    const [tables, setTables] = useState<Table[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const mapRef = useRef<HTMLDivElement>(null);
 
-    const handleTableDrop = (tableId: string, x: number, y: number) => {
+    const fetchTables = useCallback(async () => {
+        if (!eventId) return;
+        setIsLoading(true);
+        try {
+            const response = await api.get(`/tables/event/${eventId}`);
+            setTables(response.data);
+        } catch (error) {
+            toast.error("No se pudieron cargar las mesas.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [eventId]);
+
+    useEffect(() => {
+        fetchTables();
+    }, [fetchTables]);
+
+    const handleTableDrop = useCallback((tableId: string, x: number, y: number) => {
         setTables(prevTables =>
             prevTables.map(t =>
                 t.id === tableId ? { ...t, positionX: x, positionY: y } : t
             )
         );
-    };
+    }, []);
     
     const handleSaveChanges = async () => {
         toast.loading('Guardando posiciones...');
@@ -82,7 +97,7 @@ export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Ta
 
     const [, drop] = useDrop(() => ({
         accept: 'table',
-        drop: (item: unknown, monitor) => {
+        drop(item: unknown, monitor: DropTargetMonitor) {
             const map = mapRef.current;
             const draggedItem = item as DragItem;
             if (!map || !draggedItem.id) return;
@@ -96,12 +111,16 @@ export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Ta
     }));
     drop(mapRef);
 
+    if (isLoading) {
+        return <div className="flex justify-center p-8"><Loader2 className="animate-spin"/></div>;
+    }
+
     return (
         <DndProvider backend={HTML5Backend}>
             <div id="map-container" ref={mapRef} className="relative w-full max-w-lg mx-auto my-8 border-2 border-dashed border-zinc-700 rounded-lg bg-black/20">
                 <Image src="/images/tables-map-bg.png" alt="Mapa de mesas" width={512} height={768} className="w-full h-auto opacity-30"/>
                 {tables.map(table => (
-                    <DraggableTable key={table.id} table={table} onClick={() => onTableClick(table)} />
+                    <DraggableTable key={table.id} table={table} onClick={() => onTableSelect(table)} />
                 ))}
             </div>
             <div className="flex justify-end">
