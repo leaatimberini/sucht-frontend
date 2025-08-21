@@ -60,9 +60,7 @@ const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void;
     const [{ isDragging }, drag] = useDrag(() => ({
         type: 'table',
         item: { id: table.id },
-        collect: (monitor) => ({
-            isDragging: !!monitor.isDragging(),
-        }),
+        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }));
     drag(ref);
 
@@ -107,12 +105,34 @@ export default function ManageTablesPage() {
     const [selectedTable, setSelectedTable] = useState<Table | null>(null);
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
 
-    const categoryForm = useForm({ resolver: zodResolver(categorySchema) });
-    const tableForm = useForm({ resolver: zodResolver(tableSchema) });
+    const categoryForm = useForm<CategoryFormInputs>({ resolver: zodResolver(categorySchema) });
+    const tableForm = useForm<TableFormInputs>({ resolver: zodResolver(tableSchema) });
     const reservationForm = useForm({ resolver: zodResolver(manualReservationSchema) });
+    
+    const mapRef = useRef<HTMLDivElement>(null);
 
-    const fetchInitialData = useCallback(async () => { /* ... (sin cambios) ... */ }, []);
-    useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+    const fetchInitialData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [eventsRes, categoriesRes] = await Promise.all([
+                api.get('/events/all-for-admin'),
+                api.get('/tables/categories')
+            ]);
+            setEvents(eventsRes.data);
+            setCategories(categoriesRes.data);
+            if (eventsRes.data.length > 0) {
+                setSelectedEventId(eventsRes.data[0].id);
+            }
+        } catch (error) {
+            toast.error("No se pudieron cargar los datos iniciales.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchInitialData();
+    }, [fetchInitialData]);
 
     const fetchEventData = useCallback(async (eventId: string) => {
         if (!eventId) {
@@ -134,10 +154,33 @@ export default function ManageTablesPage() {
             setIsLoading(false);
         }
     }, []);
-    useEffect(() => { fetchEventData(selectedEventId); }, [selectedEventId, fetchEventData]);
+    useEffect(() => {
+        fetchEventData(selectedEventId);
+    }, [selectedEventId, fetchEventData]);
 
-    const onCategorySubmit = async (data: CategoryFormInputs) => { /* ... (sin cambios) ... */ };
-    const onTableSubmit = async (data: TableFormInputs) => { /* ... (sin cambios) ... */ };
+    const onCategorySubmit = async (data: CategoryFormInputs) => {
+        try {
+            await api.post('/tables/categories', data);
+            toast.success(`Categoría "${data.name}" creada.`);
+            setIsCategoryModalOpen(false);
+            categoryForm.reset();
+            fetchInitialData();
+        } catch (error) {
+            toast.error("No se pudo crear la categoría.");
+        }
+    };
+    
+    const onTableSubmit = async (data: TableFormInputs) => {
+        try {
+            await api.post('/tables', { ...data, eventId: selectedEventId });
+            toast.success(`Mesa "${data.tableNumber}" creada.`);
+            setIsTableModalOpen(false);
+            tableForm.reset();
+            fetchEventData(selectedEventId);
+        } catch (error) {
+            toast.error("No se pudo crear la mesa.");
+        }
+    };
 
     const onManualReservationSubmit = async (data: ManualReservationInputs) => {
         if(!selectedTable) return;
@@ -198,7 +241,7 @@ export default function ManageTablesPage() {
     const [, drop] = useDrop(() => ({
         accept: 'table',
         drop(item: unknown, monitor: DropTargetMonitor) {
-            const map = document.getElementById("map-container");
+            const map = mapRef.current;
             const draggedItem = item as DragItem;
             if (!map || !draggedItem.id) return;
 
@@ -212,6 +255,8 @@ export default function ManageTablesPage() {
             handleTableDrop(draggedItem.id, newXPercent, newYPercent);
         },
     }));
+    
+    drop(mapRef);
 
     return (
         <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.ORGANIZER]}>
@@ -220,11 +265,22 @@ export default function ManageTablesPage() {
                     <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Armchair className="text-pink-400"/> Gestión de Mesas</h1>
 
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                        {/* ... (Selector de Eventos y Botones de Acción sin cambios) ... */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6">
+                            <div className="w-full sm:w-auto">
+                                <label htmlFor="event-select" className="text-sm font-medium text-zinc-400">Mostrando mesas para el evento:</label>
+                                <select id="event-select" value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full mt-1 bg-zinc-800 rounded-md p-2">
+                                    {events.map(event => <option key={event.id} value={event.id}>{event.title}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <button onClick={() => setIsCategoryModalOpen(true)} className="flex-1 bg-zinc-700 hover:bg-zinc-600 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><PlusCircle size={18}/> Nueva Categoría</button>
+                                <button onClick={() => setIsTableModalOpen(true)} disabled={!selectedEventId} className="flex-1 bg-pink-600 hover:bg-pink-700 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"><PlusCircle size={18}/> Nueva Mesa</button>
+                            </div>
+                        </div>
 
                         {isLoading ? <Loader2 className="animate-spin mx-auto"/> : (
                             <>
-                                <div id="map-container" ref={drop as unknown as React.Ref<HTMLDivElement>} className="relative w-full max-w-lg mx-auto my-8 border-2 border-dashed border-zinc-700 rounded-lg bg-black/20">
+                                <div id="map-container" ref={mapRef} className="relative w-full max-w-lg mx-auto my-8 border-2 border-dashed border-zinc-700 rounded-lg bg-black/20">
                                     <Image src="/images/tables-map-bg.png" alt="Mapa de mesas" width={512} height={768} className="w-full h-auto opacity-30"/>
                                     {tables.map(table => (
                                         <DraggableTable key={table.id} table={table} onClick={() => setSelectedTable(table)} />
@@ -240,7 +296,39 @@ export default function ManageTablesPage() {
                     </div>
                     
                     <div className="mt-10">
-                        {/* ... (Historial de Reservas sin cambios) ... */}
+                        <h2 className="text-2xl font-bold text-white mb-4">Historial de Reservas</h2>
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="border-b border-zinc-700">
+                                    <tr>
+                                        <th className="p-4 text-sm font-semibold text-white">Mesa</th>
+                                        <th className="p-4 text-sm font-semibold text-white">Cliente</th>
+                                        <th className="p-4 text-sm font-semibold text-white">Pago</th>
+                                        <th className="p-4 text-sm font-semibold text-white">Invitados</th>
+                                        <th className="p-4 text-sm font-semibold text-white">Reservado por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {isLoading ? (
+                                        <tr><td colSpan={5} className="text-center p-6"><Loader2 className="animate-spin mx-auto"/></td></tr>
+                                    ) : reservations.map(res => (
+                                        <tr key={res.id} className="border-b border-zinc-800 last:border-b-0">
+                                            <td className="p-4"><p className="font-semibold text-white">{res.table.tableNumber}</p><p className="text-sm text-zinc-400">{res.table.category.name}</p></td>
+                                            <td className="p-4"><p className="font-semibold text-zinc-200">{res.clientName}</p><p className="text-sm text-zinc-500">{res.clientEmail}</p></td>
+                                            <td className="p-4">
+                                                <p className="font-semibold text-green-400">${res.amountPaid.toFixed(2)} / ${res.totalPrice.toFixed(2)}</p>
+                                                <p className="text-sm text-zinc-400 capitalize">{res.paymentType}</p>
+                                            </td>
+                                            <td className="p-4 text-center font-bold text-white">{res.guestCount}</td>
+                                            <td className="p-4 text-zinc-300">{res.reservedByUser.name}</td>
+                                        </tr>
+                                    ))}
+                                    {reservations.length === 0 && !isLoading && (
+                                        <tr><td colSpan={5} className="text-center p-6 text-zinc-500">No hay reservas para este evento.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
