@@ -1,13 +1,14 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
-import { DndProvider, useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
+import { useRef } from 'react';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Image from 'next/image';
-import { Loader2, Save } from 'lucide-react';
-import type { Table } from '@/types/table.types'; // Necesitarás crear este tipo
+import { Save } from 'lucide-react';
+import type { Table } from '@/types/table.types';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
+import type { DropTargetMonitor } from 'react-dnd';
 
 // --- TIPOS ---
 interface DragItem { id: string; }
@@ -35,11 +36,11 @@ const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void;
             ref={ref}
             className={`absolute p-2 border-2 rounded-lg flex flex-col items-center justify-center transition-all text-center ${statusClasses[table.status]}`}
             style={{
-                left: `calc(${table.positionX || 50}% - 20px)`,
-                top: `calc(${table.positionY || 50}% - 20px)`,
+                left: `calc(${table.positionX || 50}% - 30px)`,
+                top: `calc(${table.positionY || 50}% - 30px)`,
                 opacity: isDragging ? 0.5 : 1,
-                width: '35px',
-                height: '35px'
+                width: '60px',
+                height: '60px'
             }}
             title={`${table.category.name} ${table.tableNumber}`}
         >
@@ -50,16 +51,16 @@ const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void;
 };
 
 // --- COMPONENTE PRINCIPAL DEL EDITOR DE MAPA ---
-export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Table[]; setTables: React.Dispatch<React.SetStateAction<Table[]>>, onTableClick: React.Dispatch<React.SetStateAction<Table | null>>;}) {
+export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Table[]; setTables: React.Dispatch<React.SetStateAction<Table[]>>; onTableClick: (table: Table) => void; }) {
     const mapRef = useRef<HTMLDivElement>(null);
 
-    const handleTableDrop = useCallback((tableId: string, x: number, y: number) => {
+    const handleTableDrop = (tableId: string, x: number, y: number) => {
         setTables(prevTables =>
             prevTables.map(t =>
                 t.id === tableId ? { ...t, positionX: x, positionY: y } : t
             )
         );
-    }, [setTables]);
+    };
     
     const handleSaveChanges = async () => {
         toast.loading('Guardando posiciones...');
@@ -81,7 +82,7 @@ export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Ta
 
     const [, drop] = useDrop(() => ({
         accept: 'table',
-        drop(item: unknown, monitor: DropTargetMonitor) {
+        drop: (item: unknown, monitor) => {
             const map = mapRef.current;
             const draggedItem = item as DragItem;
             if (!map || !draggedItem.id) return;
@@ -100,7 +101,7 @@ export function TableMapEditor({ tables, setTables, onTableClick }: { tables: Ta
             <div id="map-container" ref={mapRef} className="relative w-full max-w-lg mx-auto my-8 border-2 border-dashed border-zinc-700 rounded-lg bg-black/20">
                 <Image src="/images/tables-map-bg.png" alt="Mapa de mesas" width={512} height={768} className="w-full h-auto opacity-30"/>
                 {tables.map(table => (
-                    <DraggableTable key={table.id} table={table} onClick={() => { /* Lógica para abrir modal de estado */ }} />
+                    <DraggableTable key={table.id} table={table} onClick={() => onTableClick(table)} />
                 ))}
             </div>
             <div className="flex justify-end">
