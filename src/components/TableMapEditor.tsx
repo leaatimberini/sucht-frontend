@@ -38,8 +38,8 @@ const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void;
                 left: `calc(${table.positionX || 50}% - 30px)`,
                 top: `calc(${table.positionY || 50}% - 30px)`,
                 opacity: isDragging ? 0.5 : 1,
-                width: '60px',
-                height: '60px'
+                width: '45px',
+                height: '45px'
             }}
             title={`${table.category.name} ${table.tableNumber}`}
         >
