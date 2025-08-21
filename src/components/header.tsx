@@ -53,7 +53,10 @@ export function Header() {
           <Link href="/" className="text-3xl font-bold text-white">SUCHT</Link>
           <nav className="relative flex items-center space-x-4 md:space-x-6 text-sm font-medium text-zinc-300">
             <Link href="/eventos" className="hover:text-white transition-colors">Eventos</Link>
-            {hasMounted && user && (
+            
+            {/* --- LÓGICA DE VISUALIZACIÓN CORREGIDA --- */}
+            {hasMounted && user ? (
+              // 1. Si el componente está montado y HAY usuario, muestra el panel de usuario.
               <>
                 <div className="relative">
                   <button onClick={toggleNotifications} className="relative hover:text-white transition-colors">
@@ -83,33 +86,28 @@ export function Header() {
                     <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-60 z-50 border border-zinc-700">
                       <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16}/> Mi Panel</Link>
                       <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><ShoppingBasket size={16}/> Tienda</Link>
-                      
-                      {isAdmin && (
-                          <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Admin</Link>
-                      )}
-                      {isOwner && !isAdmin && (
-                          <Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Dueño</Link>
-                      )}
-                      {isOrganizer && !isAdmin && !isOwner && (
-                          <Link href="/dashboard/organizer" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><Briefcase size={16} /> Panel Organizador</Link>
-                      )}
-                      
+                      {isAdmin && ( <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Admin</Link> )}
+                      {isOwner && !isAdmin && ( <Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Dueño</Link> )}
+                      {isOrganizer && !isAdmin && !isOwner && ( <Link href="/dashboard/organizer" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><Briefcase size={16} /> Panel Organizador</Link> )}
                       {isRrpp && (<Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><BarChartHorizontal size={16} /> Panel RRPP</Link>)}
                       {(isVerifier || isAdmin) && (<Link href="/verifier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><QrCode size={16} /> Verificar Entradas</Link>)}
                       {(isBarra || isAdmin) && (<Link href="/bar-scanner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><GlassWater size={16} /> Validar Premios</Link>)}
-                      
                       <button onClick={handleLogout} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-red-600/80 transition-colors border-t border-zinc-700"><LogOut size={16} />Cerrar sesión</button>
                     </div>
                   )}
                 </div>
               </>
-            )}
-            {!hasMounted && !user && (
+            ) : hasMounted && !user ? (
+              // 2. Si el componente está montado y NO HAY usuario, muestra el botón de Ingresar.
               <Link href="/login" className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-full transition-colors">
                 <LogIn className="h-4 w-4" />
                 <span>Ingresar</span>
               </Link>
+            ) : (
+              // 3. Mientras el componente no se ha montado, muestra un placeholder para evitar saltos visuales.
+              <div className="h-9 w-36 bg-zinc-800 rounded-full animate-pulse"></div>
             )}
+
           </nav>
         </div>
       </header>
