@@ -66,8 +66,8 @@ export default function ManageTablesPage() {
     }, [selectedEventId]);
 
     useEffect(() => {
-        fetchInitialData();
-    }, []);
+    fetchInitialData();
+}, [fetchInitialData]);
 
     const fetchReservationsForEvent = useCallback(async (eventId: string) => {
         if (!eventId) {
