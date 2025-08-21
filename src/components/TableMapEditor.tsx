@@ -47,11 +47,11 @@ const DraggableTable = ({ table, onClick }: { table: Table; onClick: () => void;
       ref={ref}
       className={`absolute p-2 border-2 rounded-lg flex flex-col items-center justify-center transition-all text-center ${statusClasses[table.status]}`}
       style={{
-        left: `calc(${table.positionX || 50}% - 30px)`,
-        top: `calc(${table.positionY || 50}% - 30px)`,
+        left: `calc(${table.positionX || 50}% - 15px)`,
+        top: `calc(${table.positionY || 50}% - 15px)`,
         opacity: isDragging ? 0.5 : 1,
-        width: '60px',
-        height: '60px'
+        width: '30px',
+        height: '30px'
       }}
       title={`${table.category.name} ${table.tableNumber}`}
     >
