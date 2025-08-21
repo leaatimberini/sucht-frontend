@@ -3,25 +3,14 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import { Armchair, Loader2 } from 'lucide-react';
-import Image from 'next/image'; // 1. Importar el componente Image
-
-// --- TIPOS DE DATOS ---
-interface TableCategory {
-    id: string;
-    name: string;
-}
-interface Table {
-    id: string;
-    tableNumber: string;
-    status: 'available' | 'reserved' | 'occupied' | 'unavailable';
-    category: TableCategory;
-}
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import type { Table } from '@/types/table.types';
 
 const statusStyles = {
     available: 'bg-green-500/30 border-green-500 hover:bg-green-500/50',
     reserved: 'bg-red-500/30 border-red-500 cursor-not-allowed',
-    occupied: 'bg-red-500/30 border-red-500 cursor-not-allowed',
+    occupied: 'bg-amber-500/30 border-amber-500 cursor-not-allowed',
     unavailable: 'bg-zinc-700/30 border-zinc-700 cursor-not-allowed',
 };
 
@@ -38,6 +27,8 @@ export function InteractiveTableMap({ eventId }: { eventId: string }) {
 
     useEffect(() => {
         const fetchTables = async () => {
+            if (!eventId) return;
+            setIsLoading(true);
             try {
                 const response = await api.get(`/tables/event/${eventId}`);
                 setTables(response.data);
@@ -55,6 +46,7 @@ export function InteractiveTableMap({ eventId }: { eventId: string }) {
             toast.error(`La mesa ${table.tableNumber} (${statusLabels[table.status]}) no está disponible.`);
             return;
         }
+        // Próximo paso: Abrir modal de reserva
         toast.success(`Has seleccionado la mesa ${table.tableNumber} (${table.category.name}).`);
     };
 
@@ -67,19 +59,18 @@ export function InteractiveTableMap({ eventId }: { eventId: string }) {
     }
 
     if (tables.length === 0) {
-        return null;
+        return null; // Si no hay mesas configuradas, no se muestra el mapa.
     }
 
     return (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 my-8">
             <h2 className="text-2xl font-bold text-white mb-4 text-center">Reserva tu Mesa VIP</h2>
             <div className="relative w-full max-w-sm mx-auto">
-                {/* --- 2. Reemplazar <img> por <Image /> --- */}
                 <Image
                     src="/images/tables-map-bg.png"
                     alt="Mapa de mesas"
-                    width={400}  // Ancho intrínseco de la imagen
-                    height={600} // Alto intrínseco de la imagen
+                    width={512}
+                    height={768}
                     className="w-full h-auto"
                 />
                 
@@ -87,10 +78,12 @@ export function InteractiveTableMap({ eventId }: { eventId: string }) {
                     <button
                         key={table.id}
                         onClick={() => handleTableClick(table)}
-                        className={`absolute flex items-center justify-center w-10 h-10 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110 ${statusStyles[table.status]}`}
+                        className={`absolute flex items-center justify-center w-10 h-10 rounded-md border-2 transform -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110 ${statusStyles[table.status]}`}
                         style={{
-                            top: `${Math.random() * 80 + 10}%`,
-                            left: `${Math.random() * 80 + 10}%`,
+                            // --- CORRECCIÓN CLAVE ---
+                            // Ahora usamos las coordenadas guardadas desde el panel de admin
+                            top: `${table.positionY || 50}%`,
+                            left: `${table.positionX || 50}%`,
                         }}
                         title={`${table.category.name} ${table.tableNumber} - ${statusLabels[table.status]}`}
                     >
