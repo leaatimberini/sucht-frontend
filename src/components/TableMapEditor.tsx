@@ -8,7 +8,7 @@ import { Loader2, Save, UserPlus, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Table, TableCategory, TableReservation } from '@/types/table.types';
+import type { Table } from '@/types/table.types';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 
