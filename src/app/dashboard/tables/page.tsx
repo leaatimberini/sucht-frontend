@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import dynamic from 'next/dynamic'; // 1. Usamos la importación estándar de dynamic
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { Armchair, PlusCircle, Loader2, X, UserPlus } from 'lucide-react';
@@ -13,9 +13,13 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Table, TableCategory, TableReservation } from '@/types/table.types';
 
+// 2. Cargamos el componente del mapa de forma dinámica y deshabilitamos el SSR
 const TableMapEditor = dynamic(() => 
     import('@/components/TableMapEditor').then(mod => mod.TableMapEditor), 
-    { ssr: false, loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin"/></div> }
+    { 
+        ssr: false, 
+        loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin"/></div> 
+    }
 );
 
 const categorySchema = z.object({ name: z.string().min(3, 'El nombre es requerido.') });
