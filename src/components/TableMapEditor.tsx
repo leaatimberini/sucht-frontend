@@ -1,3 +1,4 @@
+// src/components/TableMapEditor.tsx
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';

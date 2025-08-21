@@ -1,3 +1,4 @@
+// src/app/dashboard/tables/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,7 +12,9 @@ import { Event } from '@/types/event.types';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Table, TableCategory, TableReservation } from '@/types/table.types';
+import type { TableCategory, TableReservation } from '@/types/table.types';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Carga el componente del mapa de forma dinámica, deshabilitando el renderizado en servidor (SSR)
 const TableMapEditor = dynamic(() => 
@@ -66,8 +69,8 @@ export default function ManageTablesPage() {
     }, [selectedEventId]);
 
     useEffect(() => {
-    fetchInitialData();
-}, [fetchInitialData]);
+        fetchInitialData();
+    }, [fetchInitialData]);
 
     const fetchReservationsForEvent = useCallback(async (eventId: string) => {
         if (!eventId) {
@@ -133,9 +136,20 @@ export default function ManageTablesPage() {
                             <button onClick={() => setIsTableModalOpen(true)} disabled={!selectedEventId} className="flex-1 bg-pink-600 hover:bg-pink-700 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"><PlusCircle size={18}/> Nueva Mesa</button>
                         </div>
                     </div>
-                    {selectedEventId && <TableMapEditor key={selectedEventId} eventId={selectedEventId} onDataChange={() => fetchReservationsForEvent(selectedEventId)} />}
+
+                    {selectedEventId && (
+                        <DndProvider backend={HTML5Backend}>
+                            <TableMapEditor 
+                                key={selectedEventId}
+                                eventId={selectedEventId} 
+                                
+                                onDataChange={() => fetchReservationsForEvent(selectedEventId)} 
+                            />
+                        </DndProvider>
+                    )}
                 </div>
                 
+                {/* HISTORIAL DE RESERVAS */}
                 <div className="mt-10">
                     <h2 className="text-2xl font-bold text-white mb-4">Historial de Reservas</h2>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
@@ -172,6 +186,7 @@ export default function ManageTablesPage() {
                     </div>
                 </div>
 
+                {/* MODALES */}
                 {isCategoryModalOpen && (
                     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                         <form onSubmit={categoryForm.handleSubmit(onCategorySubmit)} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 w-full max-w-sm space-y-4">
