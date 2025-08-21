@@ -1,3 +1,4 @@
+// scan-result.tsx
 'use client';
 
 // Definimos la estructura de una respuesta exitosa

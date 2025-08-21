@@ -1,3 +1,4 @@
+// event-selector-verifier.tsx
 'use client';
 
 import { useState, useEffect } from 'react';

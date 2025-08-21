@@ -1,9 +1,11 @@
 'use client';
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import { Armchair, PlusCircle, Loader2, Save, X, UserPlus, DollarSign } from 'lucide-react';
+import { Armchair, PlusCircle, Loader2, Save, UserPlus } from 'lucide-react';
 import { AuthCheck } from '@/components/auth-check';
 import { UserRole } from '@/types/user.types';
 import { Event } from '@/types/event.types';
@@ -11,7 +13,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import type { ConnectDragSource, ConnectDropTarget, DropTargetMonitor } from 'react-dnd';
+import type { DropTargetMonitor } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Image from 'next/image';
 
