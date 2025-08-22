@@ -112,7 +112,7 @@ export default function AdminBirthdayPage() {
   }, [fetchSummary]);
 
   return (
-    <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER]}>
+    <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.ORGANIZER]}>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-6">
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
