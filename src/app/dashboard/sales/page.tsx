@@ -13,7 +13,6 @@ function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => vo
     const [events, setEvents] = useState<Event[]>([]);
 
     useEffect(() => {
-        // En la versión para administradores, pedimos todos los eventos
         api.get('/events/all-for-admin').then(response => setEvents(response.data));
     }, []);
 
@@ -108,7 +107,10 @@ export default function SalesHistoryPage() {
                                         {ticket.status}
                                     </span>
                                 </td>
-                                <td className="p-4 text-zinc-300">{ticket.promoter ? `@${ticket.promoter.username}` : (ticket.origin || 'N/A')}</td>
+                                <td className="p-4 text-zinc-300">
+                                    {/* --- LÍNEA CORREGIDA --- */}
+                                    {ticket.promoter ? `@${ticket.promoter.username || ticket.promoter.name}` : (ticket.origin || 'N/A')}
+                                </td>
                             </tr>
                         ))}
                          {history.length === 0 && !isLoading && (
