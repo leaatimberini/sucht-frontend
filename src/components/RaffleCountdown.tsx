@@ -2,12 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
-import { Trophy } from 'lucide-react';
+import { Trophy, Gift } from 'lucide-react';
 import { differenceInSeconds } from 'date-fns';
+import { parseISO } from 'date-fns/parseISO';
 
+// --- NUEVAS INTERFACES PARA MANEJAR LA RESPUESTA DE LA API ---
+interface Prize {
+  prizeRank: number;
+  product: { name: string; };
+}
+interface Winner {
+  user: { name: string; };
+  prize: Prize;
+}
 interface RaffleStatus {
-  prizeName: string;
-  deadline: string;
+  id: string;
+  status: 'pending' | 'completed';
+  drawDate: string; // ISO String
+  prizes: Prize[];
+  winners: Winner[];
 }
 
 const formatTime = (totalSeconds: number) => {
@@ -19,14 +32,17 @@ const formatTime = (totalSeconds: number) => {
 };
 
 export function RaffleCountdown({ eventId }: { eventId: string }) {
-  const [status, setStatus] = useState<RaffleStatus | null>(null);
+  const [raffle, setRaffle] = useState<RaffleStatus | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
-    api.get(`/raffles/status/${eventId}`)
+    // Usamos el nuevo endpoint para obtener la info del sorteo
+    api.get(`/raffles/event/${eventId}`)
       .then(res => {
-        setStatus(res.data);
-        setTimeLeft(differenceInSeconds(new Date(res.data.deadline), new Date()));
+        if (res.data) {
+          setRaffle(res.data);
+          setTimeLeft(differenceInSeconds(parseISO(res.data.drawDate), new Date()));
+        }
       })
       .catch(err => console.error("No raffle configured for this event."));
   }, [eventId]);
@@ -39,27 +55,60 @@ export function RaffleCountdown({ eventId }: { eventId: string }) {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  if (!status || timeLeft <= 0) {
-    return null; // No mostrar nada si no hay sorteo o si ya terminó
+  // Si no hay sorteo, no mostramos nada
+  if (!raffle) {
+    return null;
   }
   
-  const { days, hours, minutes, seconds } = formatTime(timeLeft);
+  // --- LÓGICA DE VISUALIZACIÓN ---
 
-  return (
-    <div className="bg-gradient-to-r from-amber-500/10 to-pink-500/10 border border-amber-400/30 rounded-lg p-6 my-8">
-      <div className="text-center">
-        <Trophy className="mx-auto text-amber-400 mb-2" size={32} />
-        <h3 className="text-xl font-bold text-white">¡Sorteo Semanal!</h3>
-        <p className="text-zinc-300 mt-2">Adquiere tu entrada antes de las 17:00hs del día del evento y participa automáticamente por:</p>
-        <p className="text-amber-400 font-bold text-lg my-3">{status.prizeName}</p>
-        <div className="flex justify-center gap-4 text-white">
+  // Si el sorteo está PENDIENTE y aún queda tiempo, mostramos el contador
+  if (raffle.status === 'pending' && timeLeft > 0) {
+    const { days, hours, minutes, seconds } = formatTime(timeLeft);
+    return (
+      <div className="bg-gradient-to-r from-amber-500/10 to-pink-500/10 border border-amber-400/30 rounded-lg p-6 my-8">
+        <div className="text-center">
+          <Trophy className="mx-auto text-amber-400 mb-2" size={32} />
+          <h3 className="text-xl font-bold text-white">¡Sorteo del Evento!</h3>
+          <p className="text-zinc-300 mt-2">Adquiere tu entrada y participa automáticamente por:</p>
+          <div className="text-amber-400 font-bold text-lg my-3 space-y-1">
+            {raffle.prizes.sort((a, b) => a.prizeRank - b.prizeRank).map(p => (
+                <p key={p.prizeRank}>- {p.product.name} -</p>
+            ))}
+          </div>
+          <div className="flex justify-center gap-4 text-white">
             <div><span className="text-2xl font-bold">{String(days).padStart(2, '0')}</span><span className="text-xs block">DÍAS</span></div>
             <div><span className="text-2xl font-bold">{String(hours).padStart(2, '0')}</span><span className="text-xs block">HS</span></div>
             <div><span className="text-2xl font-bold">{String(minutes).padStart(2, '0')}</span><span className="text-xs block">MIN</span></div>
             <div><span className="text-2xl font-bold">{String(seconds).padStart(2, '0')}</span><span className="text-xs block">SEG</span></div>
+          </div>
+          <p className="text-xs text-zinc-500 mt-4">Mesa VIP: 3 chances | Entrada Paga: 2 chances | Entrada Free: 1 chance</p>
         </div>
-        <p className="text-xs text-zinc-500 mt-4">Mesa VIP: 3 chances | Entrada Paga: 2 chances | Entrada Free: 1 chance</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Si el sorteo está COMPLETADO, mostramos los ganadores
+  if (raffle.status === 'completed' && raffle.winners.length > 0) {
+    return (
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-lg p-6 my-8">
+            <div className="text-center">
+                <Gift className="mx-auto text-blue-400 mb-2" size={32} />
+                <h3 className="text-xl font-bold text-white">¡Ganadores del Sorteo!</h3>
+                <p className="text-zinc-300 mt-2">¡Felicitaciones a los afortunados!</p>
+                <div className="text-left mt-4 bg-zinc-900/50 rounded-lg p-4 space-y-3">
+                    {raffle.winners.sort((a, b) => a.prize.prizeRank - b.prize.prizeRank).map(winner => (
+                        <div key={winner.user.name}>
+                            <p className="font-bold text-white">{winner.user.name}</p>
+                            <p className="text-sm text-blue-400">Ganó: {winner.prize.product.name}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+  }
+
+  // Si ninguna de las condiciones se cumple (ej. sorteo pendiente pero sin tiempo), no mostramos nada.
+  return null;
 }
