@@ -94,12 +94,12 @@ export default function SalesHistoryPage() {
                                     {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm')} hs
                                 </td>
                                 <td className="p-4">
-                                    <p className="font-semibold text-zinc-200">{ticket.user.name}</p>
-                                    <p className="text-sm text-zinc-500">{ticket.user.email}</p>
+                                    <p className="font-semibold text-zinc-200">{ticket.user?.name || 'N/A'}</p>
+                                    <p className="text-sm text-zinc-500">{ticket.user?.email || 'N/A'}</p>
                                 </td>
                                 <td className="p-4">
-                                    <p className="font-semibold text-white">{ticket.tier.name} (x{ticket.quantity})</p>
-                                    <p className="text-sm text-zinc-400">{ticket.event.title}</p>
+                                    <p className="font-semibold text-white">{ticket.tier?.name || 'Producto no disponible'} (x{ticket.quantity})</p>
+                                    <p className="text-sm text-zinc-400">{ticket.event?.title}</p>
                                 </td>
                                 <td className="p-4 font-bold text-green-400">${Number(ticket.amountPaid).toFixed(2)}</td>
                                 <td className="p-4">
@@ -108,13 +108,12 @@ export default function SalesHistoryPage() {
                                     </span>
                                 </td>
                                 <td className="p-4 text-zinc-300">
-                                    {/* --- LÍNEA CORREGIDA --- */}
                                     {ticket.promoter ? `@${ticket.promoter.username || ticket.promoter.name}` : (ticket.origin || 'N/A')}
                                 </td>
                             </tr>
                         ))}
                          {history.length === 0 && !isLoading && (
-                            <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No se encontraron resultados para los filtros seleccionados.</td></tr>
+                            <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No se encontraron resultados.</td></tr>
                          )}
                     </tbody>
                 </table>
