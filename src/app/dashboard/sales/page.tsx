@@ -92,7 +92,6 @@ export default function SalesHistoryPage() {
                         ) : history.map(ticket => (
                             <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0">
                                 <td className="p-4 text-zinc-400 text-sm">
-                                    {/* --- LÍNEA CORREGIDA --- */}
                                     {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm')} hs
                                 </td>
                                 <td className="p-4">
