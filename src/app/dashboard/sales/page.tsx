@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
 import { Ticket } from '@/types/ticket.types';
 import { Event } from '@/types/event.types';
-import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { es } from 'date-fns/locale';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // --- SUB-COMPONENTE PARA LOS FILTROS ---
 function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => void }) {
@@ -67,6 +68,18 @@ export default function SalesHistoryPage() {
         fetchData();
     }, [fetchData]);
 
+    const handleDeleteTicket = async (ticketId: string) => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar esta entrada? Esta acción no se puede deshacer.')) {
+            try {
+                await api.delete(`/tickets/${ticketId}`);
+                toast.success('Entrada eliminada con éxito.');
+                fetchData(); // Recargamos el historial
+            } catch (error) {
+                toast.error('No se pudo eliminar la entrada.');
+            }
+        }
+    };
+
     return (
         <div className="p-4 sm:p-6 lg:p-8">
             <h1 className="text-3xl font-bold text-white mb-6">Historial de Ventas y Emisiones</h1>
@@ -83,16 +96,15 @@ export default function SalesHistoryPage() {
                             <th className="p-4 text-sm font-semibold text-white">Pagado</th>
                             <th className="p-4 text-sm font-semibold text-white">Estado</th>
                             <th className="p-4 text-sm font-semibold text-white">Origen / RRPP</th>
+                            <th className="p-4 text-sm font-semibold text-white">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
-                            <tr><td colSpan={6} className="text-center p-6"><Loader2 className="animate-spin mx-auto"/></td></tr>
+                            <tr><td colSpan={7} className="text-center p-6"><Loader2 className="animate-spin mx-auto"/></td></tr>
                         ) : history.map(ticket => (
                             <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0">
-                                <td className="p-4 text-zinc-400 text-sm">
-                                    {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm')} hs
-                                </td>
+                                <td className="p-4 text-zinc-400 text-sm">{formatInTimeZone(new Date(ticket.createdAt), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm', { locale: es })} hs</td>
                                 <td className="p-4">
                                     <p className="font-semibold text-zinc-200">{ticket.user?.name || 'N/A'}</p>
                                     <p className="text-sm text-zinc-500">{ticket.user?.email || 'N/A'}</p>
@@ -107,13 +119,16 @@ export default function SalesHistoryPage() {
                                         {ticket.status}
                                     </span>
                                 </td>
-                                <td className="p-4 text-zinc-300">
-                                    {ticket.promoter ? `@${ticket.promoter.username || ticket.promoter.name}` : (ticket.origin || 'N/A')}
+                                <td className="p-4 text-zinc-300">{ticket.promoter ? `@${ticket.promoter.username || ticket.promoter.name}` : (ticket.origin || 'N/A')}</td>
+                                <td className="p-4">
+                                    <button onClick={() => handleDeleteTicket(ticket.id)} className="text-red-500 hover:text-red-400">
+                                        <Trash2 size={16}/>
+                                    </button>
                                 </td>
                             </tr>
                         ))}
                          {history.length === 0 && !isLoading && (
-                            <tr><td colSpan={6} className="text-center p-6 text-zinc-500">No se encontraron resultados.</td></tr>
+                            <tr><td colSpan={7} className="text-center p-6 text-zinc-500">No se encontraron resultados.</td></tr>
                          )}
                     </tbody>
                 </table>
