@@ -9,17 +9,35 @@ import { es } from 'date-fns/locale';
 import { Loader2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// Zona horaria constante
+const BA_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
+// Helper para formatear fechas a hora BA (-03)
+function formatToBuenosAires(dateLike: Date | string | number | undefined | null, formatStr = 'dd/MM/yyyy HH:mm') {
+    if (!dateLike) return 'N/A';
+    const date = typeof dateLike === 'string' || typeof dateLike === 'number' ? new Date(dateLike) : dateLike;
+    if (isNaN(date.getTime())) return 'Invalid date';
+    try {
+        return formatInTimeZone(date, BA_TIMEZONE, formatStr, { locale: es });
+    } catch (err) {
+        console.error('Error formateando fecha:', err);
+        return 'N/A';
+    }
+}
+
 // --- SUB-COMPONENTE PARA LOS FILTROS ---
 function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => void }) {
     const [events, setEvents] = useState<Event[]>([]);
 
     useEffect(() => {
-        api.get('/events/all-for-admin').then(response => setEvents(response.data));
+        api.get('/events/all-for-admin').then(response => setEvents(response.data)).catch(err => {
+            console.error('Error cargando eventos:', err);
+        });
     }, []);
 
-    const handleFilterSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
+    const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
         const filters = {
             eventId: formData.get('eventId'),
             startDate: formData.get('startDate'),
@@ -32,7 +50,7 @@ function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => vo
         <form onSubmit={handleFilterSubmit} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-4">
             <select name="eventId" className="w-full sm:w-[200px] bg-zinc-800 border-zinc-700 p-2 rounded-md">
                 <option value="">Todos los eventos</option>
-                {events.map(event => <option key={event.id} value={event.id}>{event.title}</option>)}
+                {events.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
             </select>
             <input type="date" name="startDate" className="w-full sm:w-auto bg-zinc-800 border-zinc-700 p-2 rounded-md" />
             <input type="date" name="endDate" className="w-full sm:w-auto bg-zinc-800 border-zinc-700 p-2 rounded-md" />
@@ -50,15 +68,16 @@ export default function SalesHistoryPage() {
     const fetchData = useCallback(async (filters: any = {}) => {
         setIsLoading(true);
         const params = new URLSearchParams();
-        if (filters.eventId) params.append('eventId', filters.eventId);
-        if (filters.startDate) params.append('startDate', filters.startDate);
-        if (filters.endDate) params.append('endDate', filters.endDate);
+        if (filters.eventId) params.append('eventId', String(filters.eventId));
+        if (filters.startDate) params.append('startDate', String(filters.startDate));
+        if (filters.endDate) params.append('endDate', String(filters.endDate));
 
         try {
             const response = await api.get(`/dashboard/full-history?${params.toString()}`);
             setHistory(response.data);
         } catch (error) {
             console.error(error);
+            toast.error('Error cargando historial.');
         } finally {
             setIsLoading(false);
         }
@@ -104,7 +123,9 @@ export default function SalesHistoryPage() {
                             <tr><td colSpan={7} className="text-center p-6"><Loader2 className="animate-spin mx-auto"/></td></tr>
                         ) : history.map(ticket => (
                             <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0">
-                                <td className="p-4 text-zinc-400 text-sm">{formatInTimeZone(new Date(ticket.createdAt), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm', { locale: es })} hs</td>
+                                <td className="p-4 text-zinc-400 text-sm">
+                                    {formatToBuenosAires(ticket.createdAt)} hs
+                                </td>
                                 <td className="p-4">
                                     <p className="font-semibold text-zinc-200">{ticket.user?.name || 'N/A'}</p>
                                     <p className="text-sm text-zinc-500">{ticket.user?.email || 'N/A'}</p>
