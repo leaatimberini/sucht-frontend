@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
-import { User } from '@/types/user.types';
-import { Loader2, ChevronLeft, ChevronRight, Award, Crown } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Crown } from 'lucide-react';
 import { AuthCheck } from '@/components/auth-check';
 import { UserRole } from '@/types/user.types';
 
@@ -56,9 +55,9 @@ export default function LoyaltyPage() {
                         <table className="w-full text-left">
                             <thead className="border-b border-zinc-700">
                                 <tr>
-                                    <th className="p-4 text-sm font-semibold text-white">#</th>
+                                    <th className="p-4 text-sm font-semibold text-white text-center">#</th>
                                     <th className="p-4 text-sm font-semibold text-white">Cliente</th>
-                                    <th className="p-4 text-sm font-semibold text-white">Asistencias Totales</th>
+                                    <th className="p-4 text-sm font-semibold text-white text-center">Asistencias Totales</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,12 +66,12 @@ export default function LoyaltyPage() {
                                 ) : ranking.length > 0 ? (
                                     ranking.map((user, index) => (
                                         <tr key={user.userId} className="border-b border-zinc-800 last:border-b-0">
-                                            <td className="p-4 text-zinc-400 font-bold">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="p-4 text-zinc-400 font-bold text-center">{(currentPage - 1) * 10 + index + 1}</td>
                                             <td className="p-4">
                                                 <p className="font-semibold text-zinc-200">{user.userName}</p>
                                                 <p className="text-sm text-zinc-500">{user.userEmail}</p>
                                             </td>
-                                            <td className="p-4 font-bold text-lg text-white">{user.totalAttendance}</td>
+                                            <td className="p-4 font-bold text-lg text-white text-center">{user.totalAttendance}</td>
                                         </tr>
                                     ))
                                 ) : (
