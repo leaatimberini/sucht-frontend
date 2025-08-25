@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import api from '@/lib/axios';
-import { Notification } from '@/types/notification.types'; // Necesitarás crear este tipo
+import { Notification } from '@/types/notification.types';
 
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   isLoading: boolean;
   fetchNotifications: () => Promise<void>;
-  markAsRead: (notificationIds: string[]) => void;
+  markAsRead: (ids: string[]) => void;
+  removeNotification: (id: string) => void; // <-- Nueva función
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -17,34 +18,30 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   fetchNotifications: async () => {
     try {
       set({ isLoading: true });
-      const { data } = await api.get('/notifications/my-notifications');
+      const response = await api.get('/notifications/my-notifications');
       set({ 
-        notifications: data.notifications, 
-        unreadCount: data.unreadCount,
-        isLoading: false 
+        notifications: response.data.notifications, 
+        unreadCount: response.data.unreadCount 
       });
     } catch (error) {
       console.error("Failed to fetch notifications", error);
+    } finally {
       set({ isLoading: false });
     }
   },
-  markAsRead: async (notificationIds) => {
-    if (notificationIds.length === 0) return;
-    
-    // Optimistic UI update: marcamos como leídas en el frontend al instante
-    const currentNotifications = get().notifications;
-    const updatedNotifications = currentNotifications.map(n => 
-      notificationIds.includes(n.id) ? { ...n, isRead: true } : n
-    );
-    set({ notifications: updatedNotifications, unreadCount: get().unreadCount - notificationIds.length });
-
-    // Y luego enviamos la petición al backend
-    try {
-      await api.patch('/notifications/mark-as-read', { notificationIds });
-    } catch (error) {
-      // Si falla, revertimos el cambio para mantener la consistencia
-      console.error("Failed to mark notifications as read", error);
-      set({ notifications: currentNotifications, unreadCount: get().unreadCount }); // Revertimos
-    }
+  markAsRead: (ids) => {
+    set(state => ({
+      notifications: state.notifications.map(n => 
+        ids.includes(n.id) ? { ...n, isRead: true } : n
+      ),
+      unreadCount: 0
+    }));
+    api.post('/notifications/mark-as-read', { notificationIds: ids });
+  },
+  // --- LÓGICA AÑADIDA ---
+  removeNotification: (id) => {
+    set(state => ({
+      notifications: state.notifications.filter(n => n.id !== id)
+    }));
   },
 }));

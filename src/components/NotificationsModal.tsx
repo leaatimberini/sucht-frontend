@@ -9,13 +9,26 @@ import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { Notification } from "@/types/notification.types";
 
-// --- SUB-COMPONENTE: VISTA DE DETALLE (se mantiene igual) ---
-function NotificationDetailView({ notification, onClose, onBack }: { notification: Notification, onClose: () => void, onBack: () => void }) {
-    // ... (lógica interna de eliminar y feedback sin cambios)
+// --- SUB-COMPONENTE: VISTA DE DETALLE ---
+function NotificationDetailView({ notification, onClose, onBack, onDelete }: { notification: Notification, onClose: () => void, onBack: () => void, onDelete: (id: string) => void }) {
+    
+    const handleDelete = async () => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar esta notificación?')) {
+            await onDelete(notification.id);
+        }
+    };
+
+    const handleFeedback = async (feedback: 'like' | 'dislike') => {
+        try {
+            await api.post(`/notifications/${notification.id}/feedback`, { feedback });
+            toast.success('¡Gracias por tu feedback!');
+        } catch (error) {
+            toast.error('No se pudo enviar el feedback.');
+        }
+    };
     
     return (
         <div className="p-4 flex flex-col h-full">
-            {/* Header de la vista de detalle */}
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-700">
                 <button onClick={onBack} className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
                     <ArrowLeft size={20}/>
@@ -26,7 +39,6 @@ function NotificationDetailView({ notification, onClose, onBack }: { notificatio
                 </button>
             </div>
 
-            {/* Contenido del Detalle */}
             <div className="flex-grow overflow-y-auto">
                 <h5 className="font-bold text-white">{notification.title}</h5>
                 <p className="text-xs text-zinc-500 mt-1 mb-4">
@@ -35,13 +47,12 @@ function NotificationDetailView({ notification, onClose, onBack }: { notificatio
                 <p className="text-zinc-300 text-sm">{notification.body}</p>
             </div>
 
-            {/* Footer de Acciones del Detalle */}
             <div className="mt-auto pt-4 border-t border-zinc-700 flex justify-between items-center flex-shrink-0">
                 <div className="flex gap-2">
-                    <button className="p-2 rounded-full hover:bg-green-500/20 text-zinc-400 hover:text-green-400"><ThumbsUp size={20}/></button>
-                    <button className="p-2 rounded-full hover:bg-red-500/20 text-zinc-400 hover:text-red-400"><ThumbsDown size={20}/></button>
+                    <button onClick={() => handleFeedback('like')} className="p-2 rounded-full hover:bg-green-500/20 text-zinc-400 hover:text-green-400"><ThumbsUp size={20}/></button>
+                    <button onClick={() => handleFeedback('dislike')} className="p-2 rounded-full hover:bg-red-500/20 text-zinc-400 hover:text-red-400"><ThumbsDown size={20}/></button>
                 </div>
-                <button className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 font-semibold"><Trash2 size={16}/> Eliminar</button>
+                <button onClick={handleDelete} className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 font-semibold"><Trash2 size={16}/> Eliminar</button>
             </div>
         </div>
     )
@@ -50,7 +61,7 @@ function NotificationDetailView({ notification, onClose, onBack }: { notificatio
 
 // --- COMPONENTE PRINCIPAL DEL MODAL ---
 export function NotificationsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { notifications, isLoading, markAsRead, unreadCount } = useNotificationStore();
+  const { notifications, isLoading, markAsRead, unreadCount, removeNotification } = useNotificationStore();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
@@ -61,6 +72,17 @@ export function NotificationsModal({ isOpen, onClose }: { isOpen: boolean, onClo
     }
   }, [isOpen, unreadCount, notifications, markAsRead]);
 
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      await api.delete(`/notifications/${id}`);
+      removeNotification(id);
+      toast.success('Notificación eliminada.');
+      setSelectedNotification(null);
+    } catch (error) {
+      toast.error('No se pudo eliminar la notificación.');
+    }
+  };
+
   if (!isOpen) {
     return null;
   }
@@ -69,18 +91,17 @@ export function NotificationsModal({ isOpen, onClose }: { isOpen: boolean, onClo
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in">
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl w-full max-w-lg h-[70vh] flex flex-col">
             
-            {/* Si hay una notificación seleccionada, mostramos la vista de detalle */}
             {selectedNotification ? (
                 <NotificationDetailView 
                     notification={selectedNotification} 
                     onClose={onClose}
-                    onBack={() => setSelectedNotification(null)} 
+                    onBack={() => setSelectedNotification(null)}
+                    onDelete={handleDeleteNotification}
                 />
             ) : (
                 <>
-                    {/* Vista de la lista principal */}
                     <div className="p-4 border-b border-zinc-700 flex-shrink-0 flex justify-between items-center">
-                        <h3 className="font-semibold text-lg">Notificaciones</h3>
+                        <h3 className="font-semibold text-lg text-white">Notificaciones</h3>
                         <button onClick={onClose} className="text-zinc-400 hover:text-white p-1 rounded-md hover:bg-zinc-800">
                             <X size={20}/>
                         </button>

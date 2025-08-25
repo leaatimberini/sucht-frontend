@@ -5,65 +5,127 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Crown, Gift, Ticket, User as UserIcon } from 'lucide-react';
+import type { Ticket as TicketType } from '@/types/ticket.types';
 
-// --- TIPOS DE DATOS ---
+// --- TIPOS DE DATOS CORREGIDOS ---
 interface ScanDetails {
     clientName?: string;
     ticketType?: string;
     productName?: string;
     isVip?: boolean;
-    origin?: string;
+    origin?: string | null;
     promoterName?: string | null;
     specialInstructions?: string | null;
     redeemedAt?: string | null;
+    quantity?: number;
+    redeemedCount?: number;
+    id?: string;
 }
-interface ScanResult {
-    type: 'ticket' | 'product';
+interface ScanResponse { // <-- TIPO AÑADIDO
+    type: 'ticket' | 'product' | 'reward';
     isValid: boolean;
     message: string;
+    details: any;
+}
+interface ResultState {
+    status: 'success' | 'error';
+    message: string;
     details: ScanDetails;
+    type: 'ticket' | 'product' | 'reward';
 }
 
 // --- SUB-COMPONENTE PARA MOSTRAR RESULTADOS ---
-function ResultDisplay({ result, onScanNext }: { result: ScanResult; onScanNext: () => void }) {
-    const { isValid, message, details, type } = result;
-    const title = isValid ? "Acceso Autorizado" : "Acceso Denegado";
-    const Icon = isValid ? CheckCircle : XCircle;
-    const colorClass = isValid ? "text-green-400" : "text-red-500";
+function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext: () => void }) {
+    const isSuccess = result.status === 'success';
+    const { message, details, type } = result;
+
+    const title = isSuccess ? "Acción Exitosa" : "Acción Denegada";
+    const Icon = isSuccess ? CheckCircle : XCircle;
+    const colorClass = isSuccess ? "text-green-400" : "text-red-500";
 
     return (
-        <div className={`w-full max-w-md mx-auto text-center border-2 ${isValid ? 'border-green-500' : 'border-red-500'} bg-zinc-900 rounded-lg p-6 animate-fade-in`}>
+        <div className={`w-full max-w-md mx-auto text-center border-2 ${isSuccess ? 'border-green-500' : 'border-red-500'} bg-zinc-900 rounded-lg p-6 animate-fade-in`}>
             <Icon className={`h-16 w-16 mx-auto ${colorClass}`} />
             <h2 className={`text-3xl font-bold ${colorClass} mt-4`}>{title}</h2>
             <p className="text-zinc-300 mt-2 text-lg">{message}</p>
             
-            <div className="text-left bg-zinc-800 rounded-lg p-4 mt-6 space-y-2">
-                {details.clientName && <p><UserIcon className="inline-block mr-2" size={16}/> {details.clientName}</p>}
-                {type === 'ticket' && details.ticketType && <p><Ticket className="inline-block mr-2" size={16}/> {details.ticketType}</p>}
-                {type === 'product' && details.productName && <p><Gift className="inline-block mr-2" size={16}/> {details.productName}</p>}
-                {details.isVip && <p className="font-bold text-amber-400"><Crown className="inline-block mr-2" size={16}/> Acceso VIP</p>}
-                {details.specialInstructions && <p className="font-bold text-pink-400">{details.specialInstructions}</p>}
-                {details.origin && details.origin.includes('INVITATION') && <p className="text-sky-400">Invitación de {details.promoterName || 'SUCHT'}</p>}
-            </div>
+            {isSuccess && (
+                <div className="text-left bg-zinc-800 rounded-lg p-4 mt-6 space-y-2">
+                    {details.clientName && <p><UserIcon className="inline-block mr-2" size={16}/> {details.clientName}</p>}
+                    {type === 'ticket' && details.ticketType && <p><Ticket className="inline-block mr-2" size={16}/> {details.ticketType}</p>}
+                    {(type === 'product' || type === 'reward') && details.productName && <p><Gift className="inline-block mr-2" size={16}/> {details.productName}</p>}
+                    {details.isVip && <p className="font-bold text-amber-400"><Crown className="inline-block mr-2" size={16}/> Acceso VIP</p>}
+                    {details.specialInstructions && <p className="font-bold text-pink-400">{details.specialInstructions}</p>}
+                </div>
+            )}
 
             <button onClick={onScanNext} className="w-full mt-6 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-3 rounded-lg">Escanear Siguiente</button>
         </div>
     );
 }
 
+// --- SUB-COMPONENTE PARA CANJE PARCIAL ---
+function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, onRedeem: (result: { status: 'success' | 'error', message: string }) => void, onCancel: () => void }) {
+    const [quantity, setQuantity] = useState(1);
+    const [isRedeeming, setIsRedeeming] = useState(false);
+    const remaining = ticket.quantity - ticket.redeemedCount;
+
+    const handleRedeem = async () => {
+        if (quantity > remaining) {
+            toast.error(`No puedes canjear más de ${remaining} entradas.`);
+            return;
+        }
+        setIsRedeeming(true);
+        try {
+            const response = await api.post(`/tickets/${ticket.id}/redeem`, { quantity });
+            onRedeem({ status: 'success', message: response.data.message });
+        } catch (error: any) {
+            onRedeem({ status: 'error', message: error.response?.data?.message || 'Error desconocido.' });
+        } finally {
+            setIsRedeeming(false);
+        }
+    };
+
+    return (
+        <div className="w-full max-w-md mx-auto text-center border border-zinc-700 rounded-lg p-6">
+            <h2 className="text-2xl font-bold text-white">Entrada Válida</h2>
+            <p className="text-zinc-300 mt-2">{ticket.user?.name}</p>
+            <p className="text-zinc-400 text-sm">{ticket.tier?.name}</p>
+            <p className="font-bold text-3xl text-pink-500 my-4">{remaining} / {ticket.quantity} disponibles</p>
+            <div className="space-y-2">
+                <label htmlFor="redeem-quantity" className="block text-sm font-medium text-zinc-300">¿Cuántas personas ingresan?</label>
+                <input 
+                    id="redeem-quantity" 
+                    type="number"
+                    min="1"
+                    max={remaining}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    className="w-full bg-zinc-800 rounded-md p-2 text-white text-center text-xl"
+                />
+            </div>
+            <div className="mt-6 space-y-3">
+                <button onClick={handleRedeem} disabled={isRedeeming} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg disabled:opacity-50">
+                    {isRedeeming ? 'Validando...' : `Validar ${quantity} Ingreso(s)`}
+                </button>
+                <button onClick={onCancel} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 rounded-lg">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // --- COMPONENTE PRINCIPAL DEL ESCÁNER ---
 export function UniversalQrScanner() {
-    const [result, setResult] = useState<ScanResult | null>(null);
+    const [result, setResult] = useState<ResultState | null>(null);
     const [isScanning, setIsScanning] = useState(true);
+    const [scannedTicket, setScannedTicket] = useState<TicketType | null>(null);
 
     useEffect(() => {
-        if (!isScanning || result) return;
+        if (!isScanning) return;
 
-        const scanner = new Html5QrcodeScanner(
-            'qr-reader', 
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            false
-        );
+        const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: 250, height: 250 } }, false);
 
         const handleScanSuccess = async (decodedText: string) => {
             setIsScanning(false);
@@ -71,40 +133,58 @@ export function UniversalQrScanner() {
             toast.loading('Verificando QR...');
 
             try {
-                const response = await api.post('/verifier/scan', { qrId: decodedText });
-                setResult(response.data);
+                const response = await api.post<ScanResponse>('/verifier/scan', { qrId: decodedText });
+                const scanData = response.data;
                 toast.dismiss();
+
+                if (scanData.type === 'ticket' && scanData.details.quantity > 1 && (scanData.details.quantity - scanData.details.redeemedCount) > 0) {
+                    setScannedTicket(scanData.details);
+                } else {
+                    setResult({
+                        status: scanData.isValid ? 'success' : 'error',
+                        message: scanData.message,
+                        details: scanData.details,
+                        type: scanData.type,
+                    });
+                }
             } catch (error: any) {
                 toast.dismiss();
                 const errorMessage = error.response?.data?.message || 'Error al procesar el QR.';
                 toast.error(errorMessage);
                 setResult({
-                    type: 'ticket',
-                    isValid: false,
+                    status: 'error',
                     message: errorMessage,
-                    details: {}
+                    details: {},
+                    type: 'ticket',
                 });
             }
         };
 
-        scanner.render(handleScanSuccess, (error) => {
-            // No hacemos nada con los errores de escaneo para no molestar al usuario
-        });
+        scanner.render(handleScanSuccess, () => {});
 
         return () => {
             if (scanner && scanner.getState()) {
                 scanner.clear().catch(err => console.error("Fallo al limpiar el scanner de QR.", err));
             }
         };
-    }, [isScanning, result]);
+    }, [isScanning]);
 
     const resetScanner = () => {
         setResult(null);
+        setScannedTicket(null);
         setIsScanning(true);
     };
 
     if (result) {
         return <ResultDisplay result={result} onScanNext={resetScanner} />;
+    }
+
+    if (scannedTicket) {
+        return <RedeemInterface 
+            ticket={scannedTicket} 
+            onCancel={resetScanner}
+            onRedeem={({ status, message }) => setResult({ status, message, details: scannedTicket, type: 'ticket' })} 
+        />;
     }
 
     return (
