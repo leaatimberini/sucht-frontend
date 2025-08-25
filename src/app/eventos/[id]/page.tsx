@@ -49,7 +49,6 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
 
   const isEventFinished = new Date() > new Date(event.endDate);
 
-  // Filtramos los tiers para no mostrar las mesas VIP en el selector de entradas
   const regularTiers = tiers?.filter(tier => tier.productType !== 'vip_table');
 
   return (
@@ -74,6 +73,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
               <h1 className="text-4xl font-bold text-white">{event.title}</h1>
               <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
               <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
+              
               <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
               
               {!isEventFinished && (
