@@ -123,6 +123,17 @@ export function SettingsForm() {
       toast.error('No se pudo desvincular la cuenta.');
     }
   };
+
+  const handleConnectTalo = async () => {
+    try {
+      const response = await api.get('/payments/connect/talo');
+      if (response.data.authUrl) {
+        window.location.href = response.data.authUrl;
+      }
+    } catch (error) {
+      toast.error('Error al generar el enlace de conexión con Talo.');
+    }
+  };
   
   if (isLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-pink-500"/></div>;
@@ -185,16 +196,25 @@ export function SettingsForm() {
             </div>
             
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Vincular Cuenta (Admin)</h2>
-                <p className="text-sm text-zinc-400 mb-4">Conecta tu cuenta de Mercado Pago para recibir la comisión por servicio de las ventas.</p>
-                {user?.isMpLinked ? (
-                    <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Cuenta Vinculada</span>
-                        <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
+                <h2 className="text-xl font-semibold text-white mb-4">Vincular Cuentas (Admin)</h2>
+                <p className="text-sm text-zinc-400 mb-6">Conecta tus cuentas para recibir la comisión por servicio de las ventas.</p>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold">Mercado Pago</span>
+                        {user?.isMpLinked ? (
+                            <div className="flex items-center gap-4">
+                                <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Vinculada</span>
+                                <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
+                            </div>
+                        ) : (
+                            <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular</button>
+                        )}
                     </div>
-                ) : (
-                    <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Vincular Mercado Pago</button>
-                )}
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold">Talo</span>
+                        <button type="button" onClick={handleConnectTalo} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular con Talo</button>
+                    </div>
+                </div>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
@@ -242,16 +262,25 @@ export function SettingsForm() {
 
         {isOwner && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Vincular Cuenta de Pagos (Dueño)</h2>
-                <p className="text-sm text-zinc-400 mb-4">Conecta tu cuenta de Mercado Pago para recibir el dinero de las ventas de entradas y mesas.</p>
-                {user?.isMpLinked ? (
-                    <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Cuenta Vinculada</span>
-                        <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
+                <h2 className="text-xl font-semibold text-white mb-4">Vincular Cuentas de Pagos (Dueño)</h2>
+                <p className="text-sm text-zinc-400 mb-6">Conecta tus cuentas para recibir el dinero de las ventas.</p>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold">Mercado Pago</span>
+                        {user?.isMpLinked ? (
+                            <div className="flex items-center gap-4">
+                                <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Vinculada</span>
+                                <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
+                            </div>
+                        ) : (
+                            <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular Mercado Pago</button>
+                        )}
                     </div>
-                ) : (
-                    <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Vincular Mercado Pago</button>
-                )}
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold">Talo</span>
+                        <button type="button" onClick={handleConnectTalo} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular con Talo</button>
+                    </div>
+                </div>
             </div>
         )}
         
