@@ -1,3 +1,4 @@
+// src/components/forms/feature-settings-form.tsx
 'use client';
 
 import { useForm } from 'react-hook-form';
