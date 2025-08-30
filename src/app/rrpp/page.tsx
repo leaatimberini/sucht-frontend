@@ -1,40 +1,36 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import { Event } from "@/types/event.types";
+import { User } from "@/types/user.types";
 import api from "@/lib/axios";
 import { TicketGenerator } from "@/components/ticket-generator";
 import { useAuthStore } from "@/stores/auth-store";
-import { User } from "@/types/user.types";
-import { Copy } from "lucide-react";
+import { Copy, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function RRPPPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  // Se elimina el estado de 'events', ya no es necesario aquí.
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const authUser = useAuthStore((state) => state.user);
 
-  const fetchInitialData = useCallback(async () => {
+  const fetchUserProfile = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Obtenemos los eventos y los datos del RRPP logueado
-      const [eventsRes, userRes] = await Promise.all([
-        api.get('/events'),
-        api.get('/users/profile/me')
-      ]);
-      setEvents(eventsRes.data);
+      // Ahora solo necesitamos obtener el perfil del usuario para el link de referido.
+      const userRes = await api.get('/users/profile/me');
       setCurrentUser(userRes.data);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error("Failed to fetch user profile:", error);
+      toast.error("No se pudo cargar tu perfil.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   const handleCopyToClipboard = () => {
     if (!currentUser?.username) return;
@@ -42,6 +38,14 @@ export default function RRPPPage() {
     navigator.clipboard.writeText(link);
     toast.success('¡Link copiado al portapapeles!');
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="animate-spin text-white" size={48} />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -61,17 +65,12 @@ export default function RRPPPage() {
         </div>
       )}
       
-      <h2 className="text-2xl font-bold text-white mb-4">Generar Entradas Individuales</h2>
-      <div className="space-y-8">
-        {isLoading ? (
-          <p className="text-zinc-400">Cargando eventos...</p>
-        ) : events.length > 0 ? (
-          events.map(event => (
-            <TicketGenerator key={event.id} event={event} />
-          ))
-        ) : (
-          <p className="text-zinc-400">No hay eventos disponibles en este momento.</p>
-        )}
+      {/* * CORRECCIÓN: 
+        * Ya no mapeamos los eventos. Simplemente renderizamos el 
+        * componente TicketGenerator, que ahora es autónomo.
+      */}
+      <div className="mt-8">
+        <TicketGenerator />
       </div>
     </div>
   );
