@@ -1,3 +1,7 @@
+// Dashboard - Página de Invitaciones y Regalos para el Propietario
+// Permite al propietario enviar invitaciones de cortesía y regalos a los invitados.
+// Implementa validaciones robustas y una interfaz de usuario intuitiva.
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,16 +13,23 @@ import toast from 'react-hot-toast';
 import { AuthCheck } from '@/components/auth-check';
 import { UserRole } from '@/types/user.types';
 import { Product } from '@/types/product.types';
-import { Loader2, Send, Gift, Crown, Plus, Minus, Ticket } from 'lucide-react';
+import { Loader2, Send, Gift, Crown, Plus, Minus, Ticket, CalendarDays } from 'lucide-react';
 
-// Esquema de validación actualizado
+// Interfaz para el tipo de dato Evento
+interface Event {
+  id: string;
+  title: string;
+  startDate: string;
+}
+
+// Esquema de validación actualizado para incluir el evento
 const invitationSchema = z.object({
   email: z.string().email({ message: 'Debe ser un correo electrónico válido.' }),
+  eventId: z.string().min(1, { message: 'Debes seleccionar un evento.' }), // <-- CAMPO NUEVO
   includeEntry: z.boolean().default(true),
   guestCount: z.coerce.number().int().min(0).max(10).optional(),
   isVipAccess: z.boolean().optional(),
 }).refine(data => {
-    // Si se incluye entrada, el número de acompañantes es requerido
     if(data.includeEntry && (data.guestCount === undefined || data.guestCount < 0)) {
         return false;
     }
@@ -31,6 +42,7 @@ const invitationSchema = z.object({
 type InvitationFormInputs = z.infer<typeof invitationSchema>;
 
 export default function OwnerInvitationsPage() {
+  const [events, setEvents] = useState<Event[]>([]); // <-- ESTADO PARA EVENTOS
   const [giftableProducts, setGiftableProducts] = useState<Product[]>([]);
   const [selectedGifts, setSelectedGifts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -41,9 +53,11 @@ export default function OwnerInvitationsPage() {
     control,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm({ // <-- Tipado explícito
     resolver: zodResolver(invitationSchema),
     defaultValues: {
+      email: '',
+      eventId: '', // <-- Valor por defecto
       includeEntry: true,
       guestCount: 0,
       isVipAccess: false,
@@ -53,17 +67,28 @@ export default function OwnerInvitationsPage() {
   const includeEntry = useWatch({ control, name: 'includeEntry' });
 
   useEffect(() => {
-    const fetchGiftableProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/store/products/giftable');
-        setGiftableProducts(response.data);
+        // Cargar eventos y productos en paralelo
+        const [eventsRes, productsRes] = await Promise.all([
+          api.get('/events'),
+          api.get('/store/products/giftable')
+        ]);
+        
+        // Filtrar solo eventos futuros
+        const futureEvents = eventsRes.data.filter(
+          (event: Event) => new Date(event.startDate) > new Date()
+        );
+        setEvents(futureEvents);
+        setGiftableProducts(productsRes.data);
+
       } catch (error) {
-        toast.error('No se pudieron cargar los productos para regalar.');
+        toast.error('No se pudieron cargar los datos necesarios (eventos/productos).');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchGiftableProducts();
+    fetchData();
   }, []);
 
   const handleGiftQuantityChange = (productId: string, delta: number) => {
@@ -91,8 +116,10 @@ export default function OwnerInvitationsPage() {
         return;
     }
 
+    // <-- Payload actualizado para incluir eventId
     const finalPayload: any = {
       email: data.email,
+      eventId: data.eventId,
       giftedProducts: giftedProductsPayload,
     };
 
@@ -102,7 +129,8 @@ export default function OwnerInvitationsPage() {
     }
 
     try {
-      await api.post('/owner/invitations', finalPayload);
+      // Endpoint actualizado a la nueva convención
+      await api.post('/owner-invitations', finalPayload);
       toast.success(`¡Invitación/Regalo enviado a ${data.email}!`);
       reset();
       setSelectedGifts({});
@@ -123,15 +151,40 @@ export default function OwnerInvitationsPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-white mb-4">1. Email del Invitado</h2>
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">Email del Invitado</label>
-                <input {...register('email')} id="email" type="email" placeholder="invitado@email.com" className="w-full bg-zinc-800 rounded-md p-2" />
+                <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">Email</label>
+                <input {...register('email')} id="email" type="email" placeholder="invitado@email.com" className="w-full bg-zinc-800 rounded-md p-2 text-white placeholder-zinc-500 border border-transparent focus:border-pink-600 focus:ring-0" />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
           </div>
 
+          {/* --- NUEVA SECCIÓN PARA SELECCIONAR EVENTO --- */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><CalendarDays size={20} /> 2. Evento de la Invitación</h2>
+            <div>
+              <label htmlFor="eventId" className="block text-sm font-medium text-zinc-300 mb-1">Seleccionar Evento</label>
+              <select
+                {...register('eventId')}
+                id="eventId"
+                className="w-full bg-zinc-800 rounded-md p-2 text-white border border-transparent focus:border-pink-600 focus:ring-0 disabled:opacity-50"
+                disabled={isLoading || events.length === 0}
+              >
+                <option value="" disabled>
+                  {isLoading ? "Cargando eventos..." : "Elige un evento"}
+                </option>
+                {events.map(event => (
+                  <option key={event.id} value={event.id}>{event.title}</option>
+                ))}
+              </select>
+              {events.length === 0 && !isLoading && <p className="text-amber-500 text-xs mt-1">No hay eventos futuros disponibles.</p>}
+              {errors.eventId && <p className="text-red-500 text-xs mt-1">{errors.eventId.message}</p>}
+            </div>
+          </div>
+          {/* --- FIN DE LA NUEVA SECCIÓN --- */}
+
+
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white flex items-center gap-2"><Ticket size={20} /> Entrada de Cortesía</h2>
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2"><Ticket size={20} /> 3. Entrada de Cortesía</h2>
                 <Controller
                     name="includeEntry"
                     control={control}
@@ -148,7 +201,7 @@ export default function OwnerInvitationsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="guestCount" className="block text-sm font-medium text-zinc-300 mb-1">Nº de Acompañantes</label>
-                            <input {...register('guestCount')} id="guestCount" type="number" className="w-full bg-zinc-800 rounded-md p-2" />
+                            <input {...register('guestCount')} id="guestCount" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white border border-transparent focus:border-pink-600 focus:ring-0" />
                             {errors.guestCount && <p className="text-red-500 text-xs mt-1">{errors.guestCount.message}</p>}
                         </div>
                     </div>
@@ -173,7 +226,7 @@ export default function OwnerInvitationsPage() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><Gift size={20} /> Regalar Productos de Barra</h2>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><Gift size={20} /> 4. Regalar Productos de Barra</h2>
             {isLoading ? <p className="text-zinc-400">Cargando productos...</p> : (
               <div className="space-y-3">
                 {giftableProducts.length > 0 ? giftableProducts.map(product => (
