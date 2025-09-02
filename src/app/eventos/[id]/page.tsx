@@ -9,23 +9,28 @@ import { useState, useEffect } from "react";
 import { Loader, Map } from "lucide-react";
 import { RaffleCountdown } from "@/components/RaffleCountdown";
 import { TableReservationModal } from "@/components/TableReservationModal";
+import { type Table } from '@/types/table.types';
 import { TicketTier } from "@/types/ticket.types";
 
 export default function EventoDetailPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<Event | null>(null);
-  const [tiers, setTiers] = useState<TicketTier[] | null>(null);
+  const [tiers, setTiers] = useState<TicketTier[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
+      setIsLoading(true);
       try {
-        const [eventRes, tiersRes] = await Promise.all([
+        const [eventRes, tiersRes, tablesRes] = await Promise.all([
           api.get(`/events/${params.id}`),
-          api.get(`/events/${params.id}/ticket-tiers`)
+          api.get(`/events/${params.id}/ticket-tiers`),
+          api.get(`/tables/event/${params.id}`)
         ]);
         setEvent(eventRes.data);
-        setTiers(tiersRes.data);
+        setTiers(tiersRes.data || []);
+        setTables(tablesRes.data || []);
       } catch (error) {
         console.error("Failed to fetch event data", error);
       } finally {
@@ -44,12 +49,14 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
   }
 
   if (!event) {
-    return <p className="text-center text-zinc-400">Evento no encontrado.</p>;
+    return <p className="text-center text-zinc-400 mt-10">Evento no encontrado.</p>;
   }
 
   const isEventFinished = new Date() > new Date(event.endDate);
 
-  const regularTiers = tiers?.filter(tier => tier.productType !== 'vip_table');
+  const regularTiers = tiers?.filter(
+    tier => tier.productType !== 'vip_table' && !tier.isBirthdayDefault
+  );
 
   return (
     <>
@@ -62,7 +69,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
                 alt={`Flyer de ${event.title}`}
                 width={700}
                 height={1050}
-                className="w-full rounded-lg object-cover"
+                className="w-full rounded-lg object-cover shadow-lg shadow-black/30"
                 priority
               />
             )}
@@ -74,9 +81,13 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
               <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
               <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
               
-              <ShareButton eventId={event.id} eventTitle={event.title} flyerImageUrl={event.flyerImageUrl}/>
+              <ShareButton 
+                eventId={event.id} 
+                eventTitle={event.title} 
+                flyerImageUrl={event.flyerImageUrl}
+              />
               
-              {!isEventFinished && (
+              {!isEventFinished && tables.length > 0 && (
                   <div className="my-8">
                       <button 
                           onClick={() => setIsTableModalOpen(true)}
