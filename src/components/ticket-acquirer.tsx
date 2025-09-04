@@ -10,7 +10,6 @@ import Link from "next/link";
 import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
 import { Loader } from "lucide-react";
 
-// Inicializamos Mercado Pago con tu Public Key
 if (process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY) {
   initMercadoPago(process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY);
 } else {
@@ -53,9 +52,9 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
           api.get('/configuration')
         ]);
         
-        // --- LÓGICA DE FILTRADO ---
+        // --- LÓGICA DE FILTRADO CORREGIDA ---
         const availableTiers = tiersRes.data.filter(
-            (tier: TicketTier) => tier.productType === ProductType.TICKET
+            (tier: TicketTier) => tier.productType === ProductType.TICKET && !tier.name.startsWith('Beneficio Cumpleaños')
         );
         setTiers(availableTiers);
 
@@ -128,11 +127,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
 
   const isFree = selectedTier?.isFree;
 
-  if (isLoading) {
-    return <TicketAcquirerSkeleton />;
-  }
-
-  if (!isClient) {
+  if (isLoading || !isClient) {
     return <TicketAcquirerSkeleton />;
   }
 
@@ -188,18 +183,10 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
                 <div className="pt-2">
                   <label className="block text-sm font-medium text-zinc-300 mb-2">Opción de Pago</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentType('partial')}
-                      className={`p-3 rounded-md text-center text-sm font-semibold border-2 ${paymentType === 'partial' ? 'border-pink-500 bg-pink-500/10' : 'border-zinc-700 bg-zinc-800'}`}
-                    >
+                    <button type="button" onClick={() => setPaymentType('partial')} className={`p-3 rounded-md text-center text-sm font-semibold border-2 ${paymentType === 'partial' ? 'border-pink-500 bg-pink-500/10' : 'border-zinc-700 bg-zinc-800'}`}>
                       Pagar Seña <span className="block font-bold text-base">${selectedTier.partialPaymentPrice}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentType('full')}
-                      className={`p-3 rounded-md text-center text-sm font-semibold border-2 ${paymentType === 'full' ? 'border-pink-500 bg-pink-500/10' : 'border-zinc-700 bg-zinc-800'}`}
-                    >
+                    <button type="button" onClick={() => setPaymentType('full')} className={`p-3 rounded-md text-center text-sm font-semibold border-2 ${paymentType === 'full' ? 'border-pink-500 bg-pink-500/10' : 'border-zinc-700 bg-zinc-800'}`}>
                       Pagar Total <span className="block font-bold text-base">${selectedTier.price}</span>
                     </button>
                   </div>
@@ -208,24 +195,14 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
               
               {termsAndConditionsText && (
                 <div className="flex items-start space-x-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="termsAccepted"
-                    checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="mt-1 accent-pink-600"
-                  />
+                  <input type="checkbox" id="termsAccepted" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-1 accent-pink-600"/>
                   <label htmlFor="termsAccepted" className="text-sm text-zinc-400">
                     Acepto los <Link href="/terms-and-conditions" target="_blank" className="underline text-pink-500">Términos y Condiciones</Link>
                   </label>
                 </div>
               )}
               
-              <button 
-                onClick={isFree ? handleAcquireFree : handleCreatePreference}
-                disabled={isLoading || (termsAndConditionsText ? !acceptedTerms : false) || !selectedTierId} 
-                className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <button onClick={isFree ? handleAcquireFree : handleCreatePreference} disabled={isLoading || (termsAndConditionsText ? !acceptedTerms : false) || !selectedTierId} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
                 {isLoading ? 'Procesando...' : (isFree ? 'Obtener Gratis' : 'Continuar al Pago')}
               </button>
             </>

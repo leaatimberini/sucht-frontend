@@ -54,9 +54,14 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
 
   const isEventFinished = new Date() > new Date(event.endDate);
 
-  const regularTiers = tiers?.filter(
-    tier => tier.productType !== 'vip_table' && !tier.isBirthdayDefault
-  );
+  // --- LÓGICA DE FILTRADO CORREGIDA ---
+  // Filtramos para quitar las mesas Y los beneficios de cumpleaños (que no son el 'default')
+  const regularTiers = tiers?.filter(tier => {
+      const isVipTable = tier.productType === 'vip_table';
+      // Un ticket de cumpleaños dinámico tendrá un nombre que empieza con "Beneficio Cumpleaños"
+      const isDynamicBirthdayTier = tier.name.startsWith('Beneficio Cumpleaños');
+      return !isVipTable && !isDynamicBirthdayTier;
+  });
 
   return (
     <>
