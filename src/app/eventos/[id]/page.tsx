@@ -23,16 +23,29 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
     async function fetchData() {
       setIsLoading(true);
       try {
-        const [eventRes, tiersRes, tablesRes] = await Promise.all([
-          api.get(`/events/${params.id}`),
-          api.get(`/events/${params.id}/ticket-tiers`),
-          api.get(`/tables/event/${params.id}`)
-        ]);
+        // --- LÓGICA DE CARGA CORREGIDA ---
+        // Primero, buscamos el evento. Si esto falla, el evento no existe.
+        const eventRes = await api.get(`/events/${params.id}`);
         setEvent(eventRes.data);
-        setTiers(tiersRes.data || []);
-        setTables(tablesRes.data || []);
+
+        // Luego, buscamos los datos secundarios. Si fallan, no rompemos la página.
+        try {
+          const [tiersRes, tablesRes] = await Promise.all([
+            api.get(`/events/${params.id}/ticket-tiers`),
+            api.get(`/tables/event/${params.id}`)
+          ]);
+          setTiers(tiersRes.data || []);
+          setTables(tablesRes.data || []);
+        } catch (secondaryError) {
+          console.error("Failed to fetch secondary event data (tiers, tables)", secondaryError);
+          // Inicializamos como arrays vacíos para que la página no se rompa
+          setTiers([]);
+          setTables([]);
+        }
+
       } catch (error) {
         console.error("Failed to fetch event data", error);
+        setEvent(null); // Nos aseguramos de que el evento sea nulo si hay un error
       } finally {
         setIsLoading(false);
       }
@@ -54,14 +67,9 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
 
   const isEventFinished = new Date() > new Date(event.endDate);
 
-  // --- LÓGICA DE FILTRADO CORREGIDA ---
-  // Filtramos para quitar las mesas Y los beneficios de cumpleaños (que no son el 'default')
-  const regularTiers = tiers?.filter(tier => {
-      const isVipTable = tier.productType === 'vip_table';
-      // Un ticket de cumpleaños dinámico tendrá un nombre que empieza con "Beneficio Cumpleaños"
-      const isDynamicBirthdayTier = tier.name.startsWith('Beneficio Cumpleaños');
-      return !isVipTable && !isDynamicBirthdayTier;
-  });
+  const regularTiers = tiers?.filter(
+    tier => tier.productType !== 'vip_table' && !tier.name.startsWith('Beneficio Cumpleaños')
+  );
 
   return (
     <>
