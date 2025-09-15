@@ -37,7 +37,6 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     const [selectedTierId, setSelectedTierId] = useState<string>('');
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
-    // ✅ CORRECCIÓN: Almacenamos solo el preferenceId, no el public_key.
     const [preferenceId, setPreferenceId] = useState<string | null>(null);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
