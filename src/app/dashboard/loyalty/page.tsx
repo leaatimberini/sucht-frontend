@@ -1,3 +1,4 @@
+// LoyaltyPage Component - src/app/dashboard/loyalty/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
