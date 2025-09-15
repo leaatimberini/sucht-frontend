@@ -10,18 +10,16 @@ import Link from "next/link";
 import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
 import { Loader } from "lucide-react";
 
-// ✅ CORRECCIÓN: La inicialización del SDK de Mercado Pago debe hacerse solo una vez.
-// Idealmente, esto se haría en el layout principal o en un archivo global.
-// Para este componente, lo haremos de forma segura, verificando que se inicialice solo una vez.
-const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
-if (publicKey && !window.mercadoPagoSDK) {
+// ✅ CORRECCIÓN: La inicialización debe hacerse aquí con la clave pública global.
+// Esto evita problemas de inicialización tardía.
+const publicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
+if (publicKey) {
     try {
-        initMercadoPago(publicKey);
-        window.mercadoPagoSDK = true; // Marcar como inicializado para evitar duplicación
+        initMercadoPago(publicKey, { locale: 'es-AR' });
     } catch (error) {
         console.error("Error al inicializar el SDK de Mercado Pago:", error);
     }
-} else if (!publicKey) {
+} else {
     console.error("Mercado Pago Public Key no está definida.");
 }
 
