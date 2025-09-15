@@ -10,8 +10,7 @@ import Link from "next/link";
 import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
 import { Loader } from "lucide-react";
 
-// ✅ CORRECCIÓN: La inicialización debe hacerse aquí con la clave pública global.
-// Esto evita problemas de inicialización tardía.
+// ✅ CORRECCIÓN: Inicialización global con la public_key del Admin.
 const publicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
 if (publicKey) {
     try {
@@ -38,6 +37,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
     const [selectedTierId, setSelectedTierId] = useState<string>('');
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
+    // ✅ CORRECCIÓN: Almacenamos solo el preferenceId, no el public_key.
     const [preferenceId, setPreferenceId] = useState<string | null>(null);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
@@ -127,6 +127,7 @@ export function TicketAcquirer({ eventId }: { eventId: string }) {
             };
 
             const response = await api.post('/payments/create-preference', payload);
+            // ✅ CORRECCIÓN: Ahora solo guardamos el preferenceId.
             setPreferenceId(response.data.preferenceId);
         } catch (error: any) {
             toast.error(error.response?.data?.message || "No se pudo preparar el pago.");
