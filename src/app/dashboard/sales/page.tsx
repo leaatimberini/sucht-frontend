@@ -1,3 +1,4 @@
+// SalesHistoryPage Component - src/app/dashboard/sales/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
