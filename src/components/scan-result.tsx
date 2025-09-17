@@ -1,63 +1,69 @@
-// src/components/scan-result.tsx
+// frontend/src/components/scan-history.tsx
 'use client';
 
-// Definimos la estructura de una respuesta exitosa
-interface SuccessResponse {
-  message: string;
-  status: 'used';
-  userName: string;
-  userEmail: string;
-  eventName: string;
-}
+import { useState, useEffect } from 'react';
+import api from '@/lib/axios';
+import { Ticket } from '@/types/ticket.types';
+import { formatInTimeZone } from 'date-fns-tz';
 
-// Definimos la estructura de una respuesta de error
-interface ErrorResponse {
-  message: string;
-  error: string;
-  statusCode: number;
-}
+export function ScanHistory({ eventId }: { eventId: string }) {
+  const [history, setHistory] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-type ScanResultType = {
-  type: 'success',
-  data: SuccessResponse
-} | {
-  type: 'error',
-  data: ErrorResponse
-};
+  useEffect(() => {
+    if (!eventId) return;
 
-export function ScanResult({
-  result,
-  onScanNext,
-}: {
-  result: ScanResultType;
-  onScanNext: () => void;
-}) {
-  const isSuccess = result.type === 'success';
-  const bgColor = isSuccess ? 'bg-green-500' : 'bg-red-500';
-  const title = isSuccess ? 'Acceso Autorizado' : 'Acceso Denegado';
-  const message = result.data.message;
+    const fetchHistory = async () => {
+      setIsLoading(true);
+      try {
+        // El backend en tickets.service.ts tiene un método getScanHistory que devuelve los tickets ya validados
+        const response = await api.get(`/tickets/scan-history/${eventId}`);
+        setHistory(response.data);
+      } catch (error) {
+        console.error("Failed to fetch scan history", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHistory();
+    // Refresca el historial automáticamente cada 15 segundos
+    const interval = setInterval(fetchHistory, 15000); 
+    return () => clearInterval(interval);
+  }, [eventId]);
+
+  const formatTime = (dateString: string | null | undefined) => {
+    if (!dateString) return '';
+    return formatInTimeZone(dateString, 'America/Argentina/Buenos_ Aires', 'HH:mm:ss');
+  };
+
+  if (isLoading) return <p className="text-zinc-400 text-center">Cargando historial...</p>;
 
   return (
-    <div className="w-full max-w-md mx-auto text-center border border-zinc-700 rounded-lg p-6">
-      <div className={`${bgColor} text-white font-bold text-3xl py-4 rounded-md mb-6`}>
-        {title}
-      </div>
-      <p className="text-zinc-300 text-lg mb-6">{message}</p>
-
-      {isSuccess && (
-        <div className="text-left space-y-2 bg-zinc-800 p-4 rounded-md">
-          <p><span className="font-semibold text-zinc-400">Nombre:</span> {result.data.userName}</p>
-          <p><span className="font-semibold text-zinc-400">Email:</span> {result.data.userEmail}</p>
-          <p><span className="font-semibold text-zinc-400">Evento:</span> {result.data.eventName}</p>
-        </div>
-      )}
-
-      <button
-        onClick={onScanNext}
-        className="mt-8 w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg"
-      >
-        Escanear Siguiente
-      </button>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg mt-6">
+      <ul role="list" className="divide-y divide-zinc-800">
+        {history.length > 0 ? history.map((ticket) => (
+          <li key={ticket.id} className="flex items-center justify-between gap-x-6 p-4">
+            <div>
+              <p className="font-semibold text-white">{ticket.user.name}</p>
+              <p className="text-sm text-zinc-400">{ticket.tier.name}</p>
+              {/* Añadimos insignia de VIP si corresponde */}
+              {ticket.isVipAccess && (
+                <p className="text-xs font-bold text-amber-400 mt-1 p-1 bg-amber-400/10 rounded-md inline-block">
+                  ACCESO VIP
+                </p>
+              )}
+            </div>
+            <div className="text-right">
+                {/* Añadimos el contador de canje para más detalle */}
+                <p className="font-mono text-lg font-bold text-pink-400">{ticket.redeemedCount}/{ticket.quantity}</p>
+                <p className="text-sm text-zinc-500">
+                    {formatTime(ticket.validatedAt)}hs
+                </p>
+            </div>
+          </li>
+        )) : <p className="p-6 text-center text-zinc-500">Aún no se han escaneado entradas.</p>}
+      </ul>
     </div>
   );
 }

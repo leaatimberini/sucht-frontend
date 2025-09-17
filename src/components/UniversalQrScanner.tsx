@@ -1,4 +1,3 @@
-// src/components/UniversalQrScanner.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Crown, Gift, Ticket, User as UserIcon } from 'lucide-react';
 import type { Ticket as TicketType } from '@/types/ticket.types';
 
-// --- (Los tipos de datos y los sub-componentes ResultDisplay y RedeemInterface no cambian y son correctos) ---
+// --- TIPOS DE DATOS ---
 interface ScanDetails {
     clientName?: string | null;
     user?: { name: string | null };
@@ -37,8 +36,8 @@ interface ResultState {
     type: 'ticket' | 'product' | 'reward';
 }
 
+// --- SUB-COMPONENTE PARA MOSTRAR RESULTADOS ---
 function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext: () => void }) {
-    // ... (este componente es correcto y no necesita cambios)
     const isSuccess = result.status === 'success';
     const { message, details, type } = result;
     const title = isSuccess ? "Acción Exitosa" : "Acción Denegada";
@@ -65,8 +64,8 @@ function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext
     );
 }
 
+// --- SUB-COMPONENTE PARA CANJE PARCIAL ---
 function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, onRedeem: (result: { status: 'success' | 'error', message: string }) => void, onCancel: () => void }) {
-    // ... (este componente es correcto y no necesita cambios)
     const [quantity, setQuantity] = useState(1);
     const [isRedeeming, setIsRedeeming] = useState(false);
     const remaining = ticket.quantity - ticket.redeemedCount;
@@ -114,7 +113,7 @@ function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, o
     );
 }
 
-// --- COMPONENTE PRINCIPAL DEL ESCÁNER (Lógica Principal Actualizada) ---
+// --- COMPONENTE PRINCIPAL DEL ESCÁNER ---
 export function UniversalQrScanner() {
     const [result, setResult] = useState<ResultState | null>(null);
     const [isScanning, setIsScanning] = useState(true);
@@ -131,48 +130,22 @@ export function UniversalQrScanner() {
             toast.loading('Verificando QR...');
 
             try {
-                // Paso 1: Verificar el QR (como antes)
+                // Paso 1: Verificar el QR para obtener los detalles.
                 const response = await api.post<ScanResponse>('/verifier/scan', { qrId: decodedText });
                 const scanData = response.data;
-                
+                toast.dismiss();
+
                 if (!scanData.isValid) {
                     throw new Error(scanData.message);
                 }
-
-                // --- FIX: LÓGICA DE CANJE AUTOMÁTICO ---
+                
+                // --- FIX: LÓGICA DE ESCANEO UNIFICADA ---
                 if (scanData.type === 'ticket') {
-                    const ticketDetails = scanData.details as TicketType;
-                    
-                    // Si la entrada es individual, la canjeamos automáticamente
-                    if (ticketDetails.quantity === 1) {
-                        toast.loading('Ticket válido. Canjeando...');
-                        const redeemResponse = await api.post(`/tickets/${ticketDetails.id}/redeem`, { quantity: 1 });
-                        toast.dismiss();
-                        setResult({
-                            status: 'success',
-                            message: redeemResponse.data.message,
-                            details: ticketDetails,
-                            type: 'ticket',
-                        });
-                    } 
-                    // Si la entrada es grupal, mostramos la interfaz de canje parcial
-                    else if (ticketDetails.quantity > 1 && (ticketDetails.quantity - ticketDetails.redeemedCount) > 0) {
-                        toast.dismiss();
-                        setScannedTicket(ticketDetails);
-                    } 
-                    // Si es otro tipo de ticket o ya está usado, vamos al resultado final
-                    else {
-                        toast.dismiss();
-                        setResult({
-                            status: 'success',
-                            message: scanData.message,
-                            details: ticketDetails,
-                            type: 'ticket',
-                        });
-                    }
+                    // CUALQUIER ticket válido (individual o grupal) ahora pasa a la pantalla de canje.
+                    // Esto soluciona el bug de no-canje y unifica la experiencia de usuario.
+                    setScannedTicket(scanData.details as TicketType);
                 } else {
-                    // Para productos y premios, el flujo sigue como antes
-                    toast.dismiss();
+                    // Los productos y premios (que se canjean al escanear) se muestran directamente.
                     setResult({
                         status: 'success',
                         message: scanData.message,
@@ -186,12 +159,7 @@ export function UniversalQrScanner() {
                 toast.dismiss();
                 const errorMessage = error.response?.data?.message || error.message || 'Error al procesar el QR.';
                 toast.error(errorMessage);
-                setResult({
-                    status: 'error',
-                    message: errorMessage,
-                    details: {},
-                    type: 'ticket',
-                });
+                setResult({ status: 'error', message: errorMessage, details: {}, type: 'ticket' });
             }
         };
 
