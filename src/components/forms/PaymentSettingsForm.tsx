@@ -1,3 +1,4 @@
+// src/components/forms/PaymentSettingsForm.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';

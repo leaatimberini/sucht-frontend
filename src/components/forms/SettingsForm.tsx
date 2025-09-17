@@ -1,3 +1,4 @@
+// src/components/forms/SettingsForm.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -6,17 +7,13 @@ import toast from 'react-hot-toast';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Save, Users, DollarSign, Percent, CreditCard, CheckCircle, XCircle, Star, Settings as SettingsIcon, Share2, FileText } from 'lucide-react';
+import { Loader2, Save, CheckCircle, Star, Settings as SettingsIcon, Share2, FileText, CreditCard } from 'lucide-react';
 import { User, UserRole } from '@/types/user.types';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// --- Esquema de Validación Unificado y Completo ---
+// --- Esquema Simplificado ---
 const settingsSchema = z.object({
-  paymentOwnerUserId: z.string().uuid("Debes seleccionar un dueño válido.").optional().or(z.literal('')),
-  adminServiceFeePercentage: z.coerce.number().min(0).max(100).optional(),
-  rrppCommissionEnabled: z.boolean().optional(),
-  enabledPaymentMethods: z.array(z.string()).optional(),
   paymentsEnabled: z.boolean().optional(),
   points_attendance: z.coerce.number().min(0).optional(),
   points_successful_referral: z.coerce.number().min(0).optional(),
@@ -31,13 +28,11 @@ type SettingsFormInputs = z.infer<typeof settingsSchema>;
 
 export function SettingsForm() {
   const { user, fetchUser } = useAuthStore();
-  const [owners, setOwners] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const isAdmin = user?.roles.includes(UserRole.ADMIN);
-  const isOwner = user?.roles.includes(UserRole.OWNER);
 
   const {
     register,
@@ -48,8 +43,6 @@ export function SettingsForm() {
   } = useForm({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-        enabledPaymentMethods: [],
-        rrppCommissionEnabled: false,
         paymentsEnabled: false,
         isRewardsStoreEnabled: false,
     }
@@ -59,7 +52,7 @@ export function SettingsForm() {
     const success = searchParams.get('success');
     const error = searchParams.get('error');
     if (success) {
-      toast.success('¡Tu cuenta de Mercado Pago fue vinculada con éxito!');
+      toast.success('¡La cuenta de Mercado Pago fue vinculada con éxito!');
       fetchUser();
       router.replace('/dashboard/settings');
     } else if (error) {
@@ -71,12 +64,7 @@ export function SettingsForm() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [configRes, usersRes] = await Promise.all([
-        api.get('/configuration'),
-        api.get('/users/staff?limit=1000'),
-      ]);
-      const ownerUsers = usersRes.data.data.filter((u: User) => u.roles.includes(UserRole.OWNER));
-      setOwners(ownerUsers);
+      const configRes = await api.get('/configuration');
       reset(configRes.data);
     } catch (error) {
       toast.error('No se pudieron cargar las configuraciones.');
@@ -111,7 +99,7 @@ export function SettingsForm() {
   };
 
   const handleUnlinkMP = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas desvincular tu cuenta de Mercado Pago?')) return;
+    if (!window.confirm('¿Estás seguro de que deseas desvincular la cuenta de Mercado Pago del sistema?')) return;
     try {
       toast.loading('Desvinculando...');
       await api.delete('/payments/connect/mercadopago');
@@ -121,17 +109,6 @@ export function SettingsForm() {
     } catch (error) {
       toast.dismiss();
       toast.error('No se pudo desvincular la cuenta.');
-    }
-  };
-
-  const handleConnectTalo = async () => {
-    try {
-      const response = await api.get('/payments/connect/talo');
-      if (response.data.authUrl) {
-        window.location.href = response.data.authUrl;
-      }
-    } catch (error) {
-      toast.error('Error al generar el enlace de conexión con Talo.');
     }
   };
   
@@ -148,73 +125,36 @@ export function SettingsForm() {
         {isAdmin && (
           <>
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><CreditCard size={20}/> Configuración de Pagos</h2>
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><CreditCard size={20}/> Configuración General de Pagos</h2>
               <div className="space-y-6">
+                
+                {/* SECCIÓN DE VINCULACIÓN DE CUENTA ÚNICA */}
                 <div>
-                  <label htmlFor="paymentOwnerUserId" className="block text-sm font-medium text-zinc-300 mb-1">Dueño Receptor de Pagos</label>
-                  <select {...register('paymentOwnerUserId')} id="paymentOwnerUserId" className="w-full bg-zinc-800 rounded-md p-2">
-                    <option value="">-- Seleccionar Dueño --</option>
-                    {owners.map(o => <option key={o.id} value={o.id}>{o.name} ({o.email})</option>)}
-                  </select>
+                  <label className="block text-sm font-medium text-zinc-300">Cuenta de Mercado Pago del Sistema</label>
+                  <p className="text-xs text-zinc-500 mt-1">Esta es la única cuenta que recibirá el dinero de todas las ventas.</p>
+                  <div className="mt-4">
+                    {user?.isMpLinked ? (
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Vinculada</span>
+                        <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular Cuenta Principal</button>
+                    )}
+                  </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Métodos de Pago Habilitados</label>
-                    <div className="flex gap-4">
-                        <label className="flex items-center gap-2">
-                            <input type="checkbox" {...register('enabledPaymentMethods')} value="mercadopago" className="accent-pink-600"/>
-                            Mercado Pago
-                        </label>
-                        <label className="flex items-center gap-2">
-                            <input type="checkbox" {...register('enabledPaymentMethods')} value="talo" className="accent-pink-600"/>
-                            Talo
-                        </label>
-                    </div>
-                </div>
-                <div className="flex items-center justify-between">
-                    <label htmlFor="paymentsEnabled" className="text-sm font-medium text-zinc-300">Habilitar Cobro de Entradas</label>
-                    <Controller name="paymentsEnabled" control={control} render={({ field }) => (
-                       <input type="checkbox" checked={field.value} onChange={field.onChange} className="toggle toggle-pink" />
-                    )}/>
+
+                {/* HABILITAR/DESHABILITAR PAGOS */}
+                <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
+                  <label htmlFor="paymentsEnabled" className="text-sm font-medium text-zinc-300">Habilitar Cobro de Entradas</label>
+                  <Controller name="paymentsEnabled" control={control} render={({ field }) => (
+                     <label className="relative inline-flex items-center cursor-pointer">
+                       <input type="checkbox" checked={field.value} onChange={field.onChange} className="sr-only peer" />
+                       <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                     </label>
+                  )}/>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><Percent size={20}/> Configuración de Comisiones</h2>
-                <div className="space-y-6">
-                    <div>
-                        <label htmlFor="adminServiceFeePercentage" className="block text-sm font-medium text-zinc-300 mb-1">Comisión por Servicio (Admin %)</label>
-                        <input {...register('adminServiceFeePercentage')} id="adminServiceFeePercentage" type="number" step="0.1" className="w-full bg-zinc-800 rounded-md p-2" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <label htmlFor="rrppCommissionEnabled" className="text-sm font-medium text-zinc-300">Habilitar Comisiones para RRPP</label>
-                        <Controller name="rrppCommissionEnabled" control={control} render={({ field }) => (
-                            <input type="checkbox" checked={field.value} onChange={field.onChange} className="toggle toggle-pink" />
-                        )}/>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Vincular Cuentas (Admin)</h2>
-                <p className="text-sm text-zinc-400 mb-6">Conecta tus cuentas para recibir la comisión por servicio de las ventas.</p>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="font-semibold">Mercado Pago</span>
-                        {user?.isMpLinked ? (
-                            <div className="flex items-center gap-4">
-                                <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Vinculada</span>
-                                <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
-                            </div>
-                        ) : (
-                            <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular</button>
-                        )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="font-semibold">Talo</span>
-                        <button type="button" onClick={handleConnectTalo} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular con Talo</button>
-                    </div>
-                </div>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
@@ -240,7 +180,10 @@ export function SettingsForm() {
                 <div className="flex items-center justify-between">
                     <label htmlFor="isRewardsStoreEnabled" className="text-sm font-medium text-zinc-300">Tienda de Canje de Puntos</label>
                     <Controller name="isRewardsStoreEnabled" control={control} render={({ field }) => (
-                       <input type="checkbox" checked={field.value} onChange={field.onChange} className="toggle toggle-pink" />
+                       <label className="relative inline-flex items-center cursor-pointer">
+                         <input type="checkbox" checked={field.value} onChange={field.onChange} className="sr-only peer" />
+                         <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                       </label>
                     )}/>
                 </div>
             </div>
@@ -259,30 +202,8 @@ export function SettingsForm() {
             </div>
           </>
         )}
-
-        {isOwner && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Vincular Cuentas de Pagos (Dueño)</h2>
-                <p className="text-sm text-zinc-400 mb-6">Conecta tus cuentas para recibir el dinero de las ventas.</p>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="font-semibold">Mercado Pago</span>
-                        {user?.isMpLinked ? (
-                            <div className="flex items-center gap-4">
-                                <span className="flex items-center gap-2 text-green-400 font-semibold"><CheckCircle size={16}/> Vinculada</span>
-                                <button type="button" onClick={handleUnlinkMP} className="text-red-500 hover:underline text-sm font-semibold">Desvincular</button>
-                            </div>
-                        ) : (
-                            <button type="button" onClick={handleConnectMP} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular Mercado Pago</button>
-                        )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="font-semibold">Talo</span>
-                        <button type="button" onClick={handleConnectTalo} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Vincular con Talo</button>
-                    </div>
-                </div>
-            </div>
-        )}
+        
+        {/* SECCIÓN DEL OWNER ELIMINADA */}
         
         <div className="flex justify-end pt-4">
             <button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2 text-lg disabled:opacity-50">

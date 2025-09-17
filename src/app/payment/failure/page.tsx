@@ -1,3 +1,4 @@
+// payment/failure/page.tsx
 'use client';
 
 import { XCircle } from 'lucide-react';
