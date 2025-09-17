@@ -1,4 +1,4 @@
-// qr-scanner.tsx
+// src/components/qr-scanner.tsx
 'use client';
 
 import { useState, useEffect } from 'react';

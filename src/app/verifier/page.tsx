@@ -1,4 +1,4 @@
-// verifier/page.tsx
+// src/app/verifier/page.tsx
 'use client';
 
 import { useState } from 'react';

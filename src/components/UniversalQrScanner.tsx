@@ -8,9 +8,8 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Crown, Gift, Ticket, User as UserIcon } from 'lucide-react';
 import type { Ticket as TicketType } from '@/types/ticket.types';
 
-// --- TIPOS DE DATOS CORREGIDOS ---
+// --- (Los tipos de datos y los sub-componentes ResultDisplay y RedeemInterface no cambian y son correctos) ---
 interface ScanDetails {
-    // FIX: Permitimos que el nombre del cliente y el del usuario puedan ser null
     clientName?: string | null;
     user?: { name: string | null };
     ticketType?: string;
@@ -38,15 +37,13 @@ interface ResultState {
     type: 'ticket' | 'product' | 'reward';
 }
 
-// --- SUB-COMPONENTE PARA MOSTRAR RESULTADOS ---
 function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext: () => void }) {
+    // ... (este componente es correcto y no necesita cambios)
     const isSuccess = result.status === 'success';
     const { message, details, type } = result;
-
     const title = isSuccess ? "Acción Exitosa" : "Acción Denegada";
     const Icon = isSuccess ? CheckCircle : XCircle;
     const colorClass = isSuccess ? "text-green-400" : "text-red-500";
-    
     const clientName = details.clientName || details.user?.name;
 
     return (
@@ -54,33 +51,29 @@ function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext
             <Icon className={`h-16 w-16 mx-auto ${colorClass}`} />
             <h2 className={`text-3xl font-bold ${colorClass} mt-4`}>{title}</h2>
             <p className="text-zinc-300 mt-2 text-lg">{message}</p>
-            
             {isSuccess && (
                 <div className="text-left bg-zinc-800 rounded-lg p-4 mt-6 space-y-3">
                     {clientName && <p className="flex items-center"><UserIcon className="inline-block mr-2" size={16}/> {clientName}</p>}
                     {type === 'ticket' && details.tier?.name && <p className="flex items-center"><Ticket className="inline-block mr-2" size={16}/> {details.tier.name}</p>}
                     {(type === 'product' || type === 'reward') && details.productName && <p className="flex items-center"><Gift className="inline-block mr-2" size={16}/> {details.productName}</p>}
-                    
                     {details.isVipAccess && <p className="font-bold text-amber-400 flex items-center"><Crown className="inline-block mr-2" size={16}/> Acceso VIP</p>}
-
                     {details.specialInstructions && <p className="font-bold text-pink-400">{details.specialInstructions}</p>}
                 </div>
             )}
-
             <button onClick={onScanNext} className="w-full mt-6 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-3 rounded-lg">Escanear Siguiente</button>
         </div>
     );
 }
 
-// --- SUB-COMPONENTE PARA CANJE PARCIAL ---
 function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, onRedeem: (result: { status: 'success' | 'error', message: string }) => void, onCancel: () => void }) {
+    // ... (este componente es correcto y no necesita cambios)
     const [quantity, setQuantity] = useState(1);
     const [isRedeeming, setIsRedeeming] = useState(false);
     const remaining = ticket.quantity - ticket.redeemedCount;
 
     const handleRedeem = async () => {
-        if (quantity > remaining) {
-            toast.error(`No puedes canjear más de ${remaining} entradas.`);
+        if (quantity > remaining || quantity <= 0) {
+            toast.error(`La cantidad a canjear no es válida.`);
             return;
         }
         setIsRedeeming(true);
@@ -93,34 +86,21 @@ function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, o
             setIsRedeeming(false);
         }
     };
-
     return (
         <div className="w-full max-w-md mx-auto text-center border border-zinc-700 rounded-lg p-6">
             <h2 className="text-2xl font-bold text-white">Entrada Válida</h2>
-            
             {ticket.isVipAccess && (
                 <div className="mt-4 font-bold text-lg p-3 bg-yellow-400 text-black rounded-md animate-pulse flex items-center justify-center">
                     <Crown className="inline-block mr-2" size={20}/> ACCESO VIP
                 </div>
             )}
-
             <p className="text-zinc-300 mt-4">{ticket.user?.name}</p>
             <p className="text-zinc-400 text-sm">{ticket.tier?.name}</p>
-
             {ticket.specialInstructions && <p className="font-bold text-pink-400 mt-2">{ticket.specialInstructions}</p>}
-
             <p className="font-bold text-3xl text-pink-500 my-4">{remaining} / {ticket.quantity} disponibles</p>
             <div className="space-y-2">
                 <label htmlFor="redeem-quantity" className="block text-sm font-medium text-zinc-300">¿Cuántas personas ingresan?</label>
-                <input 
-                    id="redeem-quantity" 
-                    type="number"
-                    min="1"
-                    max={remaining}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full bg-zinc-800 rounded-md p-2 text-white text-center text-xl"
-                />
+                <input id="redeem-quantity" type="number" min="1" max={remaining} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="w-full bg-zinc-800 rounded-md p-2 text-white text-center text-xl"/>
             </div>
             <div className="mt-6 space-y-3">
                 <button onClick={handleRedeem} disabled={isRedeeming} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg disabled:opacity-50">
@@ -134,7 +114,7 @@ function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, o
     );
 }
 
-// --- COMPONENTE PRINCIPAL DEL ESCÁNER ---
+// --- COMPONENTE PRINCIPAL DEL ESCÁNER (Lógica Principal Actualizada) ---
 export function UniversalQrScanner() {
     const [result, setResult] = useState<ResultState | null>(null);
     const [isScanning, setIsScanning] = useState(true);
@@ -151,29 +131,66 @@ export function UniversalQrScanner() {
             toast.loading('Verificando QR...');
 
             try {
+                // Paso 1: Verificar el QR (como antes)
                 const response = await api.post<ScanResponse>('/verifier/scan', { qrId: decodedText });
                 const scanData = response.data;
-                toast.dismiss();
+                
+                if (!scanData.isValid) {
+                    throw new Error(scanData.message);
+                }
 
-                if (scanData.type === 'ticket' && scanData.isValid && scanData.details.quantity > 1 && (scanData.details.quantity - scanData.details.redeemedCount) > 0) {
-                    setScannedTicket(scanData.details);
+                // --- FIX: LÓGICA DE CANJE AUTOMÁTICO ---
+                if (scanData.type === 'ticket') {
+                    const ticketDetails = scanData.details as TicketType;
+                    
+                    // Si la entrada es individual, la canjeamos automáticamente
+                    if (ticketDetails.quantity === 1) {
+                        toast.loading('Ticket válido. Canjeando...');
+                        const redeemResponse = await api.post(`/tickets/${ticketDetails.id}/redeem`, { quantity: 1 });
+                        toast.dismiss();
+                        setResult({
+                            status: 'success',
+                            message: redeemResponse.data.message,
+                            details: ticketDetails,
+                            type: 'ticket',
+                        });
+                    } 
+                    // Si la entrada es grupal, mostramos la interfaz de canje parcial
+                    else if (ticketDetails.quantity > 1 && (ticketDetails.quantity - ticketDetails.redeemedCount) > 0) {
+                        toast.dismiss();
+                        setScannedTicket(ticketDetails);
+                    } 
+                    // Si es otro tipo de ticket o ya está usado, vamos al resultado final
+                    else {
+                        toast.dismiss();
+                        setResult({
+                            status: 'success',
+                            message: scanData.message,
+                            details: ticketDetails,
+                            type: 'ticket',
+                        });
+                    }
                 } else {
+                    // Para productos y premios, el flujo sigue como antes
+                    toast.dismiss();
                     setResult({
-                        status: scanData.isValid ? 'success' : 'error',
+                        status: 'success',
                         message: scanData.message,
                         details: scanData.details,
                         type: scanData.type,
                     });
                 }
+                // --- FIN DEL FIX ---
+
             } catch (error: any) {
                 toast.dismiss();
-                const errorMessage = error.response?.data?.message || 'Error al procesar el QR.';
+                const errorMessage = error.response?.data?.message || error.message || 'Error al procesar el QR.';
                 toast.error(errorMessage);
                 setResult({
                     status: 'error',
                     message: errorMessage,
                     details: {},
-                    type: 'ticket', 
+                    type: 'ticket',
                 });
             }
         };
