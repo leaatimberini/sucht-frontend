@@ -1,3 +1,4 @@
+// src/components/UniversalQrScanner.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,10 +10,12 @@ import type { Ticket as TicketType } from '@/types/ticket.types';
 
 // --- TIPOS DE DATOS CORREGIDOS ---
 interface ScanDetails {
-    clientName?: string;
+    // FIX: Permitimos que el nombre del cliente y el del usuario puedan ser null
+    clientName?: string | null;
+    user?: { name: string | null };
     ticketType?: string;
     productName?: string;
-    isVip?: boolean;
+    isVipAccess?: boolean;
     origin?: string | null;
     promoterName?: string | null;
     specialInstructions?: string | null;
@@ -20,8 +23,9 @@ interface ScanDetails {
     quantity?: number;
     redeemedCount?: number;
     id?: string;
+    tier?: { name: string };
 }
-interface ScanResponse { // <-- TIPO AÑADIDO
+interface ScanResponse {
     type: 'ticket' | 'product' | 'reward';
     isValid: boolean;
     message: string;
@@ -42,6 +46,8 @@ function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext
     const title = isSuccess ? "Acción Exitosa" : "Acción Denegada";
     const Icon = isSuccess ? CheckCircle : XCircle;
     const colorClass = isSuccess ? "text-green-400" : "text-red-500";
+    
+    const clientName = details.clientName || details.user?.name;
 
     return (
         <div className={`w-full max-w-md mx-auto text-center border-2 ${isSuccess ? 'border-green-500' : 'border-red-500'} bg-zinc-900 rounded-lg p-6 animate-fade-in`}>
@@ -50,11 +56,13 @@ function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext
             <p className="text-zinc-300 mt-2 text-lg">{message}</p>
             
             {isSuccess && (
-                <div className="text-left bg-zinc-800 rounded-lg p-4 mt-6 space-y-2">
-                    {details.clientName && <p><UserIcon className="inline-block mr-2" size={16}/> {details.clientName}</p>}
-                    {type === 'ticket' && details.ticketType && <p><Ticket className="inline-block mr-2" size={16}/> {details.ticketType}</p>}
-                    {(type === 'product' || type === 'reward') && details.productName && <p><Gift className="inline-block mr-2" size={16}/> {details.productName}</p>}
-                    {details.isVip && <p className="font-bold text-amber-400"><Crown className="inline-block mr-2" size={16}/> Acceso VIP</p>}
+                <div className="text-left bg-zinc-800 rounded-lg p-4 mt-6 space-y-3">
+                    {clientName && <p className="flex items-center"><UserIcon className="inline-block mr-2" size={16}/> {clientName}</p>}
+                    {type === 'ticket' && details.tier?.name && <p className="flex items-center"><Ticket className="inline-block mr-2" size={16}/> {details.tier.name}</p>}
+                    {(type === 'product' || type === 'reward') && details.productName && <p className="flex items-center"><Gift className="inline-block mr-2" size={16}/> {details.productName}</p>}
+                    
+                    {details.isVipAccess && <p className="font-bold text-amber-400 flex items-center"><Crown className="inline-block mr-2" size={16}/> Acceso VIP</p>}
+
                     {details.specialInstructions && <p className="font-bold text-pink-400">{details.specialInstructions}</p>}
                 </div>
             )}
@@ -89,8 +97,18 @@ function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, o
     return (
         <div className="w-full max-w-md mx-auto text-center border border-zinc-700 rounded-lg p-6">
             <h2 className="text-2xl font-bold text-white">Entrada Válida</h2>
-            <p className="text-zinc-300 mt-2">{ticket.user?.name}</p>
+            
+            {ticket.isVipAccess && (
+                <div className="mt-4 font-bold text-lg p-3 bg-yellow-400 text-black rounded-md animate-pulse flex items-center justify-center">
+                    <Crown className="inline-block mr-2" size={20}/> ACCESO VIP
+                </div>
+            )}
+
+            <p className="text-zinc-300 mt-4">{ticket.user?.name}</p>
             <p className="text-zinc-400 text-sm">{ticket.tier?.name}</p>
+
+            {ticket.specialInstructions && <p className="font-bold text-pink-400 mt-2">{ticket.specialInstructions}</p>}
+
             <p className="font-bold text-3xl text-pink-500 my-4">{remaining} / {ticket.quantity} disponibles</p>
             <div className="space-y-2">
                 <label htmlFor="redeem-quantity" className="block text-sm font-medium text-zinc-300">¿Cuántas personas ingresan?</label>
@@ -137,7 +155,7 @@ export function UniversalQrScanner() {
                 const scanData = response.data;
                 toast.dismiss();
 
-                if (scanData.type === 'ticket' && scanData.details.quantity > 1 && (scanData.details.quantity - scanData.details.redeemedCount) > 0) {
+                if (scanData.type === 'ticket' && scanData.isValid && scanData.details.quantity > 1 && (scanData.details.quantity - scanData.details.redeemedCount) > 0) {
                     setScannedTicket(scanData.details);
                 } else {
                     setResult({
@@ -155,7 +173,7 @@ export function UniversalQrScanner() {
                     status: 'error',
                     message: errorMessage,
                     details: {},
-                    type: 'ticket',
+                    type: 'ticket', 
                 });
             }
         };
