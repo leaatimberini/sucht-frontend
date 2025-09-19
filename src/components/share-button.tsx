@@ -1,3 +1,4 @@
+// src/components/share-button.tsx
 'use client';
 
 import { useEffect, useState } from 'react';

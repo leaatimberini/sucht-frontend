@@ -1,3 +1,4 @@
+// SpecialTicketDisplay.tsx
 'use client';
 
 import { Ticket } from "@/types/ticket.types";

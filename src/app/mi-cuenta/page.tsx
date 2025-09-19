@@ -10,6 +10,8 @@ import toast from "react-hot-toast";
 import { ShieldCheck } from "lucide-react"; 
 import { BirthdayBenefitCard } from "./components/BirthdayBenefitCard";
 import { SpecialTicketDisplay } from "./components/special-ticket-display";
+// FIX: Importamos el componente para el link de referido
+import { UsernamePrompt } from "./components/UsernamePrompt";
 
 // --- TIPOS Y COMPONENTES INTERNOS ---
 
@@ -89,6 +91,10 @@ export default function MiCuentaPage() {
     t => (t.origin === 'OWNER_INVITATION' || t.tier.productType === 'vip_table') && (t.status === 'valid' || t.status === 'partially_used')
   );
   
+  // Filtramos las entradas "normales" para no mostrarlas junto a las especiales.
+  // Podrías tener otra sección para estas si quisieras.
+  const regularTickets = tickets.filter(t => !specialTickets.some(st => st.id === t.id));
+
   return (
     <AuthCheck>
       {isLoading ? (
@@ -102,9 +108,12 @@ export default function MiCuentaPage() {
 
           <LoyaltyProgressBar user={userData} />
 
-          {/* Renderizamos la nueva sección de Invitaciones Especiales */}
+          {/* FIX: Renderizamos el componente del link de referido aquí */}
+          <UsernamePrompt />
+
           {specialTickets.length > 0 && (
             <div className="space-y-6 mb-8">
+              <h2 className="text-2xl font-bold text-white mt-8 border-b border-zinc-800 pb-2">Invitaciones Especiales y Mesas</h2>
               {specialTickets.map(ticket => (
                 <SpecialTicketDisplay key={ticket.id} ticket={ticket} />
               ))}
@@ -116,10 +125,12 @@ export default function MiCuentaPage() {
               <BirthdayBenefitCard />
             </div>
           )}
+
+          {/* Aquí podrías añadir la lista de entradas regulares si lo deseas */}
           
         </>
       ) : (
-         <p className="text-zinc-500 text-center py-10">No se pudo cargar tu perfil.</p>
+          <p className="text-zinc-500 text-center py-10">No se pudo cargar tu perfil.</p>
       )}
     </AuthCheck>
   );

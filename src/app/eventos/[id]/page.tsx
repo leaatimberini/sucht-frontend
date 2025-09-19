@@ -1,3 +1,4 @@
+// src/app/eventos/[id]/page.tsx
 'use client';
 
 import api from "@/lib/axios";
