@@ -10,8 +10,6 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   const eventDate = new Date(event.startDate);
-
-  // FIX: Usamos toLocaleDateString, que es nativo de JavaScript y más estable.
   const formattedDate = eventDate.toLocaleDateString('es-AR', {
     weekday: 'long',
     day: 'numeric',
