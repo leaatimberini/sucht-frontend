@@ -129,7 +129,7 @@ export default function HomePage() {
             <ShoppingCart size={48} className="mx-auto text-pink-500 mb-4"/>
             <h2 className="text-3xl md:text-4xl font-bold">Visita Nuestra Tienda Online</h2>
             <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">Anticipa tus consumiciones y accede a productos exclusivos con descuento comprando directamente desde nuestra web.</p>
-            <Link href="/tienda" className="mt-8 inline-block bg-white hover:bg-zinc-200 text-black font-bold py-3 px-6 rounded-lg transition-colors">
+            <Link href="/store" className="mt-8 inline-block bg-white hover:bg-zinc-200 text-black font-bold py-3 px-6 rounded-lg transition-colors">
                 Ir a la Tienda
             </Link>
         </div>
