@@ -11,6 +11,7 @@ import { Modal } from "./ui/modal";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { EditTicketTierForm } from "./edit-ticket-tier-form";
 
+// Esquema de validación COMPLETO para el formulario de CREACIÓN
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   isFree: z.boolean().default(true),
@@ -23,6 +24,10 @@ const createTierSchema = z.object({
   isBirthdayVipOffer: z.boolean().optional(),
   consumptionCredit: z.coerce.number().min(0).optional().nullable(),
   validUntil: z.string().optional().nullable(),
+  // --- NUEVO: CAMPOS PARA MESAS VIP AÑADIDOS AL SCHEMA ---
+  tableNumber: z.coerce.number().int().positive().optional().nullable(),
+  capacity: z.coerce.number().int().positive().optional().nullable(),
+  location: z.string().optional().nullable(),
 }).refine(data => !data.isFree ? data.price > 0 : true, {
     message: "El precio es requerido para entradas de pago.",
     path: ['price'],
@@ -92,7 +97,6 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         ...data,
         isFree: data.price === 0,
         eventId: eventId,
-        // FIX: Convertimos la fecha local a un string ISO 8601 completo.
         validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
       };
       await api.post(`/events/${eventId}/ticket-tiers`, payload);
@@ -177,6 +181,27 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
               <option value={ProductType.VOUCHER}>Voucher de Consumo</option>
             </select>
           </div>
+
+          {/* --- NUEVO: CAMPOS CONDICIONALES PARA MESAS VIP --- */}
+          {productType === ProductType.VIP_TABLE && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-dashed border-zinc-600 rounded-lg animate-in fade-in">
+              <div>
+                <label htmlFor="tableNumber-create" className="block text-sm font-medium text-zinc-300 mb-1">Nº Mesa</label>
+                <input type="number" {...register('tableNumber')} id="tableNumber-create" placeholder="Ej: 7" className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700" />
+                {errors.tableNumber && <p className="text-xs text-red-500 mt-1">{errors.tableNumber.message}</p>}
+              </div>
+              <div>
+                <label htmlFor="capacity-create" className="block text-sm font-medium text-zinc-300 mb-1">Capacidad</label>
+                <input type="number" {...register('capacity')} id="capacity-create" placeholder="Ej: 8" className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700" />
+                {errors.capacity && <p className="text-xs text-red-500 mt-1">{errors.capacity.message}</p>}
+              </div>
+              <div>
+                <label htmlFor="location-create" className="block text-sm font-medium text-zinc-300 mb-1">Ubicación</label>
+                <input type="text" {...register('location')} id="location-create" placeholder="Ej: Cabina" className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700" />
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-3 rounded-lg border border-pink-500/30 bg-pink-500/10 p-4">
             <h4 className="font-semibold text-white">Configuración de Cumpleaños</h4>
             <div className="flex items-center space-x-2">
