@@ -1,4 +1,3 @@
-// src/types/ticket.types.ts
 import { Event } from "./event.types";
 import { User } from "./user.types";
 
@@ -30,6 +29,15 @@ export interface TicketTier {
   isBirthdayDefault: boolean;
   isBirthdayVipOffer: boolean;
   consumptionCredit: number | null;
+
+  // --- CAMPOS NUEVOS Y ACTUALIZADOS ---
+  eventId: string;
+  description: string | null;
+  isVip: boolean;
+  isPubliclyListed: boolean;
+  tableNumber: number | null;
+  capacity: number | null;
+  location: string | null;
 }
 
 export interface Ticket {
@@ -44,11 +52,10 @@ export interface Ticket {
   redeemedCount: number;
   amountPaid: number;
   paymentId: string | null;
+  specialInstructions: string | null;
   confirmedAt: string | null;
   validatedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  // --- CAMPOS AÑADIDOS ---
-  isVipAccess: boolean;
-  specialInstructions: string | null;
+  isVipAccess: boolean; // Propiedad virtual calculada en el backend
 }
