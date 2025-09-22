@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import type { Table } from '@/types/table.types';
-import { TicketTier } from '@/types/ticket.types';
+import { TicketTier, ProductType } from '@/types/ticket.types';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 
@@ -47,7 +47,7 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
             try {
                 const [tablesRes, tiersRes] = await Promise.all([
                     api.get(`/tables/event/${eventId}`),
-                    api.get(`/events/${eventId}/ticket-tiers/vip-tables`)
+                    api.get(`/events/${eventId}/ticket-tiers/vip-tables`) 
                 ]);
                 setTables(tablesRes.data);
                 setVipTiers(tiersRes.data);
@@ -63,11 +63,12 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
     const enrichedTables: EnrichedTable[] = useMemo(() => {
         if (!tables || !vipTiers) return [];
         
-        // Esta es la lógica clave que une la mesa física con su precio.
         return tables.map(table => {
-            const correspondingTier = vipTiers.find(tier => 
-                String(tier.tableNumber).trim() === String(table.tableNumber).trim()
-            );
+            // FIX: Comparamos los números de mesa como NÚMEROS en lugar de texto.
+            // Esto soluciona el problema de '1' vs '01'.
+            const tableNum = parseInt(String(table.tableNumber).trim(), 10);
+            const correspondingTier = vipTiers.find(tier => tier.tableNumber === tableNum);
+            
             return {
                 ...table,
                 price: correspondingTier?.price,
@@ -119,7 +120,6 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
                         <div className="h-96 flex justify-center items-center"><Loader2 className="animate-spin text-white"/></div>
                     ) : (
                         <div className="relative w-full max-w-sm mx-auto">
-                            {/* FIX: Se corrige la ruta de la imagen del mapa */}
                             <Image src="/images/tables-map-bg.png" alt="Mapa de mesas" width={512} height={768} className="w-full h-auto"/>
                             {enrichedTables.map(table => (
                                 <button key={table.id} onClick={() => handleTableClick(table)}
