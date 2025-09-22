@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import type { Table } from '@/types/table.types';
-import { TicketTier, ProductType } from '@/types/ticket.types';
+import { TicketTier } from '@/types/ticket.types';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 
@@ -24,11 +24,10 @@ const statusLabels: { [key: string]: string } = {
     unavailable: 'No disponible',
 };
 
-// FIX: Se ajusta el tipo para permitir 'null' en partialPaymentPrice.
 type EnrichedTable = Table & {
     price?: number;
     allowPartialPayment?: boolean;
-    partialPaymentPrice?: number | null; // <-- Corrección aquí
+    partialPaymentPrice?: number | null;
     tierId?: string;
     tierName?: string;
     capacity?: number | null;
@@ -48,7 +47,7 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
             try {
                 const [tablesRes, tiersRes] = await Promise.all([
                     api.get(`/tables/event/${eventId}`),
-                    api.get(`/events/${eventId}/ticket-tiers/vip-tables`) 
+                    api.get(`/events/${eventId}/ticket-tiers/vip-tables`)
                 ]);
                 setTables(tablesRes.data);
                 setVipTiers(tiersRes.data);
@@ -60,11 +59,15 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
         };
         fetchData();
     }, [eventId]);
-
+    
     const enrichedTables: EnrichedTable[] = useMemo(() => {
         if (!tables || !vipTiers) return [];
+        
+        // Esta es la lógica clave que une la mesa física con su precio.
         return tables.map(table => {
-            const correspondingTier = vipTiers.find(tier => tier.tableNumber === parseInt(table.tableNumber));
+            const correspondingTier = vipTiers.find(tier => 
+                String(tier.tableNumber).trim() === String(table.tableNumber).trim()
+            );
             return {
                 ...table,
                 price: correspondingTier?.price,
@@ -109,20 +112,19 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl w-full max-w-lg relative">
-                <button onClick={onClose} className="absolute top-2 right-2 text-zinc-400 hover:text-white z-10">
-                    <X size={24} />
-                </button>
+                <button onClick={onClose} className="absolute top-2 right-2 text-zinc-400 hover:text-white z-10"><X size={24} /></button>
                 <div className="p-6">
                     <h2 className="text-2xl font-bold text-white mb-4 text-center">Reserva tu Mesa VIP</h2>
                     {isLoading ? (
                         <div className="h-96 flex justify-center items-center"><Loader2 className="animate-spin text-white"/></div>
                     ) : (
                         <div className="relative w-full max-w-sm mx-auto">
-                            <Image src="/images/mapa-mesas-vip.png" alt="Mapa de mesas" width={512} height={768} className="w-full h-auto"/>
+                            {/* FIX: Se corrige la ruta de la imagen del mapa */}
+                            <Image src="/images/tables-map-bg.png" alt="Mapa de mesas" width={512} height={768} className="w-full h-auto"/>
                             {enrichedTables.map(table => (
                                 <button key={table.id} onClick={() => handleTableClick(table)}
                                     className={`absolute flex items-center justify-center w-8 h-8 rounded-md border-2 transform -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110 group ${statusStyles[table.status]}`}
-                                    style={{ top: `${table.positionY || 50}%`, left: `${table.positionX || 50}%` }}
+                                    style={{ top: `${table.positionY}%`, left: `${table.positionX}%` }}
                                     title={`${table.category.name} ${table.tableNumber} - ${statusLabels[table.status]}`}
                                 >
                                     <span className="font-bold text-white text-sm">{table.tableNumber}</span>
