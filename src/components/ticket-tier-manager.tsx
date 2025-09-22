@@ -11,7 +11,6 @@ import { Modal } from "./ui/modal";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { EditTicketTierForm } from "./edit-ticket-tier-form";
 
-// Esquema de validación COMPLETO para el formulario de CREACIÓN
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   isFree: z.boolean().default(true),
@@ -71,6 +70,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     }
   }, [isFreeTicket, setValue]);
 
+
   const fetchTiers = useCallback(async () => {
     try {
       const response = await api.get(`/events/${eventId}/ticket-tiers`);
@@ -90,7 +90,10 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     try {
       const payload = {
         ...data,
-        eventId,
+        isFree: data.price === 0,
+        eventId: eventId,
+        // FIX: Convertimos la fecha local a un string ISO 8601 completo.
+        validUntil: data.validUntil ? new Date(data.validUntil).toISOString() : null,
       };
       await api.post(`/events/${eventId}/ticket-tiers`, payload);
       toast.success("Tipo de entrada creado con éxito.");
@@ -160,7 +163,6 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         onClose={() => setIsCreateModalOpen(false)}
         title="Añadir Nuevo Tipo de Entrada"
       >
-        {/* --- FORMULARIO DE CREACIÓN COMPLETO --- */}
         <form onSubmit={handleSubmit(onSubmitCreate)} className="space-y-4">
           <div>
             <label htmlFor="name-create" className="block text-sm font-medium text-zinc-300 mb-1">Nombre</label>
