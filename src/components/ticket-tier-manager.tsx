@@ -11,7 +11,7 @@ import { Modal } from "./ui/modal";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { EditTicketTierForm } from "./edit-ticket-tier-form";
 
-// FIX: Se reintroduce 'isFree' en el esquema de validación
+// Esquema de validación COMPLETO para el formulario de CREACIÓN
 const createTierSchema = z.object({
   name: z.string().min(3, { message: "El nombre es requerido." }),
   isFree: z.boolean().default(true),
@@ -27,6 +27,9 @@ const createTierSchema = z.object({
 }).refine(data => !data.isFree ? data.price > 0 : true, {
     message: "El precio es requerido para entradas de pago.",
     path: ['price'],
+}).refine(data => data.allowPartialPayment ? data.partialPaymentPrice && data.partialPaymentPrice > 0 : true, {
+    message: "El precio de la seña es requerido si se permite el pago parcial.",
+    path: ['partialPaymentPrice'],
 });
 
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
@@ -42,7 +45,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     handleSubmit,
     reset,
     watch,
-    setValue, // Importamos setValue para controlar el formulario
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(createTierSchema),
@@ -52,19 +55,21 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         price: 0,
         quantity: 100,
         productType: ProductType.TICKET,
+        allowPartialPayment: false,
+        isBirthdayDefault: false,
+        isBirthdayVipOffer: false,
     }
   });
 
   const isFreeTicket = watch('isFree');
   const allowPartialPayment = watch('allowPartialPayment');
+  const productType = watch('productType');
 
-  // FIX: Lógica para poner el precio a 0 automáticamente si se marca "Sin Cargo"
   useEffect(() => {
     if (isFreeTicket) {
         setValue('price', 0);
     }
   }, [isFreeTicket, setValue]);
-
 
   const fetchTiers = useCallback(async () => {
     try {
@@ -122,7 +127,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         <h3 className="text-xl font-semibold text-white">Entradas Disponibles</h3>
         <button 
           onClick={() => {
-            reset({ name: '', isFree: true, price: 0, quantity: 100, productType: ProductType.TICKET });
+            reset({ name: '', isFree: true, price: 0, quantity: 100, productType: ProductType.TICKET, allowPartialPayment: false, isBirthdayDefault: false, isBirthdayVipOffer: false });
             setIsCreateModalOpen(true);
           }}
           className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-3 rounded-lg flex items-center space-x-2 text-sm"
@@ -155,34 +160,71 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
         onClose={() => setIsCreateModalOpen(false)}
         title="Añadir Nuevo Tipo de Entrada"
       >
+        {/* --- FORMULARIO DE CREACIÓN COMPLETO --- */}
         <form onSubmit={handleSubmit(onSubmitCreate)} className="space-y-4">
-          {/* Usamos el formulario completo como en la captura de pantalla */}
           <div>
-            <label htmlFor="name-create">Nombre</label>
-            <input {...register('name')} id="name-create" />
-            {errors.name && <p>{errors.name.message}</p>}
+            <label htmlFor="name-create" className="block text-sm font-medium text-zinc-300 mb-1">Nombre</label>
+            <input {...register('name')} id="name-create" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
+            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
           </div>
           <div>
-            <label htmlFor="productType-create">Tipo de Producto</label>
-            <select {...register('productType')} id="productType-create">
+            <label htmlFor="productType-create" className="block text-sm font-medium text-zinc-300 mb-1">Tipo de Producto</label>
+            <select {...register('productType')} id="productType-create" className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700">
               <option value={ProductType.TICKET}>Entrada General</option>
               <option value={ProductType.VIP_TABLE}>Mesa VIP</option>
               <option value={ProductType.VOUCHER}>Voucher de Consumo</option>
             </select>
           </div>
+          <div className="space-y-3 rounded-lg border border-pink-500/30 bg-pink-500/10 p-4">
+            <h4 className="font-semibold text-white">Configuración de Cumpleaños</h4>
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="isBirthdayDefault-create" {...register('isBirthdayDefault')} className="h-4 w-4 rounded accent-pink-600" />
+              <label htmlFor="isBirthdayDefault-create" className="text-sm font-medium text-zinc-300">Usar como entrada gratuita de cumpleaños</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="isBirthdayVipOffer-create" {...register('isBirthdayVipOffer')} className="h-4 w-4 rounded accent-amber-500" />
+              <label htmlFor="isBirthdayVipOffer-create" className="text-sm font-medium text-zinc-300">Usar como oferta VIP de cumpleaños</label>
+            </div>
+          </div>
           <div className="flex items-center space-x-2">
-            <input type="checkbox" id="isFree-create" {...register('isFree')} />
-            <label htmlFor="isFree-create">Sin Cargo</label>
+            <input type="checkbox" id="isFree-create" {...register('isFree')} className="accent-pink-600 h-4 w-4 rounded" />
+            <label htmlFor="isFree-create" className="text-sm font-medium text-zinc-300">Sin Cargo</label>
           </div>
           {!isFreeTicket && (
-            <div>
-              <label htmlFor="price-create">Precio</label>
-              <input {...register('price')} id="price-create" type="number" step="0.01" />
-              {errors.price && <p>{errors.price.message}</p>}
+            <div className="animate-in fade-in">
+              <label htmlFor="price-create" className="block text-sm font-medium text-zinc-300 mb-1">Precio</label>
+              <input {...register('price')} id="price-create" type="number" step="0.01" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
+              {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}
             </div>
           )}
-          {/* (Aquí irían los demás campos del formulario de la captura) */}
-          <button type="submit" disabled={isSubmitting}>Añadir Entrada</button>
+          <div className="flex items-center justify-between bg-zinc-800/50 p-3 rounded-md">
+            <label htmlFor="allowPartialPayment-create" className="text-sm font-medium text-zinc-300">Permitir Seña</label>
+            <label htmlFor="allowPartialPayment-create" className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="allowPartialPayment-create" className="sr-only peer" {...register('allowPartialPayment')} />
+              <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+            </label>
+          </div>
+          {allowPartialPayment && (
+            <div className="animate-in fade-in">
+              <label htmlFor="partialPaymentPrice-create" className="block text-sm font-medium text-zinc-300 mb-1">Precio de la Seña</label>
+              <input {...register('partialPaymentPrice')} id="partialPaymentPrice-create" type="number" step="0.01" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
+              {errors.partialPaymentPrice && <p className="text-xs text-red-500 mt-1">{errors.partialPaymentPrice.message}</p>}
+            </div>
+          )}
+          <div>
+            <label htmlFor="quantity-create" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad Disponible</label>
+            <input {...register('quantity')} id="quantity-create" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
+            {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="validUntil-create" className="block text-sm font-medium text-zinc-300 mb-1">Válido Hasta (Opcional)</label>
+            <input id="validUntil-create" type="datetime-local" {...register('validUntil')} className="w-full bg-zinc-800 rounded-md p-2 text-white"/>
+          </div>
+          <div className="flex justify-end pt-4">
+            <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">
+              {isSubmitting ? 'Añadiendo...' : 'Añadir Entrada'}
+            </button>
+          </div>
         </form>
       </Modal>
 
