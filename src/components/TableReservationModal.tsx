@@ -61,14 +61,27 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
     }, [eventId]);
     
     const enrichedTables: EnrichedTable[] = useMemo(() => {
-        if (!tables || !vipTiers) return [];
+        if (isLoading || !tables || !vipTiers) return [];
+
+        // --- HERRAMIENTA DE DEBUG: MIRA LA CONSOLA DE TU NAVEGADOR ---
+        console.log("--- DEBUG DE DATOS DE MESAS ---");
+        console.log("Mesas Físicas (desde el editor de mapas):", tables);
+        console.log("Productos en Venta (desde los Tipos de Entrada):", vipTiers);
+        console.log("---------------------------------");
         
         return tables.map(table => {
             const tableNum = parseInt(String(table.tableNumber).trim(), 10);
-            const correspondingTier = vipTiers.find(tier => 
-                tier.tableNumber === tableNum &&
-                tier.name.toLowerCase().includes(table.category.name.toLowerCase())
-            );
+            
+            const correspondingTier = vipTiers.find(tier => {
+                if (tier.tableNumber !== tableNum) return false;
+
+                const tierName = tier.name.toLowerCase().trim();
+                const tierLocation = tier.location?.toLowerCase().trim();
+                const categoryName = table.category.name.toLowerCase().trim();
+                
+                // Intenta coincidir por el nombre de la categoría O por la ubicación
+                return tierName.includes(categoryName) || (tierLocation && categoryName.includes(tierLocation));
+            });
             
             return {
                 ...table,
@@ -80,7 +93,7 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
                 capacity: correspondingTier?.capacity,
             };
         });
-    }, [tables, vipTiers]);
+    }, [tables, vipTiers, isLoading]);
 
     const handleTableClick = (table: EnrichedTable) => {
         if (table.status !== 'available') {
@@ -89,6 +102,7 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
         }
         if (!table.tierId || typeof table.price !== 'number') {
             toast.error(`La mesa ${table.tableNumber} no está a la venta en este momento.`);
+            console.error("Fallo de enlace para la mesa:", table);
             return;
         }
         setSelectedTable(table);
@@ -113,7 +127,6 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in">
-            {/* Modal principal con el mapa */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl w-full max-w-lg relative">
                 <button onClick={onClose} className="absolute top-2 right-2 text-zinc-400 hover:text-white z-10"><X size={24} /></button>
                 <div className="p-6">
@@ -142,14 +155,11 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
                 </div>
             </div>
 
-            {/* Modal de Confirmación anidado */}
             {selectedTable && (
                 <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 animate-fade-in">
                     <div className="bg-zinc-800 rounded-lg p-6 max-w-sm w-full space-y-4 border border-zinc-700">
                         <h3 className="text-xl font-bold text-white">Confirmar Mesa {selectedTable.tableNumber}</h3>
                         <p className="text-zinc-300">Estás por reservar la <span className="font-bold">{selectedTable.tierName || selectedTable.category.name}</span>.</p>
-                        
-                        {/* FIX: Se añade la capacidad de la mesa */}
                         <div className="flex justify-between items-center text-lg">
                             <span className="text-zinc-400 flex items-center gap-2"><Users size={18} /> Capacidad:</span>
                             <span className="font-bold text-white">{selectedTable.capacity} personas</span>
@@ -158,7 +168,6 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
                             <span className="text-zinc-400">Precio Total:</span>
                             <span className="font-bold text-pink-400">${new Intl.NumberFormat('es-AR').format(selectedTable.price!)}</span>
                         </div>
-
                         <div className="border-t border-zinc-700 pt-4 space-y-2">
                             <button onClick={() => handleConfirmReservation('full')} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-4 rounded-lg text-base">Pagar Total</button>
                             {selectedTable.allowPartialPayment && selectedTable.partialPaymentPrice && (
