@@ -64,10 +64,13 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
         if (!tables || !vipTiers) return [];
         
         return tables.map(table => {
-            // FIX: Comparamos los números de mesa como NÚMEROS en lugar de texto.
-            // Esto soluciona el problema de '1' vs '01'.
             const tableNum = parseInt(String(table.tableNumber).trim(), 10);
-            const correspondingTier = vipTiers.find(tier => tier.tableNumber === tableNum);
+            
+            // FIX: La lógica ahora busca una coincidencia de NÚMERO y de CATEGORÍA en el nombre.
+            const correspondingTier = vipTiers.find(tier => 
+                tier.tableNumber === tableNum &&
+                tier.name.toLowerCase().includes(table.category.name.toLowerCase())
+            );
             
             return {
                 ...table,
