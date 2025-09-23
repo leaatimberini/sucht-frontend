@@ -62,32 +62,20 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
     
     const enrichedTables: EnrichedTable[] = useMemo(() => {
         if (isLoading || !tables || !vipTiers) return [];
-
-        // --- HERRAMIENTA DE DEBUG: MIRA LA CONSOLA DE TU NAVEGADOR ---
-        console.log("--- DEBUG DE DATOS DE MESAS ---");
-        console.log("Mesas Físicas (desde el editor de mapas):", tables);
-        console.log("Productos en Venta (desde los Tipos de Entrada):", vipTiers);
-        console.log("---------------------------------");
         
         return tables.map(table => {
             const tableNum = parseInt(String(table.tableNumber).trim(), 10);
+            const correspondingTier = vipTiers.find(tier => tier.tableNumber === tableNum);
             
-            const correspondingTier = vipTiers.find(tier => {
-                if (tier.tableNumber !== tableNum) return false;
+            // FIX: Convertimos explícitamente los precios de string a number.
+            const priceAsNumber = correspondingTier ? parseFloat(String(correspondingTier.price)) : undefined;
+            const partialPriceAsNumber = correspondingTier?.partialPaymentPrice ? parseFloat(String(correspondingTier.partialPaymentPrice)) : null;
 
-                const tierName = tier.name.toLowerCase().trim();
-                const tierLocation = tier.location?.toLowerCase().trim();
-                const categoryName = table.category.name.toLowerCase().trim();
-                
-                // Intenta coincidir por el nombre de la categoría O por la ubicación
-                return tierName.includes(categoryName) || (tierLocation && categoryName.includes(tierLocation));
-            });
-            
             return {
                 ...table,
-                price: correspondingTier?.price,
+                price: priceAsNumber,
                 allowPartialPayment: correspondingTier?.allowPartialPayment,
-                partialPaymentPrice: correspondingTier?.partialPaymentPrice,
+                partialPaymentPrice: partialPriceAsNumber,
                 tierId: correspondingTier?.id,
                 tierName: correspondingTier?.name,
                 capacity: correspondingTier?.capacity,
@@ -100,6 +88,7 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
             toast.error(`La mesa ${table.tableNumber} no está disponible.`);
             return;
         }
+        // Ahora la comparación 'typeof table.price === 'number'' funcionará.
         if (!table.tierId || typeof table.price !== 'number') {
             toast.error(`La mesa ${table.tableNumber} no está a la venta en este momento.`);
             console.error("Fallo de enlace para la mesa:", table);
