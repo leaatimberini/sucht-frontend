@@ -1,3 +1,4 @@
+// src/components/ticket-acquirer.tsx
 'use client';
 
 import { useEffect, useState, useMemo } from "react";
