@@ -7,6 +7,7 @@ export enum UserRole {
   VERIFIER = 'verifier',
   BARRA = 'barra',
   CLIENT = 'client',
+  PARTNER = 'partner',
 }
 
 // Interfaz unificada con todas las propiedades que usa la aplicación
@@ -27,7 +28,7 @@ export interface User {
   points: number;
   isMpLinked: boolean;
   rrppCommissionRate: number | null;
-  
+
   // --- PROPIEDAD AÑADIDA ---
   isPushSubscribed?: boolean;
 

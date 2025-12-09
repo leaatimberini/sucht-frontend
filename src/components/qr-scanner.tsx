@@ -64,7 +64,8 @@ function RedeemProductInterface({ productPurchase, onRedeemed, onCancel }: { pro
     setIsRedeeming(true);
     try {
       const response = await api.post(`/store/purchase/validate/${productPurchase.id}`);
-      onRedeemed({ type: 'success', data: {
+      onRedeemed({
+        type: 'success', data: {
           message: 'Producto canjeado con éxito.',
           userName: response.data.user.name,
           productName: response.data.product.name
@@ -123,8 +124,8 @@ function RedeemInterface({ ticket, onRedeemed, onCancel }: { ticket: Ticket, onR
       <p className="font-bold text-3xl text-pink-500 my-4">{remaining} / {ticket.quantity} disponibles</p>
       <div className="space-y-2">
         <label htmlFor="redeem-quantity" className="block text-sm font-medium text-zinc-300">¿Cuántas personas ingresan?</label>
-        <input 
-          id="redeem-quantity" 
+        <input
+          id="redeem-quantity"
           type="number"
           min="1"
           max={remaining}
@@ -156,9 +157,9 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
 
     const onScanSuccess = async (decodedText: string) => {
       if (isPaused) return;
-      
+
       setIsPaused(true);
-      
+
       try {
         toast.loading('Verificando QR...');
         let response;
@@ -169,40 +170,40 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
         } catch (e) {
           // Si falla, el QR es una cadena simple (un UUID)
         }
-        
+
         let type = qrData.type;
         let id = qrData.id;
 
         if (!isUuid(id)) {
-            throw new Error('Formato de QR inválido o corrupto.');
+          throw new Error('Formato de QR inválido o corrupto.');
         }
 
         switch (type) {
-            case 'ticket':
-                if (!eventId) { throw new Error("Se requiere un eventId para escanear tickets."); }
-                response = await api.get(`/tickets/${id}`);
-                setScannedData(response.data);
-                break;
-            case 'reward':
-                response = await api.post(`/rewards/validate/${id}`);
-                setResult({ type: 'success', data: response.data });
-                break;
-            case 'product':
-                response = await api.post(`/store/purchase/validate/${id}`);
-                setScannedData(response.data);
-                break;
-            case 'BIRTHDAY_ENTRY':
-                response = await api.post(`/birthday/validate-entry/${id}`);
-                setScannedData(response.data);
-                break;
-            case 'BIRTHDAY_GIFT':
-                response = await api.post(`/birthday/validate-gift/${id}`);
-                setResult({ type: 'success', data: response.data });
-                break;
-            default:
-                throw new Error('Tipo de QR no reconocido.');
+          case 'ticket':
+            if (!eventId) { throw new Error("Se requiere un eventId para escanear tickets."); }
+            response = await api.get(`/tickets/${id}`);
+            setScannedData(response.data);
+            break;
+          case 'reward':
+            response = await api.post(`/rewards/validate/${id}`);
+            setResult({ type: 'success', data: response.data });
+            break;
+          case 'product':
+            response = await api.post(`/store/purchase/validate/${id}`);
+            setScannedData(response.data);
+            break;
+          case 'BIRTHDAY_ENTRY':
+            response = await api.post(`/birthday/validate-entry/${id}`);
+            setScannedData(response.data);
+            break;
+          case 'BIRTHDAY_GIFT':
+            response = await api.post(`/birthday/validate-gift/${id}`);
+            setResult({ type: 'success', data: response.data });
+            break;
+          default:
+            throw new Error('Tipo de QR no reconocido.');
         }
-        
+
         toast.dismiss();
         toast.success('QR verificado con éxito.');
 
@@ -215,7 +216,17 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
       }
     };
 
-    const html5QrcodeScanner = new Html5QrcodeScanner('qr-reader-container', { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      'qr-reader-container',
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        videoConstraints: {
+          facingMode: "environment"
+        }
+      },
+      false
+    );
     html5QrcodeScanner.render(onScanSuccess, undefined);
 
     return () => {
@@ -230,12 +241,12 @@ export function QrScanner({ scanType, eventId }: { scanType: ScanType, eventId?:
     setResult(null);
     setIsPaused(false);
   };
-  
+
   const handleFinalRedeem = (redeemResult: ResultState) => {
     setScannedData(null);
     setResult(redeemResult);
   }
-  
+
   if (result) {
     return <ScanResult result={result} onScanNext={resetScanner} />;
   }

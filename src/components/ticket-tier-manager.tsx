@@ -28,12 +28,13 @@ const createTierSchema = z.object({
   tableNumber: z.coerce.number().int().positive().optional().nullable(),
   capacity: z.coerce.number().int().positive().optional().nullable(),
   location: z.string().optional().nullable(),
+  linkedRewardId: z.string().optional().nullable(), // Nuevo campo en schema
 }).refine(data => !data.isFree ? data.price > 0 : true, {
-    message: "El precio es requerido para entradas de pago.",
-    path: ['price'],
+  message: "El precio es requerido para entradas de pago.",
+  path: ['price'],
 }).refine(data => data.allowPartialPayment ? data.partialPaymentPrice && data.partialPaymentPrice > 0 : true, {
-    message: "El precio de la seña es requerido si se permite el pago parcial.",
-    path: ['partialPaymentPrice'],
+  message: "El precio de la seña es requerido si se permite el pago parcial.",
+  path: ['partialPaymentPrice'],
 });
 
 type CreateTierFormInputs = z.infer<typeof createTierSchema>;
@@ -43,6 +44,20 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<TicketTier | null>(null);
+  const [rewards, setRewards] = useState<any[]>([]); // Estado para rewards
+
+  // Fetch rewards
+  useEffect(() => {
+    const fetchRewards = async () => {
+      try {
+        const { data } = await api.get('/rewards');
+        setRewards(data);
+      } catch (error) {
+        console.error("Error fetching rewards", error);
+      }
+    };
+    fetchRewards();
+  }, []);
 
   const {
     register,
@@ -54,14 +69,14 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
   } = useForm({
     resolver: zodResolver(createTierSchema),
     defaultValues: {
-        name: '',
-        isFree: true,
-        price: 0,
-        quantity: 100,
-        productType: ProductType.TICKET,
-        allowPartialPayment: false,
-        isBirthdayDefault: false,
-        isBirthdayVipOffer: false,
+      name: '',
+      isFree: true,
+      price: 0,
+      quantity: 100,
+      productType: ProductType.TICKET,
+      allowPartialPayment: false,
+      isBirthdayDefault: false,
+      isBirthdayVipOffer: false,
     }
   });
 
@@ -71,7 +86,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     if (isFreeTicket) {
-        setValue('price', 0);
+      setValue('price', 0);
     }
   }, [isFreeTicket, setValue]);
 
@@ -110,7 +125,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
       toast.error(displayError);
     }
   };
-  
+
   const handleEditClick = (tier: TicketTier) => {
     setSelectedTier(tier);
     setIsEditModalOpen(true);
@@ -132,7 +147,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
     <>
       <div className="flex justify-between items-center mt-8">
         <h3 className="text-xl font-semibold text-white">Entradas Disponibles</h3>
-        <button 
+        <button
           onClick={() => {
             reset({ name: '', isFree: true, price: 0, quantity: 100, productType: ProductType.TICKET, allowPartialPayment: false, isBirthdayDefault: false, isBirthdayVipOffer: false });
             setIsCreateModalOpen(true);
@@ -143,7 +158,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
           <span>Añadir Tipo</span>
         </button>
       </div>
-      
+
       <div className="mt-4 space-y-3">
         {tiers.map(tier => (
           <div key={tier.id} className="flex justify-between items-center bg-zinc-900 p-4 rounded-lg border border-zinc-800">
@@ -201,7 +216,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
               </div>
             </div>
           )}
-          
+
           <div className="space-y-3 rounded-lg border border-pink-500/30 bg-pink-500/10 p-4">
             <h4 className="font-semibold text-white">Configuración de Cumpleaños</h4>
             <div className="flex items-center space-x-2">
@@ -237,7 +252,22 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
               <input {...register('partialPaymentPrice')} id="partialPaymentPrice-create" type="number" step="0.01" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
               {errors.partialPaymentPrice && <p className="text-xs text-red-500 mt-1">{errors.partialPaymentPrice.message}</p>}
             </div>
+
           )}
+
+          <div className="animate-in fade-in">
+            <label htmlFor="linkedRewardId-create" className="block text-sm font-medium text-zinc-300 mb-1">Incluir Producto/Regalo (Opcional)</label>
+            <select {...register('linkedRewardId')} id="linkedRewardId-create" className="w-full bg-zinc-800 rounded-md p-2 text-white border border-zinc-700">
+              <option value="">-- Ninguno --</option>
+              {rewards.map(reward => (
+                <option key={reward.id} value={reward.id}>
+                  {reward.name} ({reward.pointsCost} pts)
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-zinc-500 mt-1">El cliente recibirá un QR extra para canjear este producto.</p>
+          </div>
+
           <div>
             <label htmlFor="quantity-create" className="block text-sm font-medium text-zinc-300 mb-1">Cantidad Disponible</label>
             <input {...register('quantity')} id="quantity-create" type="number" className="w-full bg-zinc-800 rounded-md p-2 text-white" />
@@ -245,7 +275,7 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
           </div>
           <div>
             <label htmlFor="validUntil-create" className="block text-sm font-medium text-zinc-300 mb-1">Válido Hasta (Opcional)</label>
-            <input id="validUntil-create" type="datetime-local" {...register('validUntil')} className="w-full bg-zinc-800 rounded-md p-2 text-white"/>
+            <input id="validUntil-create" type="datetime-local" {...register('validUntil')} className="w-full bg-zinc-800 rounded-md p-2 text-white" />
           </div>
           <div className="flex justify-end pt-4">
             <button type="submit" disabled={isSubmitting} className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50">
@@ -253,18 +283,19 @@ export function TicketTierManager({ eventId }: { eventId: string }) {
             </button>
           </div>
         </form>
-      </Modal>
+      </Modal >
 
       {selectedTier && (
         <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Editando: ${selectedTier.name}`}>
-          <EditTicketTierForm 
+          <EditTicketTierForm
             tier={selectedTier}
             eventId={eventId}
             onClose={() => setIsEditModalOpen(false)}
             onTierUpdated={fetchTiers}
           />
         </Modal>
-      )}
+      )
+      }
     </>
   );
 }

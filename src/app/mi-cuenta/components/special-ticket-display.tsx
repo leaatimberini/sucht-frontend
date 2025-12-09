@@ -12,7 +12,7 @@ interface SpecialTicketDisplayProps {
 export function SpecialTicketDisplay({ ticket }: SpecialTicketDisplayProps) {
   const isOwnerInvitation = ticket.origin === 'OWNER_INVITATION';
   const isBirthdayBenefit = ticket.origin === 'BIRTHDAY';
-  
+
   // Determinamos el texto del remitente.
   const senderName = ticket.promoter?.name || 'SUCHT';
   const title = isOwnerInvitation ? `Invitación Especial de ${senderName}` : `¡Tu Beneficio de Cumpleaños!`;
@@ -39,15 +39,15 @@ export function SpecialTicketDisplay({ ticket }: SpecialTicketDisplayProps) {
 
       <div className="flex flex-col md:flex-row items-center gap-6">
         <div className="bg-white p-4 rounded-lg flex-shrink-0">
-          <QRCodeSVG value={ticket.id} size={160} />
+          <QRCodeSVG value={ticket.id} size={160} fgColor="#000000" bgColor="#ffffff" />
         </div>
 
         <div className="text-center md:text-left">
           <h2 className="text-2xl font-bold text-white">{ticket.event.title}</h2>
-          
+
           {/* CORRECCIÓN: Mostramos un texto más apropiado para invitaciones */}
           <p className="text-pink-400 font-semibold">{isOwnerInvitation || isBirthdayBenefit ? `Entrada General (x${ticket.quantity})` : `${ticket.tier.name} (x${ticket.quantity})`}</p>
-          
+
           {ticket.specialInstructions && (
             <p className="mt-3 text-lg font-bold text-amber-400 uppercase tracking-wide">
               {ticket.specialInstructions}

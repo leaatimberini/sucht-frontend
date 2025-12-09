@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { AuthCheck } from '@/components/auth-check';
 import { ProductPurchase } from '@/types/product-purchase.types';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG } from 'qrcode.react';
 import { Loader2, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -42,20 +42,19 @@ export default function MisProductosPage() {
           {productPurchases.map((purchase) => (
             <div key={purchase.id} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col items-center text-center shadow-lg">
               <div className="bg-white p-4 rounded-md mb-4">
-                <QRCode value={purchase.id} size={150} />
+                <QRCodeSVG value={purchase.id || ''} size={150} fgColor="#000000" bgColor="#ffffff" />
               </div>
               <h2 className="text-xl font-bold text-white">{purchase.product.name}</h2>
               <p className="text-sm text-zinc-400 mb-4">{purchase.event.title}</p>
-              
+
               <p className="text-xs text-zinc-500">
                 Comprado el: {new Date(purchase.createdAt).toLocaleDateString('es-AR')}
               </p>
 
-              <div className={`mt-4 px-3 py-1 rounded-full text-xs font-semibold ${
-                purchase.redeemedAt 
-                ? 'bg-zinc-500/20 text-zinc-400' 
-                : 'bg-green-500/20 text-green-400'
-              }`}>
+              <div className={`mt-4 px-3 py-1 rounded-full text-xs font-semibold ${purchase.redeemedAt
+                  ? 'bg-zinc-500/20 text-zinc-400'
+                  : 'bg-green-500/20 text-green-400'
+                }`}>
                 {purchase.redeemedAt ? `CANJEADO` : 'LISTO PARA USAR'}
               </div>
             </div>

@@ -39,6 +39,24 @@ export interface TicketTier {
   tableNumber: number | null;
   capacity: number | null;
   location: string | null;
+  tableCategoryId: string | null;
+  linkedRewardId?: string | null; // Nuevo campo
+  linkedReward?: any | null; // Usar tipo apropiado si está disponible
+}
+
+export interface UserReward {
+  id: string;
+  userId: string;
+  rewardId: string;
+  ticketId: string | null;
+  redeemedAt: string | null;
+  origin: string | null;
+  reward: {
+    id: string;
+    name: string;
+    description: string | null;
+    imageUrl: string | null;
+  };
 }
 
 export interface Ticket {
@@ -58,5 +76,6 @@ export interface Ticket {
   validatedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  isVipAccess: boolean; // Propiedad virtual calculada en el backend
+  isVipAccess: boolean;
+  userRewards: UserReward[]; // Nuevo campo
 }

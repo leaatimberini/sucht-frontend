@@ -52,10 +52,10 @@ function ResultDisplay({ result, onScanNext }: { result: ResultState; onScanNext
             <p className="text-zinc-300 mt-2 text-lg">{message}</p>
             {isSuccess && (
                 <div className="text-left bg-zinc-800 rounded-lg p-4 mt-6 space-y-3">
-                    {clientName && <p className="flex items-center"><UserIcon className="inline-block mr-2" size={16}/> {clientName}</p>}
-                    {type === 'ticket' && details.tier?.name && <p className="flex items-center"><Ticket className="inline-block mr-2" size={16}/> {details.tier.name}</p>}
-                    {(type === 'product' || type === 'reward') && details.productName && <p className="flex items-center"><Gift className="inline-block mr-2" size={16}/> {details.productName}</p>}
-                    {details.isVipAccess && <p className="font-bold text-amber-400 flex items-center"><Crown className="inline-block mr-2" size={16}/> Acceso VIP</p>}
+                    {clientName && <p className="flex items-center"><UserIcon className="inline-block mr-2" size={16} /> {clientName}</p>}
+                    {type === 'ticket' && details.tier?.name && <p className="flex items-center"><Ticket className="inline-block mr-2" size={16} /> {details.tier.name}</p>}
+                    {(type === 'product' || type === 'reward') && details.productName && <p className="flex items-center"><Gift className="inline-block mr-2" size={16} /> {details.productName}</p>}
+                    {details.isVipAccess && <p className="font-bold text-amber-400 flex items-center"><Crown className="inline-block mr-2" size={16} /> Acceso VIP</p>}
                     {details.specialInstructions && <p className="font-bold text-pink-400">{details.specialInstructions}</p>}
                 </div>
             )}
@@ -90,7 +90,7 @@ function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, o
             <h2 className="text-2xl font-bold text-white">Entrada Válida</h2>
             {ticket.isVipAccess && (
                 <div className="mt-4 font-bold text-lg p-3 bg-yellow-400 text-black rounded-md animate-pulse flex items-center justify-center">
-                    <Crown className="inline-block mr-2" size={20}/> ACCESO VIP
+                    <Crown className="inline-block mr-2" size={20} /> ACCESO VIP
                 </div>
             )}
             <p className="text-zinc-300 mt-4">{ticket.user?.name}</p>
@@ -99,7 +99,7 @@ function RedeemInterface({ ticket, onRedeem, onCancel }: { ticket: TicketType, o
             <p className="font-bold text-3xl text-pink-500 my-4">{remaining} / {ticket.quantity} disponibles</p>
             <div className="space-y-2">
                 <label htmlFor="redeem-quantity" className="block text-sm font-medium text-zinc-300">¿Cuántas personas ingresan?</label>
-                <input id="redeem-quantity" type="number" min="1" max={remaining} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="w-full bg-zinc-800 rounded-md p-2 text-white text-center text-xl"/>
+                <input id="redeem-quantity" type="number" min="1" max={remaining} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="w-full bg-zinc-800 rounded-md p-2 text-white text-center text-xl" />
             </div>
             <div className="mt-6 space-y-3">
                 <button onClick={handleRedeem} disabled={isRedeeming} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg disabled:opacity-50">
@@ -122,7 +122,17 @@ export function UniversalQrScanner() {
     useEffect(() => {
         if (!isScanning) return;
 
-        const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+        const scanner = new Html5QrcodeScanner(
+            'qr-reader',
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                videoConstraints: {
+                    facingMode: "environment"
+                }
+            },
+            false
+        );
 
         const handleScanSuccess = async (decodedText: string) => {
             setIsScanning(false);
@@ -138,7 +148,7 @@ export function UniversalQrScanner() {
                 if (!scanData.isValid) {
                     throw new Error(scanData.message);
                 }
-                
+
                 // --- FIX: LÓGICA DE ESCANEO UNIFICADA ---
                 if (scanData.type === 'ticket') {
                     // CUALQUIER ticket válido (individual o grupal) ahora pasa a la pantalla de canje.
@@ -163,7 +173,7 @@ export function UniversalQrScanner() {
             }
         };
 
-        scanner.render(handleScanSuccess, () => {});
+        scanner.render(handleScanSuccess, () => { });
 
         return () => {
             if (scanner && scanner.getState()) {
@@ -183,10 +193,10 @@ export function UniversalQrScanner() {
     }
 
     if (scannedTicket) {
-        return <RedeemInterface 
-            ticket={scannedTicket} 
+        return <RedeemInterface
+            ticket={scannedTicket}
             onCancel={resetScanner}
-            onRedeem={({ status, message }) => setResult({ status, message, details: scannedTicket, type: 'ticket' })} 
+            onRedeem={({ status, message }) => setResult({ status, message, details: scannedTicket, type: 'ticket' })}
         />;
     }
 

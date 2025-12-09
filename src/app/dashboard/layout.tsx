@@ -5,10 +5,10 @@ import { AuthCheck } from "@/components/auth-check";
 import { LogoutButton } from "@/components/logout-button";
 import { UserRole } from "@/types/user.types";
 import Link from "next/link";
-import { 
-  Calendar, LayoutGrid, Users, QrCode, UserSquare, BarChartHorizontal, 
-  Settings, Bell, UserX, Trophy, CreditCard, Gift, ShoppingBasket, 
-  PartyPopper, Send, Package, Ticket, Briefcase, Armchair // Icono para Mesas
+import {
+  Calendar, LayoutGrid, Users, QrCode, UserSquare, BarChartHorizontal,
+  Settings, Bell, UserX, Trophy, CreditCard, Gift, ShoppingBasket,
+  PartyPopper, Send, Package, Ticket, Briefcase, Armchair, Store
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePathname } from "next/navigation";
@@ -16,12 +16,11 @@ import { usePathname } from "next/navigation";
 const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
   const pathname = usePathname();
   const isActive = pathname.startsWith(href);
-  
+
   return (
     <li>
-      <Link href={href} className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-        isActive ? 'bg-pink-600/20 text-pink-400 font-semibold' : 'text-zinc-300 hover:bg-zinc-700'
-      }`}>
+      <Link href={href} className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${isActive ? 'bg-pink-600/20 text-pink-400 font-semibold' : 'text-zinc-300 hover:bg-zinc-700'
+        }`}>
         <Icon className="h-4 w-4" />
         <span>{children}</span>
       </Link>
@@ -36,21 +35,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isOrganizer = user?.roles.includes(UserRole.ORGANIZER);
 
   const getPanelTitle = () => {
-      if(isAdmin) return 'Panel de Administrador';
-      if(isOwner) return 'Panel de Dueño';
-      if(isOrganizer) return 'Panel de Organizador';
-      return 'Panel de Control';
+    if (isAdmin) return 'Panel de Administrador';
+    if (isOwner) return 'Panel de Dueño';
+    if (isOrganizer) return 'Panel de Organizador';
+    return 'Panel de Control';
   }
 
   return (
-    <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.ORGANIZER]}> 
+    <AuthCheck allowedRoles={[UserRole.ADMIN, UserRole.OWNER, UserRole.ORGANIZER]}>
       <div className="flex min-h-screen">
         <aside className="w-64 bg-zinc-900 p-4 border-r border-zinc-800 flex flex-col">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-white">SUCHT</h1>
             <p className="text-sm text-pink-500">{getPanelTitle()}</p>
           </div>
-          
+
           <nav className="flex-1">
             <ul className="space-y-2">
               {isAdmin && (
@@ -70,6 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <NavLink href="/dashboard/loyalty" icon={Trophy}>Fidelización</NavLink>
                   <NavLink href="/dashboard/rewards" icon={Gift}>Premios</NavLink>
                   <NavLink href="/dashboard/products" icon={ShoppingBasket}>Productos</NavLink>
+                  <NavLink href="/dashboard/partners" icon={Store}>Partners</NavLink>
                   <NavLink href="/dashboard/owner/invitations" icon={Send}>Invitaciones (Dueño)</NavLink>
                   <li className="border-t border-zinc-700 pt-2 mt-2">
                     <NavLink href="/verifier" icon={QrCode}>Verificar Acceso</NavLink>
@@ -95,14 +95,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <NavLink href="/dashboard/birthday" icon={PartyPopper}>Gestión Cumpleaños</NavLink>
                 </>
               )}
+
+              {user?.roles.includes(UserRole.PARTNER) && !isAdmin && (
+                <NavLink href="/partners" icon={Store}>Mi Negocio</NavLink>
+              )}
             </ul>
           </nav>
-          
+
           <div className="mt-auto">
             <LogoutButton />
           </div>
         </aside>
-        
+
         <main className="flex-1 p-8 bg-black">
           {children}
         </main>

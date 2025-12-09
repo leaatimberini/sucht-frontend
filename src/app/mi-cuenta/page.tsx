@@ -7,16 +7,18 @@ import { Ticket } from "@/types/ticket.types";
 import { User } from "@/types/user.types";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import { ShieldCheck } from "lucide-react"; 
+import { ShieldCheck } from "lucide-react";
 import { BirthdayBenefitCard } from "./components/BirthdayBenefitCard";
 import { SpecialTicketDisplay } from "./components/special-ticket-display";
 // FIX: Importamos el componente para el link de referido
 import { UsernamePrompt } from "./components/UsernamePrompt";
+import { MyCoupons } from "./components/MyCoupons";
+import { PartnerPromoBanner } from "@/components/partners/PartnerPromoBanner";
 
 // --- TIPOS Y COMPONENTES INTERNOS ---
 
-export type UserProfile = User & { 
-  isPushSubscribed?: boolean; 
+export type UserProfile = User & {
+  isPushSubscribed?: boolean;
   points?: number;
   isBirthdayWeek?: boolean;
   loyalty?: {
@@ -90,7 +92,7 @@ export default function MiCuentaPage() {
   const specialTickets = tickets.filter(
     t => (t.origin === 'OWNER_INVITATION' || t.tier.productType === 'vip_table') && (t.status === 'valid' || t.status === 'partially_used')
   );
-  
+
   // Filtramos las entradas "normales" para no mostrarlas junto a las especiales.
   // Podrías tener otra sección para estas si quisieras.
   const regularTickets = tickets.filter(t => !specialTickets.some(st => st.id === t.id));
@@ -108,8 +110,13 @@ export default function MiCuentaPage() {
 
           <LoyaltyProgressBar user={userData} />
 
+
           {/* FIX: Renderizamos el componente del link de referido aquí */}
           <UsernamePrompt />
+
+          <PartnerPromoBanner />
+
+          <MyCoupons />
 
           {specialTickets.length > 0 && (
             <div className="space-y-6 mb-8">
@@ -127,10 +134,10 @@ export default function MiCuentaPage() {
           )}
 
           {/* Aquí podrías añadir la lista de entradas regulares si lo deseas */}
-          
+
         </>
       ) : (
-          <p className="text-zinc-500 text-center py-10">No se pudo cargar tu perfil.</p>
+        <p className="text-zinc-500 text-center py-10">No se pudo cargar tu perfil.</p>
       )}
     </AuthCheck>
   );

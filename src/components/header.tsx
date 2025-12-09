@@ -30,17 +30,18 @@ export function Header() {
   const isVerifier = user?.roles.includes(UserRole.VERIFIER);
   const isBarra = user?.roles.includes(UserRole.BARRA);
   const isOrganizer = user?.roles.includes(UserRole.ORGANIZER);
+  const isPartner = user?.roles.includes(UserRole.PARTNER);
 
   const toggleUserMenu = () => {
     setShowUserMenu(!showUserMenu);
     if (showNotifications) setShowNotifications(false);
   };
-  
+
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
     if (showUserMenu) setShowUserMenu(false);
   };
-  
+
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
@@ -53,7 +54,8 @@ export function Header() {
           <Link href="/" className="text-3xl font-bold text-white">SUCHT</Link>
           <nav className="relative flex items-center space-x-4 md:space-x-6 text-sm font-medium text-zinc-300">
             <Link href="/eventos" className="hover:text-white transition-colors">Eventos</Link>
-            
+            <Link href="/benefits" className="hover:text-white transition-colors bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent font-bold">Club de Beneficios</Link>
+
             {/* --- LÓGICA DE VISUALIZACIÓN CORREGIDA --- */}
             {hasMounted && user ? (
               // 1. Si el componente está montado y HAY usuario, muestra el panel de usuario.
@@ -69,13 +71,13 @@ export function Header() {
                   </button>
                 </div>
                 <Link href="/cart" className="relative hover:text-white transition-colors">
-                   <ShoppingBasket className="h-6 w-6" />
-                   {totalItemsInCart > 0 && (
-                     <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                       {totalItemsInCart}
-                     </span>
-                   )}
-                 </Link>
+                  <ShoppingBasket className="h-6 w-6" />
+                  {totalItemsInCart > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                      {totalItemsInCart}
+                    </span>
+                  )}
+                </Link>
                 <div className="relative">
                   <button onClick={toggleUserMenu} className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 py-2 px-4 rounded-full transition-colors">
                     <User className="h-4 w-4" />
@@ -84,11 +86,12 @@ export function Header() {
                   </button>
                   {showUserMenu && (
                     <div className="absolute top-16 right-0 bg-zinc-900 shadow-lg rounded-lg text-white w-60 z-50 border border-zinc-700">
-                      <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16}/> Mi Panel</Link>
-                      <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><ShoppingBasket size={16}/> Tienda</Link>
-                      {isAdmin && ( <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Admin</Link> )}
-                      {isOwner && !isAdmin && ( <Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Dueño</Link> )}
-                      {isOrganizer && !isAdmin && !isOwner && ( <Link href="/dashboard/organizer" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><Briefcase size={16} /> Panel Organizador</Link> )}
+                      <Link href="/mi-cuenta" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Mi Panel</Link>
+                      <Link href="/store" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><ShoppingBasket size={16} /> Tienda</Link>
+                      {isAdmin && (<Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Admin</Link>)}
+                      {isOwner && !isAdmin && (<Link href="/dashboard/owner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Dueño</Link>)}
+                      {isOrganizer && !isAdmin && !isOwner && (<Link href="/dashboard/organizer" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><Briefcase size={16} /> Panel Organizador</Link>)}
+                      {isPartner && !isAdmin && (<Link href="/partners" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><LayoutGrid size={16} /> Panel Partner</Link>)}
                       {isRrpp && (<Link href="/rrpp" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><BarChartHorizontal size={16} /> Panel RRPP</Link>)}
                       {(isVerifier || isAdmin) && (<Link href="/verifier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><QrCode size={16} /> Verificar Entradas</Link>)}
                       {(isBarra || isAdmin) && (<Link href="/bar-scanner" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800"><GlassWater size={16} /> Validar Premios</Link>)}
@@ -111,10 +114,10 @@ export function Header() {
           </nav>
         </div>
       </header>
-      
-      <NotificationsModal 
-        isOpen={showNotifications} 
-        onClose={() => setShowNotifications(false)} 
+
+      <NotificationsModal
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
     </>
   );

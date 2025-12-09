@@ -79,7 +79,7 @@ export default function MisPremiosPage() {
                 <p className="text-sm text-zinc-400 mt-1">{reward.description}</p>
                 <p className="text-sm text-zinc-500 mt-2">Stock: {reward.stock ?? 'Ilimitado'}</p>
               </div>
-              <button 
+              <button
                 onClick={() => handleRedeem(reward.id)}
                 disabled={!userData?.points || userData.points < reward.pointsCost || reward.stock === 0}
                 className="w-full mt-4 bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -94,22 +94,22 @@ export default function MisPremiosPage() {
         <hr className="border-zinc-800" />
 
         <div>
-            <h2 className="text-3xl font-bold text-white mb-4">Mis Premios Listos para Usar</h2>
-            {userRewards.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {userRewards.map(ur => (
-                  <div key={ur.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center text-center">
-                    <div className="bg-white p-4 rounded-lg"><QRCodeSVG value={ur.id} size={160} /></div>
-                    <h3 className="text-2xl font-bold text-white mt-6">{ur.reward.name}</h3>
-                    <p className="text-zinc-400 text-sm mt-2">{ur.reward.description}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 bg-zinc-900 border border-zinc-800 rounded-lg">
-                <p className="text-zinc-400">Aún no has canjeado ningún premio.</p>
-              </div>
-            )}
+          <h2 className="text-3xl font-bold text-white mb-4">Mis Premios Listos para Usar</h2>
+          {userRewards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {userRewards.map(ur => (
+                <div key={ur.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center text-center">
+                  <div className="bg-white p-4 rounded-lg"><QRCodeSVG value={ur.id} size={160} fgColor="#000000" bgColor="#ffffff" /></div>
+                  <h3 className="text-2xl font-bold text-white mt-6">{ur.reward.name}</h3>
+                  <p className="text-zinc-400 text-sm mt-2">{ur.reward.description}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-zinc-900 border border-zinc-800 rounded-lg">
+              <p className="text-zinc-400">Aún no has canjeado ningún premio.</p>
+            </div>
+          )}
         </div>
       </div>
     </AuthCheck>
