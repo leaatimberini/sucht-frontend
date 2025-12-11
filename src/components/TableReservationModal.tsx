@@ -46,7 +46,7 @@ export function TableReservationModal({ eventId, onClose }: { eventId: string; o
             setIsLoading(true);
             try {
                 const [tablesRes, tiersRes] = await Promise.all([
-                    api.get(`/tables/event/${eventId}`),
+                    api.get(`/tables/public/event/${eventId}`),
                     api.get(`/events/${eventId}/ticket-tiers/vip-tables`)
                 ]);
                 setTables(tablesRes.data);

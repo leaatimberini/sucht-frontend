@@ -3,73 +3,61 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Loader2, Ticket, MapPin, Instagram, Globe } from 'lucide-react';
-
-interface Partner {
-    id: string;
-    name: string;
-    logoUrl?: string;
-    address?: string;
-    instagramUrl?: string;
-    websiteUrl?: string;
-}
-
-interface Benefit {
-    id: string;
-    title: string;
-    description?: string;
-    conditions?: string;
-    imageUrl?: string;
-    partner: Partner;
-}
+import { Loader2, ArrowLeft, ChevronRight, Store, Search } from 'lucide-react';
+import { PartnerCard } from '@/components/partners/PartnerCard';
+import { useRouter } from 'next/navigation';
 
 export default function BenefitsPage() {
-    const [benefits, setBenefits] = useState<Benefit[]>([]);
+    const router = useRouter();
+    const [categories, setCategories] = useState<string[]>([]);
+    const [partners, setPartners] = useState<any[]>([]);
+
+    // States: 'CATEGORIES' | 'PARTNERS'
+    const [view, setView] = useState<'CATEGORIES' | 'PARTNERS'>('CATEGORIES');
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [claimingId, setClaimingId] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchBenefits();
+        fetchInitialData();
     }, []);
 
-    const fetchBenefits = async () => {
+    const fetchInitialData = async () => {
         try {
-            const { data } = await api.get('/benefits');
-            setBenefits(data);
+            setIsLoading(true);
+            const { data } = await api.get('/partners/categories');
+            setCategories(data);
         } catch (error) {
             console.error(error);
-            toast.error('Error al cargar beneficios.');
+            toast.error('Error al cargar rubros.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleClaim = async (id: string, benefitTitle: string) => {
-        setClaimingId(id);
+    const handleCategorySelect = async (category: string) => {
+        setSelectedCategory(category);
+        setView('PARTNERS');
+        setIsLoading(true);
         try {
-            await api.post(`/benefits/${id}/claim`);
-            toast.success('¡Cupón solicitado! Lo encontrarás en "Mis Cupones"');
-
-            // Meta Pixel: Track Lead
-            if (typeof window !== 'undefined' && (window as any).fbq) {
-                (window as any).fbq('track', 'Lead', {
-                    content_name: benefitTitle,
-                    content_category: 'Benefits Club'
-                });
-            }
-            // Redirect or Open Modal? For now just toast.
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'No se pudo solicitar el cupón.');
+            const { data } = await api.get(`/partners?category=${encodeURIComponent(category)}`);
+            setPartners(data);
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al cargar partners.');
         } finally {
-            setClaimingId(null);
+            setIsLoading(false);
         }
     };
 
-    if (isLoading) {
+    const handleBack = () => {
+        setView('CATEGORIES');
+        setSelectedCategory(null);
+        setPartners([]);
+    };
+
+    if (isLoading && view === 'CATEGORIES') { // Only full screen load for initial
         return (
-            <div className="flex justify-center items-center min-h-screen pt-20">
+            <div className="flex justify-center items-center min-h-screen pt-20 bg-zinc-950">
                 <Loader2 className="w-10 h-10 animate-spin text-pink-500" />
             </div>
         );
@@ -77,76 +65,83 @@ export default function BenefitsPage() {
 
     return (
         <div className="min-h-screen bg-zinc-950 px-4 py-8 max-w-7xl mx-auto">
-            <h1 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600 mb-2">
-                Club de Beneficios
-            </h1>
-            <p className="text-zinc-400 mb-10 text-lg">
-                Descuentos y regalos exclusivos de nuestros partners.
-            </p>
+            <header className="mb-10">
+                <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 mb-4 animate-gradient-x">
+                    Club de Beneficios
+                </h1>
+                <p className="text-zinc-400 text-lg md:text-xl font-light">
+                    Explora descuentos exclusivos en los mejores lugares.
+                </p>
+            </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {benefits.map((benefit) => (
-                    <div key={benefit.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col hover:border-pink-500/50 transition-colors">
-                        <div className="relative h-48 w-full bg-zinc-800">
-                            {(benefit.imageUrl || benefit.partner.logoUrl) ? (
-                                <Image
-                                    src={benefit.imageUrl || benefit.partner.logoUrl || '/placeholder.png'}
-                                    alt={benefit.title}
-                                    fill
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-zinc-600">
-                                    <Ticket className="w-12 h-12" />
-                                </div>
-                            )}
-                            <Link href={`/partners/${benefit.partner.id}`} className="absolute top-4 left-4 bg-black/70 backdrop-blur px-3 py-1 rounded-full flex items-center gap-2 hover:bg-black/90 transition-colors z-10">
-                                {benefit.partner.logoUrl && (
-                                    <div className="relative w-5 h-5 rounded-full overflow-hidden">
-                                        <Image src={benefit.partner.logoUrl} alt={benefit.partner.name} fill className="object-cover" />
-                                    </div>
-                                )}
-                                <span className="text-xs font-medium text-white">{benefit.partner.name}</span>
-                            </Link>
-                        </div>
+            {view === 'PARTNERS' && (
+                <button
+                    onClick={handleBack}
+                    className="flex items-center gap-2 text-zinc-400 hover:text-white mb-6 group transition-colors"
+                >
+                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <span>Volver a Categorías</span>
+                </button>
+            )}
 
-                        <div className="p-5 flex flex-col flex-1">
-                            <h3 className="text-xl font-bold text-white mb-2">{benefit.title}</h3>
-                            {benefit.description && (
-                                <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{benefit.description}</p>
-                            )}
-
-                            <div className="mt-auto pt-4 border-t border-zinc-800 flex items-center justify-between">
-                                <div className="flex gap-3">
-                                    {benefit.partner.instagramUrl && (
-                                        <a href={benefit.partner.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-pink-500">
-                                            <Instagram className="w-5 h-5" />
-                                        </a>
-                                    )}
-                                    {benefit.partner.websiteUrl && (
-                                        <a href={benefit.partner.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-blue-500">
-                                            <Globe className="w-5 h-5" />
-                                        </a>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => handleClaim(benefit.id, benefit.title)}
-                                    disabled={!!claimingId}
-                                    className="bg-zinc-100 hover:bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                                >
-                                    {claimingId === benefit.id ? 'Solicitando...' : 'Quiero mi cupón'}
-                                </button>
+            {view === 'CATEGORIES' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {categories.map((cat, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => handleCategorySelect(cat)}
+                            className="group relative h-32 md:h-40 rounded-2xl overflow-hidden border border-zinc-800 hover:border-pink-500/50 transition-all active:scale-95 text-left p-6 flex flex-col justify-end bg-gradient-to-br from-zinc-900 to-black hover:from-zinc-900 hover:to-zinc-900"
+                        >
+                            <div className="absolute top-4 right-4 bg-zinc-800/50 p-2 rounded-full group-hover:bg-pink-500/20 group-hover:text-pink-400 transition-colors">
+                                <ChevronRight className="w-5 h-5" />
                             </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
 
-            {benefits.length === 0 && (
-                <div className="text-center py-20 text-zinc-500">
-                    <p>Aun no hay beneficios disponibles. ¡Vuelve pronto!</p>
+                            <h3 className="text-xl md:text-2xl font-bold text-white group-hover:text-pink-500 transition-colors capitalize">
+                                {cat}
+                            </h3>
+                            <span className="text-xs text-zinc-500 font-medium uppercase tracking-wider group-hover:text-zinc-400">Ver Partners</span>
+                        </button>
+                    ))}
+
+                    {categories.length === 0 && !isLoading && (
+                        <div className="col-span-full py-20 text-center">
+                            <Store className="w-16 h-16 text-zinc-800 mx-auto mb-4" />
+                            <p className="text-zinc-500">No hay rubros disponibles por el momento.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {view === 'PARTNERS' && (
+                <div>
+                    <div className="flex items-center gap-3 mb-8">
+                        <h2 className="text-2xl font-bold text-white capitalize">
+                            {selectedCategory}
+                        </h2>
+                        <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-1 rounded-full">{partners.length}</span>
+                    </div>
+
+                    {isLoading ? (
+                        <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {partners.map(partner => (
+                                <div key={partner.id} className="h-[400px]">
+                                    <PartnerCard
+                                        partner={partner}
+                                        onClick={() => router.push(`/partners/${partner.id}`)}
+                                    />
+                                </div>
+                            ))}
+                            {partners.length === 0 && (
+                                <p className="text-zinc-500 col-span-full">No hay partners en esta categoría.</p>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     );
 }
+
+

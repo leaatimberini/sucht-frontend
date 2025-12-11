@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { PlusCircle, Edit, Trash2, Loader, Gift, History, Star } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/date-utils';
 
 // --- TIPOS DE DATOS ---
 interface Reward {
@@ -80,8 +80,8 @@ export default function RewardsManagementPage() {
   const handleSetBirthdayReward = async (rewardId: string) => {
     try {
       // Nos aseguramos de enviar el payload correcto al backend
-      await api.patch('/configuration', { 
-        birthday_reward_id: rewardId 
+      await api.patch('/configuration', {
+        birthday_reward_id: rewardId
       });
       toast.success('Premio de cumpleaños actualizado.');
       fetchData();
@@ -211,7 +211,7 @@ export default function RewardsManagementPage() {
                     <p className="text-sm text-zinc-500">{item.user.email}</p>
                   </td>
                   <td className="p-4 text-zinc-300">{item.reward.name}</td>
-                  <td className="p-4 text-zinc-400">{format(new Date(item.redeemedAt), 'dd/MM/yyyy HH:mm')} hs</td>
+                  <td className="p-4 text-zinc-400">{formatDate(item.redeemedAt)} hs</td>
                 </tr>
               ))}
               {history.length === 0 && !isLoading && (

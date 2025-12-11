@@ -4,8 +4,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { ProductPurchase } from '@/types/product-purchase.types';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { formatDate } from '@/lib/date-utils';
 
 export function RedeemedProductsHistory() {
   const [history, setHistory] = useState<ProductPurchase[]>([]);
@@ -50,7 +49,7 @@ export function RedeemedProductsHistory() {
               <p className="text-lg font-semibold text-white">{item.product.name}</p>
               <p className="text-zinc-400 text-sm">Por: {item.user.name}</p>
               <p className="text-zinc-500 text-xs">
-                Fecha de canje: {item.redeemedAt ? format(new Date(item.redeemedAt), "dd 'de' MMMM, HH:mm") : 'N/A'}
+                Fecha de canje: {item.redeemedAt ? formatDate(item.redeemedAt, "dd 'de' MMMM, HH:mm") : 'N/A'}
               </p>
             </div>
           </li>

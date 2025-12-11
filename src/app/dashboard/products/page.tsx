@@ -6,11 +6,11 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { PlusCircle, Edit, Trash2, Loader, ShoppingBasket, Gift, History, Check, X, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader, ShoppingBasket, Gift, History, Check, X, Loader2, Plus, Search, Pencil, Package, DollarSign, Filter } from 'lucide-react';
 import { Event } from '@/types/event.types';
 import { AuthCheck } from '@/components/auth-check';
 import { UserRole } from '@/types/user.types';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/date-utils';
 
 // --- TIPOS DE DATOS ---
 interface Product {
@@ -159,7 +159,7 @@ function PurchaseHistory() {
               <tr><td colSpan={6} className="text-center p-6 text-zinc-400"><Loader2 className="animate-spin mx-auto" /></td></tr>
             ) : history.map((purchase) => (
               <tr key={purchase.id} className="border-b border-zinc-800 last:border-b-0">
-                <td className="p-4 text-zinc-400 text-sm">{format(new Date(purchase.createdAt), 'dd/MM/yy HH:mm')}hs</td>
+                <td className="p-4 text-zinc-400 text-sm">{formatDate(purchase.createdAt, 'dd/MM/yy HH:mm')}hs</td>
                 <td className="p-4"><p className="font-semibold text-zinc-200">{purchase.user.name}</p><p className="text-sm text-zinc-500">{purchase.user.email}</p></td>
                 <td className="p-4 font-semibold text-white">{purchase.product.name} (x{purchase.quantity})</td>
                 <td className="p-4 text-zinc-300">{purchase.event.title}</td>

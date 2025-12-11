@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { Loader2, Instagram, Globe, Ticket, MapPin, MessageCircle } from 'lucide-react';
@@ -16,13 +16,7 @@ export default function PartnerPublicProfile() {
     const [isLoading, setIsLoading] = useState(true);
     const [claimingId, setClaimingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (id) {
-            fetchData();
-        }
-    }, [id]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const [partnerRes, benefitsRes] = await Promise.all([
                 api.get(`/partners/${id}`),
@@ -39,7 +33,13 @@ export default function PartnerPublicProfile() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        if (id) {
+            fetchData();
+        }
+    }, [id, fetchData]);
 
     const handleClaim = async (benefitId: string, benefitTitle: string) => {
         setClaimingId(benefitId);

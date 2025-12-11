@@ -3,18 +3,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { type Event } from '@/types/event.types';
 import { Calendar, MapPin } from 'lucide-react';
+import { formatDate } from '@/lib/date-utils';
 
 interface EventCardProps {
   event: Event;
 }
 
 export function EventCard({ event }: EventCardProps) {
-  const eventDate = new Date(event.startDate);
-  const formattedDate = eventDate.toLocaleDateString('es-AR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const formattedDate = formatDate(event.startDate, "EEEE d 'de' MMMM");
 
   return (
     <Link href={`/eventos/${event.id}`} className="block group">

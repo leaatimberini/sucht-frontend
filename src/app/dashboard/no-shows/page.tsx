@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/date-utils';
 import { User, Calendar, AlertCircle, Ticket as TicketIcon } from "lucide-react";
 import { Loader2 } from 'lucide-react';
 import { Ticket } from '@/types/ticket.types';
 
-interface NoShowTicket extends Ticket {}
+interface NoShowTicket extends Ticket { }
 
 export default function NoShowsPage() {
   const [noShows, setNoShows] = useState<NoShowTicket[]>([]);
@@ -39,7 +40,7 @@ export default function NoShowsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center p-8"><Loader2 className="animate-spin text-pink-500"/></div>
+        <div className="flex justify-center p-8"><Loader2 className="animate-spin text-pink-500" /></div>
       ) : noShows.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center bg-zinc-900 border border-zinc-800 rounded-lg p-12">
           <AlertCircle className="h-12 w-12 text-zinc-600 mb-4" />
@@ -53,7 +54,7 @@ export default function NoShowsPage() {
               <tr>
                 <th className="p-4 text-sm font-semibold text-white flex items-center gap-2"><User size={16} /> Cliente</th>
                 <th className="p-4 text-sm font-semibold text-white flex items-center gap-2"><Calendar size={16} /> Evento</th>
-                <th className="p-4 text-sm font-semibold text-white flex items-center gap-2"><TicketIcon size={16}/> Tipo de Entrada</th>
+                <th className="p-4 text-sm font-semibold text-white flex items-center gap-2"><TicketIcon size={16} /> Tipo de Entrada</th>
                 <th className="p-4 text-sm font-semibold text-white">Finalizó el</th>
               </tr>
             </thead>
@@ -67,7 +68,8 @@ export default function NoShowsPage() {
                   </td>
                   <td className="p-4 text-zinc-300">{ticket.event?.title || 'Evento no disponible'}</td>
                   <td className="p-4 text-zinc-300">{ticket.tier?.name || 'Tipo no disponible'}</td>
-                  <td className="p-4 text-zinc-400">{ticket.event ? format(new Date(ticket.event.endDate), 'dd/MM/yyyy') : 'N/A'}</td>
+
+                  <td className="p-4 text-zinc-400">{ticket.event ? formatDate(ticket.event.endDate, 'dd/MM/yyyy') : 'N/A'}</td>
                 </tr>
               ))}
             </tbody>

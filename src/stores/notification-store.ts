@@ -19,9 +19,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await api.get('/notifications/my-notifications');
-      set({ 
-        notifications: response.data.notifications, 
-        unreadCount: response.data.unreadCount 
+      set({
+        notifications: response.data.notifications,
+        unreadCount: response.data.unreadCount
       });
     } catch (error) {
       console.error("Failed to fetch notifications", error);
@@ -31,12 +31,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
   markAsRead: (ids) => {
     set(state => ({
-      notifications: state.notifications.map(n => 
+      notifications: state.notifications.map(n =>
         ids.includes(n.id) ? { ...n, isRead: true } : n
       ),
       unreadCount: 0
     }));
-    api.post('/notifications/mark-as-read', { notificationIds: ids });
+    api.patch('/notifications/mark-as-read', { notificationIds: ids });
   },
   // --- LÓGICA AÑADIDA ---
   removeNotification: (id) => {

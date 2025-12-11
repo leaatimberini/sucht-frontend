@@ -89,7 +89,7 @@ export function TableMapEditor({ eventId, onDataChange }: { eventId: string; onD
     if (!eventId) return;
     setIsLoading(true);
     try {
-      const response = await api.get(`/tables/event/${eventId}`);
+      const response = await api.get(`/tables/public/event/${eventId}`);
       setTables(response.data);
     } catch {
       toast.error("No se pudieron cargar las mesas.");

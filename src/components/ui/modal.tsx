@@ -24,7 +24,7 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 rounded-lg shadow-xl w-full max-w-lg p-6 border border-zinc-800 relative"
+        className="bg-zinc-900 rounded-lg shadow-xl w-full max-w-lg p-6 border border-zinc-800 relative max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()} // Evita que el modal se cierre al hacer clic dentro de él
       >
         <div className="flex justify-between items-center border-b border-zinc-700 pb-4 mb-4">

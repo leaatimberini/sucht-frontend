@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { Ticket } from '@/types/ticket.types';
-import { formatInTimeZone } from 'date-fns-tz';
+import { formatDate } from '@/lib/date-utils';
 
 export function ScanHistory({ eventId }: { eventId: string }) {
   const [history, setHistory] = useState<Ticket[]>([]);
@@ -28,13 +28,13 @@ export function ScanHistory({ eventId }: { eventId: string }) {
 
     fetchHistory();
     // Refresca el historial automáticamente cada 15 segundos
-    const interval = setInterval(fetchHistory, 15000); 
+    const interval = setInterval(fetchHistory, 15000);
     return () => clearInterval(interval);
   }, [eventId]);
 
   const formatTime = (dateString: string | null | undefined) => {
     if (!dateString) return '';
-    return formatInTimeZone(dateString, 'America/Argentina/Buenos_ Aires', 'HH:mm:ss');
+    return formatDate(dateString, 'HH:mm:ss');
   };
 
   if (isLoading) return <p className="text-zinc-400 text-center">Cargando historial...</p>;
@@ -55,11 +55,11 @@ export function ScanHistory({ eventId }: { eventId: string }) {
               )}
             </div>
             <div className="text-right">
-                {/* Añadimos el contador de canje para más detalle */}
-                <p className="font-mono text-lg font-bold text-pink-400">{ticket.redeemedCount}/{ticket.quantity}</p>
-                <p className="text-sm text-zinc-500">
-                    {formatTime(ticket.validatedAt)}hs
-                </p>
+              {/* Añadimos el contador de canje para más detalle */}
+              <p className="font-mono text-lg font-bold text-pink-400">{ticket.redeemedCount}/{ticket.quantity}</p>
+              <p className="text-sm text-zinc-500">
+                {formatTime(ticket.validatedAt)}hs
+              </p>
             </div>
           </li>
         )) : <p className="p-6 text-center text-zinc-500">Aún no se han escaneado entradas.</p>}

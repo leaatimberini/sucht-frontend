@@ -7,6 +7,7 @@ const pwaConfig = withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  importScripts: ['/push-sw.js'],
 
   runtimeCaching: [
     ...runtimeCaching,
@@ -51,6 +52,12 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
 };
 

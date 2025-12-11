@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Modal } from '@/components/ui/modal';
 import api from '@/lib/axios';
@@ -13,6 +13,15 @@ interface PartnerApplicationModalProps {
 export function PartnerApplicationModal({ isOpen, onClose }: PartnerApplicationModalProps) {
     const { register, handleSubmit, reset } = useForm();
     const [isLoading, setIsLoading] = useState(false);
+    const [categories, setCategories] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (isOpen) {
+            api.get('/partners/categories')
+                .then(res => setCategories(res.data))
+                .catch(err => console.error("Failed to fetch categories", err));
+        }
+    }, [isOpen]);
 
     const onSubmit = async (data: any) => {
         setIsLoading(true);
@@ -20,6 +29,7 @@ export function PartnerApplicationModal({ isOpen, onClose }: PartnerApplicationM
             const formData = new FormData();
             formData.append('name', data.name);
             formData.append('description', data.description);
+            if (data.category) formData.append('category', data.category);
             if (data.instagramUrl) formData.append('instagramUrl', data.instagramUrl);
             if (data.websiteUrl) formData.append('websiteUrl', data.websiteUrl);
             if (data.address) formData.append('address', data.address);
@@ -54,6 +64,21 @@ export function PartnerApplicationModal({ isOpen, onClose }: PartnerApplicationM
                 <div>
                     <label className="block text-sm font-medium mb-1">Nombre del Negocio/Emprendimiento</label>
                     <input {...register('name', { required: true })} className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white" placeholder="Ej: Burger King" />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Rubro / Categoría</label>
+                    <input
+                        list="categories-list"
+                        {...register('category', { required: true })}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white"
+                        placeholder="Ej: Gastronomía, Indumentaria..."
+                    />
+                    <datalist id="categories-list">
+                        {categories.map((c) => (
+                            <option key={c} value={c} />
+                        ))}
+                    </datalist>
                 </div>
 
                 <div>

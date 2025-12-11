@@ -6,7 +6,7 @@ import { ImageOff, Pencil } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DeleteEventButton } from './delete-event-button';
-import { formatInTimeZone } from 'date-fns-tz'; // 👈 Importamos la función
+import { formatDate } from '@/lib/date-utils';
 
 export function EventList({
   events,
@@ -28,12 +28,7 @@ export function EventList({
   // Función para formatear la fecha del evento en la zona horaria de Buenos Aires
   const formatEventDate = (dateString: string) => {
     if (!dateString) return '';
-    // Usamos formatInTimeZone para convertir y formatear la fecha en un solo paso
-    return formatInTimeZone(
-      dateString,
-      'America/Argentina/Buenos_Aires',
-      'dd/MM/yyyy HH:mm'
-    );
+    return formatDate(dateString, 'dd/MM/yyyy HH:mm');
   };
 
   return (

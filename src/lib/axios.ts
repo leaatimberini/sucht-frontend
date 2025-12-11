@@ -3,9 +3,11 @@
 import { useAuthStore } from '@/stores/auth-store';
 import axios from 'axios';
 
+const isServer = typeof window === 'undefined';
+const baseURL = isServer ? 'http://localhost:5000/api' : process.env.NEXT_PUBLIC_API_URL;
+
 const api = axios.create({
-  // CORRECCIÓN: Usamos directamente la variable de entorno, que ya debe contener la ruta completa a la API.
-  baseURL: process.env.NEXT_PUBLIC_API_URL, 
+  baseURL,
 });
 
 api.interceptors.request.use(
@@ -18,6 +20,17 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    // Si la API devuelve 401 (Unauthorized), forzamos logout
+    if (error.response && error.response.status === 401) {
+      const { logout } = useAuthStore.getState();
+      if (typeof window !== 'undefined') {
+        // Evitamos loop infinito si ya estamos en login
+        if (!window.location.pathname.startsWith('/login')) {
+          logout();
+          window.location.href = '/login';
+        }
+      }
+    }
     return Promise.reject(error);
   },
 );

@@ -30,7 +30,7 @@ export function InteractiveTableMap({ eventId }: { eventId: string }) {
             if (!eventId) return;
             setIsLoading(true);
             try {
-                const response = await api.get(`/tables/event/${eventId}`);
+                const response = await api.get(`/tables/public/event/${eventId}`);
                 setTables(response.data);
             } catch (error) {
                 console.error("Failed to fetch tables for event", error);

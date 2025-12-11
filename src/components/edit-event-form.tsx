@@ -6,19 +6,19 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 import { type Event } from '@/types/event.types';
-import { format } from 'date-fns';
+import { formatISOToBuenosAiresInput, parseBuenosAiresToISO } from '@/lib/date-utils';
 import { useState } from 'react';
 import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 
 const editEventSchema = z.object({
   title: z.string().min(3, { message: 'El título es requerido.' }),
   description: z.string().optional(),
   location: z.string().min(3, { message: 'La ubicación es requerida.' }),
-  startDate: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
+  startDate: z.string().refine((val) => val, {
     message: 'Fecha de inicio inválida.',
   }),
-  endDate: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
+  endDate: z.string().refine((val) => val, {
     message: 'Fecha de fin inválida.',
   }),
   publishAt: z.string().optional(),
@@ -27,20 +27,13 @@ const editEventSchema = z.object({
 
 type EditEventFormInputs = z.infer<typeof editEventSchema>;
 
-const safeFormat = (date: any, formatString: string) => {
-    try {
-        // Usamos new Date() que es la forma correcta de parsear la fecha
-        return format(new Date(date), formatString);
-    } catch {
-        return '';
-    }
-};
-
 export function EditEventForm({ event, onClose, onEventUpdated }: { event: Event; onClose: () => void; onEventUpdated: () => void; }) {
   const [preview, setPreview] = useState<string | null>(event.flyerImageUrl);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditEventFormInputs>({
     resolver: zodResolver(editEventSchema),
@@ -48,15 +41,37 @@ export function EditEventForm({ event, onClose, onEventUpdated }: { event: Event
       title: event.title,
       description: event.description || '',
       location: event.location,
-      startDate: safeFormat(event.startDate, "yyyy-MM-dd'T'HH:mm"),
-      endDate: safeFormat(event.endDate, "yyyy-MM-dd'T'HH:mm"),
-      publishAt: event.publishAt ? safeFormat(event.publishAt, "yyyy-MM-dd'T'HH:mm") : '',
+      startDate: formatISOToBuenosAiresInput(event.startDate),
+      endDate: formatISOToBuenosAiresInput(event.endDate),
+      publishAt: event.publishAt ? formatISOToBuenosAiresInput(event.publishAt) : '',
     },
   });
+
+  const handleGenerateDescription = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const response = await api.post(`/events/${event.id}/generate-description`, {
+        context: ''
+      });
+      setValue('description', response.data.description);
+      toast.success('✨ Descripción generada con IA');
+    } catch (error) {
+      toast.error('Error al generar descripción');
+      console.error('AI generation error:', error);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('El archivo es demasiado grande. Máximo 10MB.');
+        e.target.value = ''; // Reset input
+        setPreview(event.flyerImageUrl);
+        return;
+      }
       setPreview(URL.createObjectURL(file));
     } else {
       setPreview(event.flyerImageUrl);
@@ -67,18 +82,18 @@ export function EditEventForm({ event, onClose, onEventUpdated }: { event: Event
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('location', data.location);
-    formData.append('startDate', new Date(data.startDate).toISOString());
-    formData.append('endDate', new Date(data.endDate).toISOString());
+    formData.append('startDate', parseBuenosAiresToISO(data.startDate));
+    formData.append('endDate', parseBuenosAiresToISO(data.endDate));
 
     if (data.description) formData.append('description', data.description);
-    if (data.publishAt) formData.append('publishAt', new Date(data.publishAt).toISOString());
+    if (data.publishAt) formData.append('publishAt', parseBuenosAiresToISO(data.publishAt));
     if (data.flyerImage && data.flyerImage[0]) {
       formData.append('flyerImage', data.flyerImage[0]);
     }
-    
+
     try {
       await api.patch(`/events/${event.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('¡Evento actualizado exitosamente!');
       onEventUpdated();
@@ -100,16 +115,42 @@ export function EditEventForm({ event, onClose, onEventUpdated }: { event: Event
         />
         {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
       </div>
-      
+
       <div>
-        <label htmlFor="edit-description" className="block text-sm font-medium text-zinc-300 mb-1">Descripción</label>
-        <textarea
-          id="edit-description"
-          {...register('description')}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
-        />
+        <label htmlFor="edit-description" className="block text-sm font-medium text-zinc-300 mb-1">
+          Descripción
+        </label>
+        <div className="relative">
+          <textarea
+            id="edit-description"
+            {...register('description')}
+            rows={5}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 pr-32 text-zinc-50 resize-none"
+          />
+          <button
+            type="button"
+            onClick={handleGenerateDescription}
+            disabled={isGeneratingAI}
+            className="absolute top-2 right-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white text-xs font-bold py-1.5 px-3 rounded-md flex items-center space-x-1 transition-colors"
+          >
+            {isGeneratingAI ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Generando...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3 w-3" />
+                <span>Generar con IA</span>
+              </>
+            )}
+          </button>
+        </div>
+        <p className="text-xs text-zinc-500 mt-1">
+          💡 Usa el botón de IA para generar una descripción atractiva automáticamente
+        </p>
       </div>
-      
+
       <div>
         <label htmlFor="edit-location" className="block text-sm font-medium text-zinc-300 mb-1">Ubicación</label>
         <input

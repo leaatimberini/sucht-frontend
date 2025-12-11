@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/date-utils';
 
 // Tipos basados en lo que devuelve la API
 interface UserReward {
@@ -54,7 +54,7 @@ export function RedeemedRewardsHistory() {
                 <p className="text-sm text-zinc-500">{item.user.email}</p>
               </td>
               <td className="p-4 text-zinc-300">{item.reward.name}</td>
-              <td className="p-4 text-zinc-400">{format(new Date(item.redeemedAt), 'dd/MM/yyyy HH:mm')} hs</td>
+              <td className="p-4 text-zinc-400">{formatDate(item.redeemedAt, 'dd/MM/yyyy HH:mm')} hs</td>
             </tr>
           ))}
         </tbody>

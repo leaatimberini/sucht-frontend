@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { Ticket } from '@/types/ticket.types';
-import { formatInTimeZone } from 'date-fns-tz';
+import { formatDate } from '@/lib/date-utils';
 
 export function PremiumProductsList({ eventId }: { eventId: string }) {
   const [products, setProducts] = useState<Ticket[]>([]);
@@ -26,9 +26,10 @@ export function PremiumProductsList({ eventId }: { eventId: string }) {
   }, [eventId]);
 
   // Función para formatear la fecha a la zona horaria local de Buenos Aires
+  // Función para formatear la fecha a la zona horaria local de Buenos Aires
   const formatDateTimeToBuenosAires = (dateString: string) => {
     if (!dateString) return '';
-    return formatInTimeZone(dateString, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
+    return formatDate(dateString, 'dd/MM/yyyy HH:mm');
   };
 
   if (isLoading) return <p className="text-zinc-400 text-center">Cargando productos...</p>;
@@ -49,11 +50,10 @@ export function PremiumProductsList({ eventId }: { eventId: string }) {
                 </p>
               </div>
               <div className="text-right">
-                <p className={`text-sm font-semibold capitalize ${
-                  ticket.status === 'partially_paid' ? 'text-yellow-400' :
+                <p className={`text-sm font-semibold capitalize ${ticket.status === 'partially_paid' ? 'text-yellow-400' :
                   ticket.status === 'redeemed' || ticket.status === 'used' ? 'text-red-400' :
-                  'text-green-400'
-                }`}>
+                    'text-green-400'
+                  }`}>
                   {ticket.status.replace('_', ' ')}
                 </p>
                 <p className="text-xs text-zinc-500 mt-1">

@@ -14,6 +14,8 @@ import { SpecialTicketDisplay } from "./components/special-ticket-display";
 import { UsernamePrompt } from "./components/UsernamePrompt";
 import { MyCoupons } from "./components/MyCoupons";
 import { PartnerPromoBanner } from "@/components/partners/PartnerPromoBanner";
+import { GoogleReviewModal } from "@/components/google-review-modal";
+import { ScratchGame } from "@/components/scratch/ScratchGame";
 
 // --- TIPOS Y COMPONENTES INTERNOS ---
 
@@ -108,13 +110,18 @@ export default function MiCuentaPage() {
             <p className="text-zinc-400">Bienvenido a tu panel de control.</p>
           </div>
 
+          <GoogleReviewModal />
+
           <LoyaltyProgressBar user={userData} />
 
 
           {/* FIX: Renderizamos el componente del link de referido aquí */}
           <UsernamePrompt />
 
+
           <PartnerPromoBanner />
+
+          <ScratchGame />
 
           <MyCoupons />
 

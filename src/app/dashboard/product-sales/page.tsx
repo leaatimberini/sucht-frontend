@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
+import { formatDate } from '@/lib/date-utils';
 import toast from 'react-hot-toast';
 import { Loader2, Package, Check, X } from 'lucide-react';
-import { format } from 'date-fns';
 
 // Definimos el tipo de dato que esperamos de la API
 interface ProductPurchaseHistory {
@@ -60,7 +60,7 @@ export default function ProductSalesHistoryPage() {
                             <tr><td colSpan={6} className="text-center p-6 text-zinc-400"><Loader2 className="animate-spin mx-auto" /></td></tr>
                         ) : history.map((purchase) => (
                             <tr key={purchase.id} className="border-b border-zinc-800 last:border-b-0">
-                                <td className="p-4 text-zinc-400 text-sm">{format(new Date(purchase.createdAt), 'dd/MM/yy HH:mm')}hs</td>
+                                <td className="p-4 text-zinc-400 text-sm">{formatDate(purchase.createdAt, 'dd/MM/yy HH:mm')}hs</td>
                                 <td className="p-4"><p className="font-semibold text-zinc-200">{purchase.user.name}</p><p className="text-sm text-zinc-500">{purchase.user.email}</p></td>
                                 <td className="p-4 font-semibold text-white">{purchase.product.name} (x{purchase.quantity})</td>
                                 <td className="p-4 text-zinc-300">{purchase.event.title}</td>

@@ -32,7 +32,7 @@ export function DashboardFilters({ onFilterChange, initialEventId }: DashboardFi
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await api.get<EventSelectItem[]>('/events/list/for-select');
+        const res = await api.get<EventSelectItem[]>('/events/select');
         setEvents(res.data);
       } catch (error) {
         console.error("Failed to fetch events for select", error);
@@ -40,7 +40,7 @@ export function DashboardFilters({ onFilterChange, initialEventId }: DashboardFi
     };
     fetchEvents();
   }, []);
-  
+
   // 3. NUEVO EFECTO PARA ESTABLECER EL VALOR INICIAL
   // Este efecto se ejecuta cuando el initialEventId se carga en la página padre.
   useEffect(() => {
@@ -114,7 +114,7 @@ export function DashboardFilters({ onFilterChange, initialEventId }: DashboardFi
           Aplicar Filtros
         </Button>
         <Button onClick={handleClearFilters} variant="ghost" className="hover:bg-zinc-700 text-zinc-400 p-2">
-          <X className="h-5 w-5"/>
+          <X className="h-5 w-5" />
         </Button>
       </div>
     </div>

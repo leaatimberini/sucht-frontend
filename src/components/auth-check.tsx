@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { UserRole } from "@/types/user.types";
 
-export function AuthCheck({ 
-  children, 
-  allowedRoles 
-}: { 
-  children: React.ReactNode; 
+export function AuthCheck({
+  children,
+  allowedRoles
+}: {
+  children: React.ReactNode;
   allowedRoles?: string[];
 }) {
   const router = useRouter();
@@ -32,7 +32,7 @@ export function AuthCheck({
     // Lógica actualizada para comprobar el array de roles
     if (allowedRoles && user && !user.roles.some(role => allowedRoles.includes(role))) {
       toast.error('No tienes permiso para acceder a esta página.');
-      
+
       if (user.roles.includes(UserRole.ADMIN)) {
         router.push('/dashboard');
       } else if (user.roles.includes(UserRole.RRPP)) {
@@ -47,8 +47,12 @@ export function AuthCheck({
   if (isClient && allowedRoles && user && !user.roles.some(role => allowedRoles.includes(role))) {
     return null;
   }
-  
+
   if (isClient && !token) {
+    return null;
+  }
+
+  if (!isClient) {
     return null;
   }
 

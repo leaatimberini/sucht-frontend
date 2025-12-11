@@ -5,7 +5,7 @@ import api from '@/lib/axios';
 import { AuthCheck } from '@/components/auth-check';
 import { Ticket } from '@/types/ticket.types';
 import { UserReward } from '@/types/reward.types';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/date-utils';
 import { Loader2, History } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -39,7 +39,7 @@ export default function HistorialPage() {
   // Procesamos los datos para unificar y ordenar el historial
   const usedTickets = tickets.filter(t => t.status === 'used' || t.status === 'redeemed' || t.status === 'partially_used');
   const usedRewards = userRewards.filter(r => r.redeemedAt !== null);
-  
+
   const allUsedItems = [
     ...usedTickets.map(t => ({ id: t.id, name: t.tier.name, date: t.validatedAt, type: 'Ticket' })),
     ...usedRewards.map(r => ({ id: r.id, name: r.reward.name, date: r.redeemedAt, type: 'Premio' }))
@@ -63,7 +63,7 @@ export default function HistorialPage() {
                 <p className="text-white font-semibold mt-2">{item.name}</p>
               </div>
               <p className="text-zinc-400 text-sm mt-2 sm:mt-0">
-                Usado el: {format(new Date(item.date!), 'dd/MM/yyyy HH:mm')} hs
+                Usado el: {formatDate(item.date!)} hs
               </p>
             </div>
           ))}

@@ -48,7 +48,7 @@ export function SubscriptionManager() {
   }, [checkSubscription]);
 
   useEffect(() => {
-    if (isSupported && permissionStatus === 'default' && !sessionStorage.getItem('subscriptionBannerDismissed')) {
+    if (isSupported && permissionStatus === 'default' && !localStorage.getItem('subscriptionBannerDismissed')) {
       setIsBannerVisible(true);
     }
   }, [permissionStatus, isSupported]);
@@ -96,7 +96,7 @@ export function SubscriptionManager() {
   };
 
   const handleDismiss = () => {
-    sessionStorage.setItem('subscriptionBannerDismissed', 'true');
+    localStorage.setItem('subscriptionBannerDismissed', 'true');
     setIsBannerVisible(false);
   };
 
@@ -105,7 +105,7 @@ export function SubscriptionManager() {
 
   if (permissionStatus === 'default') {
     return (
-      <div className="fixed bottom-4 left-4 right-4 z-50 animate-fade-in-up">
+      <div className="fixed bottom-4 left-4 right-4 z-[100] animate-fade-in-up">
         <div className="bg-zinc-800 border border-zinc-700 text-white rounded-lg shadow-lg flex items-center justify-between w-full max-w-lg mx-auto p-4">
           <div className="flex items-center gap-3">
             <BellRing className="text-pink-400" />
@@ -115,8 +115,8 @@ export function SubscriptionManager() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleSubscribe} className="bg-pink-600 hover:bg-pink-700 font-bold text-sm px-4 py-2 rounded-md">Activar</button>
-            <button onClick={handleDismiss} className="p-2 rounded-md hover:bg-zinc-700"><X size={18} /></button>
+            <button onClick={handleSubscribe} className="bg-pink-600 hover:bg-pink-700 font-bold text-sm px-4 py-2 rounded-md cursor-pointer">Activar</button>
+            <button onClick={handleDismiss} className="p-2 rounded-md hover:bg-zinc-700 cursor-pointer"><X size={18} /></button>
           </div>
         </div>
       </div>

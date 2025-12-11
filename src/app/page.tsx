@@ -9,11 +9,12 @@ import { useAuthStore } from '@/stores/auth-store';
 import api from '@/lib/axios';
 import { type Event } from '@/types/event.types';
 import { Award, Gift, Instagram, Loader, MessageSquare, ShoppingCart } from 'lucide-react';
+import { PartnersBanner } from '@/components/PartnersBanner';
 
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
-  
+
   // FIX: Se separa el estado del usuario del store y el perfil cargado de la API
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -96,6 +97,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* --- PARTNERS BANNER --- */}
+      <PartnersBanner />
+
       {/* --- SECCIÓN DE PRÓXIMOS EVENTOS --- */}
       <section id="proximos-eventos" className="py-20 bg-black">
         <div className="container mx-auto px-4">
@@ -122,48 +126,48 @@ export default function HomePage() {
           )}
         </div>
       </section>
-      
+
       {/* --- SECCIÓN TIENDA ONLINE --- */}
       <section className="bg-zinc-950 py-20">
         <div className="container mx-auto px-4 text-center">
-            <ShoppingCart size={48} className="mx-auto text-pink-500 mb-4"/>
-            <h2 className="text-3xl md:text-4xl font-bold">Visita Nuestra Tienda Online</h2>
-            <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">Anticipa tus consumiciones y accede a productos exclusivos con descuento comprando directamente desde nuestra web.</p>
-            <Link href="/store" className="mt-8 inline-block bg-white hover:bg-zinc-200 text-black font-bold py-3 px-6 rounded-lg transition-colors">
-                Ir a la Tienda
-            </Link>
+          <ShoppingCart size={48} className="mx-auto text-pink-500 mb-4" />
+          <h2 className="text-3xl md:text-4xl font-bold">Visita Nuestra Tienda Online</h2>
+          <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">Anticipa tus consumiciones y accede a productos exclusivos con descuento comprando directamente desde nuestra web.</p>
+          <Link href="/store" className="mt-8 inline-block bg-white hover:bg-zinc-200 text-black font-bold py-3 px-6 rounded-lg transition-colors">
+            Ir a la Tienda
+          </Link>
         </div>
       </section>
 
       {/* --- SECCIÓN CTA REFERIDOS (SOLO PARA USUARIOS LOGUEADOS) --- */}
       {user && (
         <section className="bg-black py-20">
-            <div className="container mx-auto px-4 text-center">
-                <Gift size={48} className="mx-auto text-pink-500 mb-4" />
-                <h2 className="text-3xl md:text-4xl font-bold">Gana Premios por Invitar</h2>
-                <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">Por cada amigo que asista a un evento usando tu link de referido, acumularás puntos que podrás canjear por premios exclusivos.</p>
-                <Link href="/mi-cuenta" className="mt-8 inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
-                    Obtener mi Link de Referido
-                </Link>
-            </div>
+          <div className="container mx-auto px-4 text-center">
+            <Gift size={48} className="mx-auto text-pink-500 mb-4" />
+            <h2 className="text-3xl md:text-4xl font-bold">Gana Premios por Invitar</h2>
+            <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">Por cada amigo que asista a un evento usando tu link de referido, acumularás puntos que podrás canjear por premios exclusivos.</p>
+            <Link href="/mi-cuenta" className="mt-8 inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+              Obtener mi Link de Referido
+            </Link>
+          </div>
         </section>
       )}
 
       {/* --- Footer --- */}
       <footer className="bg-zinc-900 text-zinc-400 py-8">
         <div className="container mx-auto px-4 flex flex-col items-center space-y-4">
-            <p className="text-center">Síguenos en nuestras redes</p>
-            <div className="flex space-x-6 text-2xl">
-                <a href="https://www.instagram.com/sucht.oficial" target="_blank" rel="noopener noreferrer" aria-label="Instagram SUCHT" className="hover:text-pink-600 transition-colors">
-                    <Instagram />
-                </a>
-                <a href="https://wa.me/5491166755207" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp SUCHT" className="hover:text-green-500 transition-colors">
-                    <MessageSquare />
-                </a>
-            </div>
-            <p className="text-xs text-zinc-500 pt-4">
+          <p className="text-center">Síguenos en nuestras redes</p>
+          <div className="flex space-x-6 text-2xl">
+            <a href="https://www.instagram.com/sucht.oficial" target="_blank" rel="noopener noreferrer" aria-label="Instagram SUCHT" className="hover:text-pink-600 transition-colors">
+              <Instagram />
+            </a>
+            <a href="https://wa.me/5491166755207" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp SUCHT" className="hover:text-green-500 transition-colors">
+              <MessageSquare />
+            </a>
+          </div>
+          <p className="text-xs text-zinc-500 pt-4">
             SUCHT - Desarrollado por <a href="https://www.instagram.com/leaa.emanuel" target="_blank" rel="noopener noreferrer" className="underline hover:text-pink-600">LEAA</a>
-            </p>
+          </p>
         </div>
       </footer>
     </div>

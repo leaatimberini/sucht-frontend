@@ -11,7 +11,8 @@ import { Event } from '@/types/event.types';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format } from 'date-fns'; // 1. Importar 'format'
+import { format } from 'date-fns';
+import { formatDate } from '@/lib/date-utils';
 
 // --- TIPOS DE DATOS ---
 interface Prize {
@@ -95,7 +96,8 @@ export default function RaffleManagementPage() {
             const { data } = await api.get<RaffleConfig>(`/raffles/event/${eventId}`);
             if (data) {
                 reset({
-                    drawDate: data.drawDate ? format(new Date(data.drawDate), "yyyy-MM-dd'T'HH:mm") : '',
+
+                    drawDate: data.drawDate ? formatDate(data.drawDate, "yyyy-MM-dd'T'HH:mm") : '',
                     numberOfWinners: data.numberOfWinners,
                     prizes: data.prizes,
                 });
@@ -113,7 +115,7 @@ export default function RaffleManagementPage() {
     useEffect(() => {
         fetchRaffleForEvent(selectedEventId);
     }, [selectedEventId, fetchRaffleForEvent]);
-    
+
     // --- LÓGICA CORREGIDA ---
     useEffect(() => {
         const currentPrizes = watch('prizes');

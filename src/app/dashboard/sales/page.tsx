@@ -5,26 +5,9 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
 import { Ticket } from '@/types/ticket.types';
 import { Event } from '@/types/event.types';
-import { formatInTimeZone } from 'date-fns-tz';
-import { es } from 'date-fns/locale';
+import { formatDate } from '@/lib/date-utils';
 import { Loader2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-// Zona horaria constante
-const BA_TIMEZONE = 'America/Argentina/Buenos_Aires';
-
-// Helper para formatear fechas a hora BA (-03)
-function formatToBuenosAires(dateLike: Date | string | number | undefined | null, formatStr = 'dd/MM/yyyy HH:mm') {
-    if (!dateLike) return 'N/A';
-    const date = typeof dateLike === 'string' || typeof dateLike === 'number' ? new Date(dateLike) : dateLike;
-    if (isNaN(date.getTime())) return 'Invalid date';
-    try {
-        return formatInTimeZone(date, BA_TIMEZONE, formatStr, { locale: es });
-    } catch (err) {
-        console.error('Error formateando fecha:', err);
-        return 'N/A';
-    }
-}
 
 // --- SUB-COMPONENTE PARA LOS FILTROS ---
 function SalesFilters({ onFilterChange }: { onFilterChange: (filters: any) => void }) {
@@ -103,7 +86,7 @@ export default function SalesHistoryPage() {
     return (
         <div className="p-4 sm:p-6 lg:p-8">
             <h1 className="text-3xl font-bold text-white mb-6">Historial de Ventas y Emisiones</h1>
-            
+
             <SalesFilters onFilterChange={fetchData} />
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-x-auto">
@@ -121,11 +104,11 @@ export default function SalesHistoryPage() {
                     </thead>
                     <tbody>
                         {isLoading ? (
-                            <tr><td colSpan={7} className="text-center p-6"><Loader2 className="animate-spin mx-auto"/></td></tr>
+                            <tr><td colSpan={7} className="text-center p-6"><Loader2 className="animate-spin mx-auto" /></td></tr>
                         ) : history.map(ticket => (
                             <tr key={ticket.id} className="border-b border-zinc-800 last:border-b-0">
                                 <td className="p-4 text-zinc-400 text-sm">
-                                    {formatToBuenosAires(ticket.createdAt)} hs
+                                    {formatDate(ticket.createdAt)} hs
                                 </td>
                                 <td className="p-4">
                                     <p className="font-semibold text-zinc-200">{ticket.user?.name || 'N/A'}</p>
@@ -144,14 +127,14 @@ export default function SalesHistoryPage() {
                                 <td className="p-4 text-zinc-300">{ticket.promoter ? `@${ticket.promoter.username || ticket.promoter.name}` : (ticket.origin || 'N/A')}</td>
                                 <td className="p-4">
                                     <button onClick={() => handleDeleteTicket(ticket.id)} className="text-red-500 hover:text-red-400">
-                                        <Trash2 size={16}/>
+                                        <Trash2 size={16} />
                                     </button>
                                 </td>
                             </tr>
                         ))}
-                         {history.length === 0 && !isLoading && (
+                        {history.length === 0 && !isLoading && (
                             <tr><td colSpan={7} className="text-center p-6 text-zinc-500">No se encontraron resultados.</td></tr>
-                         )}
+                        )}
                     </tbody>
                 </table>
             </div>

@@ -33,7 +33,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
         try {
           const [tiersRes, tablesRes] = await Promise.all([
             api.get(`/events/${params.id}/ticket-tiers`),
-            api.get(`/tables/event/${params.id}`)
+            api.get(`/tables/public/event/${params.id}`)
           ]);
           setTiers(tiersRes.data || []);
           setTables(tablesRes.data || []);
@@ -94,24 +94,24 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
               <h1 className="text-4xl font-bold text-white">{event.title}</h1>
               <p className="text-lg text-zinc-400 mt-2">{event.location}</p>
               <p className="text-zinc-300 mt-4 whitespace-pre-wrap">{event.description}</p>
-              
-              <ShareButton 
-                eventId={event.id} 
-                eventTitle={event.title} 
+
+              <ShareButton
+                eventId={event.id}
+                eventTitle={event.title}
                 flyerImageUrl={event.flyerImageUrl}
               />
-              
+
               {!isEventFinished && tables.length > 0 && (
-                  <div className="my-8">
-                      <button 
-                          onClick={() => setIsTableModalOpen(true)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 text-lg transition-colors"
-                      >
-                          <Map size={20}/> Ver Mapa de Mesas VIP
-                      </button>
-                  </div>
+                <div className="my-8">
+                  <button
+                    onClick={() => setIsTableModalOpen(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 text-lg transition-colors"
+                  >
+                    <Map size={20} /> Ver Mapa de Mesas VIP
+                  </button>
+                </div>
               )}
-              
+
               <div className="mt-8 space-y-4">
                 <h2 className="text-2xl font-bold text-white">Entradas Generales</h2>
                 {regularTiers && regularTiers.length > 0 ? regularTiers.map(tier => (
@@ -129,7 +129,7 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
                     </div>
                   </div>
                 )) : (
-                    <p className="text-zinc-500">No hay entradas generales disponibles para este evento.</p>
+                  <p className="text-zinc-500">No hay entradas generales disponibles para este evento.</p>
                 )}
               </div>
             </div>
@@ -148,9 +148,9 @@ export default function EventoDetailPage({ params }: { params: { id: string } })
       </div>
 
       {isTableModalOpen && (
-        <TableReservationModal 
-          eventId={event.id} 
-          onClose={() => setIsTableModalOpen(false)} 
+        <TableReservationModal
+          eventId={event.id}
+          onClose={() => setIsTableModalOpen(false)}
         />
       )}
     </>

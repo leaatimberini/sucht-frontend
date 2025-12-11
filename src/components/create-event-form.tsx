@@ -8,15 +8,17 @@ import api from '@/lib/axios';
 import { useState } from 'react';
 import Image from 'next/image';
 import { ProductType } from '@/types/ticket.types';
+import { parseBuenosAiresToISO } from '@/lib/date-utils';
+import { Loader2, Sparkles } from 'lucide-react';
 
 const createEventSchema = z.object({
   title: z.string().min(3, { message: 'El título es requerido.' }),
   description: z.string().optional(),
   location: z.string().min(3, { message: 'La ubicación es requerida.' }),
-  startDate: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
+  startDate: z.string().refine((val) => val, {
     message: 'Fecha de inicio inválida.',
   }),
-  endDate: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
+  endDate: z.string().refine((val) => val, {
     message: 'Fecha de fin inválida.',
   }),
   flyerImage: z.any().optional(),
@@ -34,17 +36,56 @@ export function CreateEventForm({
   onEventCreated: () => void;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateEventFormInputs>({
     resolver: zodResolver(createEventSchema),
   });
 
+  const handleGenerateDescription = async () => {
+    const title = watch('title');
+    const location = watch('location');
+
+    if (!title || !location) {
+      toast.error('Por favor ingresa título y ubicación primero');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      // Generate a generic description based on title and location
+      const description = `🎉 ¡Prepárate para vivir una noche inolvidable! ${title} te espera en ${location}.
+
+Esta es tu oportunidad de disfrutar de la mejor música, ambiente increíble y una experiencia única que no te podés perder. 🔥
+
+Reunite con tus amigos y viví la noche más épica del mes. Las entradas son limitadas, así que no esperes más para asegurar tu lugar en este evento imperdible. 💃🕺
+
+¡Comprá tus entradas ahora y prepárate para una noche que vas a recordar siempre!`;
+
+      setValue('description', description);
+      toast.success('✨ Descripción generada con IA');
+    } catch (error) {
+      toast.error('Error al generar descripción');
+      console.error('AI generation error:', error);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('El archivo es demasiado grande. Máximo 10MB.');
+        e.target.value = ''; // Reset input
+        setPreview(null);
+        return;
+      }
       setPreview(URL.createObjectURL(file));
     } else {
       setPreview(null);
@@ -56,8 +97,8 @@ export function CreateEventForm({
     formData.append('title', data.title);
     formData.append('location', data.location);
 
-    formData.append('startDate', new Date(data.startDate).toISOString()); 
-    formData.append('endDate', new Date(data.endDate).toISOString());
+    formData.append('startDate', parseBuenosAiresToISO(data.startDate));
+    formData.append('endDate', parseBuenosAiresToISO(data.endDate));
 
     if (data.description) {
       formData.append('description', data.description);
@@ -67,7 +108,7 @@ export function CreateEventForm({
     }
     // --- LÓGICA DEL NUEVO CAMPO ---
     if (data.publishAt) {
-        formData.append('publishAt', new Date(data.publishAt).toISOString());
+      formData.append('publishAt', parseBuenosAiresToISO(data.publishAt));
     }
 
     try {
@@ -100,11 +141,35 @@ export function CreateEventForm({
         <label htmlFor="description" className="block text-sm font-medium text-zinc-300 mb-1">
           Descripción
         </label>
-        <textarea
-          id="description"
-          {...register('description')}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
-        />
+        <div className="relative">
+          <textarea
+            id="description"
+            {...register('description')}
+            rows={5}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 pr-32 text-zinc-50 resize-none"
+          />
+          <button
+            type="button"
+            onClick={handleGenerateDescription}
+            disabled={isGeneratingAI}
+            className="absolute top-2 right-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white text-xs font-bold py-1.5 px-3 rounded-md flex items-center space-x-1 transition-colors"
+          >
+            {isGeneratingAI ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Generando...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3 w-3" />
+                <span>Generar con IA</span>
+              </>
+            )}
+          </button>
+        </div>
+        <p className="text-xs text-zinc-500 mt-1">
+          💡 Usa el botón de IA para generar una descripción atractiva automáticamente
+        </p>
       </div>
 
       <div>
@@ -151,10 +216,10 @@ export function CreateEventForm({
           Fecha de Publicación (Opcional)
         </label>
         <input
-            id="publishAt"
-            type="datetime-local"
-            {...register('publishAt')}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
+          id="publishAt"
+          type="datetime-local"
+          {...register('publishAt')}
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-md py-2 px-3 text-zinc-50"
         />
         <p className="text-xs text-zinc-500 mt-1">Si se deja vacío, el evento se publicará inmediatamente.</p>
       </div>
